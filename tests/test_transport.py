@@ -121,3 +121,33 @@ class TestEnergyAndCurrentPreserved:
         states = tr.transport(initial_state)
         for s in states:
             assert s.current == pytest.approx(initial_state.current, rel=1e-9)
+
+
+class TestEmittanceConservation:
+    def test_geometric_emittance_conserved_in_drift(self, config_no_solenoids, initial_state):
+        """Geometric emittance must be conserved (no acceleration, no damping)."""
+        tr     = BeamTransport(config_no_solenoids)
+        states = tr.transport(initial_state)
+        eps0   = initial_state.emittance_x
+        for s in states:
+            assert s.emittance_x == pytest.approx(eps0, rel=1e-6)
+
+    def test_normalized_emittance_conserved_with_solenoid(self):
+        """Emittance must also be conserved in presence of solenoid focusing."""
+        sol = SolenoidConfig(position=0.3, length=0.25, bore_radius=0.05, peak_field=0.20)
+        cfg = InjectorConfig(total_length=1.5, n_steps=400, solenoids=[sol])
+        st  = BeamState()
+        st.position       = 0.0
+        st.kinetic_energy = 3.0e6
+        st.current        = 100.0
+        st.sigma_x        = 0.015
+        st.sigma_y        = 0.015
+        st.sigma_xp       = 0.003
+        st.sigma_yp       = 0.003
+        st.sigma_xxp      = 0.0
+        st.sigma_yyp      = 0.0
+        tr     = BeamTransport(cfg)
+        states = tr.transport(st)
+        eps0   = st.emittance_x
+        for s in states:
+            assert s.emittance_x == pytest.approx(eps0, rel=1e-5)

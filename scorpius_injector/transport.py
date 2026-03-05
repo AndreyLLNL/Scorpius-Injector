@@ -33,6 +33,8 @@ from __future__ import annotations
 
 from typing import List
 
+import math
+
 import numpy as np
 from scipy.integrate import solve_ivp
 
@@ -167,12 +169,14 @@ class BeamTransport:
         KE      = initial_state.kinetic_energy
         current = initial_state.current
 
-        y0 = np.array([
-            initial_state.sigma_x,
-            initial_state.sigma_xp,
-            initial_state.sigma_y,
-            initial_state.sigma_yp,
-        ])
+        # Convert BeamState moments to envelope-equation initial conditions.
+        # The ODE uses X = σ_x and X' = dσ_x/dz = σ_{xx'} / σ_x.
+        X0  = initial_state.sigma_x
+        Xp0 = initial_state.sigma_xxp / X0 if X0 > 0.0 else 0.0
+        Y0  = initial_state.sigma_y
+        Yp0 = initial_state.sigma_yyp / Y0 if Y0 > 0.0 else 0.0
+
+        y0 = np.array([X0, Xp0, Y0, Yp0])
 
         z_eval = np.linspace(z0, z1, n)
 
@@ -190,27 +194,36 @@ class BeamTransport:
         states: List[BeamState] = []
         for i, z in enumerate(sol.t):
             X  = abs(float(sol.y[0, i]))
-            Xp = float(sol.y[1, i])
+            Xp = float(sol.y[1, i])   # dX/dz  (derivative of rms envelope)
             Y  = abs(float(sol.y[2, i]))
-            Yp = float(sol.y[3, i])
+            Yp = float(sol.y[3, i])   # dY/dz
 
             st = BeamState()
             st.position       = float(z)
             st.kinetic_energy = KE
             st.current        = current
 
-            st.sigma_x  = X
-            st.sigma_xp = abs(Xp)          # store magnitude; sign in alpha
-            st.sigma_y  = Y
-            st.sigma_yp = abs(Yp)
+            st.sigma_x = X
+            st.sigma_y = Y
 
-            # Recover correlation from emittance and Twiss α
-            # α = -(σ_{xx'}/ε)  →  σ_{xx'} = -α ε
-            # For the envelope equations α_x = -X' / (2 ε_x / X)  (approx)
-            if eps_x > 0.0 and X > 0.0:
-                st.sigma_xxp = -Xp * X / 2.0   # consistent sign convention
-            if eps_y > 0.0 and Y > 0.0:
-                st.sigma_yyp = -Yp * Y / 2.0
+            # The ODE state Xp = dσ_x/dz is NOT the rms divergence σ_{x'}.
+            # The Twiss relation gives:
+            #   σ_{x'}² = ε_x² / σ_x² + (dσ_x/dz)²
+            # which correctly preserves emittance:  ε = √(σ_x² σ_{x'}² − σ_{xx'}²)
+            # and the phase-space correlation:      σ_{xx'} = σ_x · (dσ_x/dz)
+            if X > 0.0:
+                st.sigma_xp  = math.sqrt(eps_x**2 / X**2 + Xp**2)
+                st.sigma_xxp = X * Xp
+            else:
+                st.sigma_xp  = 0.0
+                st.sigma_xxp = 0.0
+
+            if Y > 0.0:
+                st.sigma_yp  = math.sqrt(eps_y**2 / Y**2 + Yp**2)
+                st.sigma_yyp = Y * Yp
+            else:
+                st.sigma_yp  = 0.0
+                st.sigma_yyp = 0.0
 
             st.x_centroid  = initial_state.x_centroid
             st.y_centroid  = initial_state.y_centroid
