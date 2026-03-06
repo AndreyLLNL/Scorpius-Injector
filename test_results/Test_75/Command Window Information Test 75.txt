@@ -1,0 +1,4423 @@
+Command Window Information Test 75
+02.26.2026
+Pirce_Gun_PIC_v8_Integrated_SCF6_2_V3_10.m
+Residual Gas Pressure 1e-6 mbar
+=== BETATRON AVERAGING MODE (MULTI-PULSE) ===
+Snapshots per pulse: 7
+Temporal spacing: 5.0 ns
+Total window: 30.0 ns (~1 betatron period)
+================================================================
+  PIERCE GUN PIC v8 - WITH SPACE CHARGE                        
+================================================================
+
+Loading resources...
+  ? Geometry loaded (mesh: 3850x500)
+  ? Fields loaded (max E: 7.5 MV/m)
+
+=== Field Array Diagnostics ===
+  z array: -400.0 to 2760.0 mm (3850 points)
+  r array: 0.0 to 452.1 mm (500 points)
+  Ez_capped size: 500x3850
+  Er_capped size: 500x3850
+  Ez at z=250 mm: -3.79e+06 V/m
+  Ez at z=350 mm: -2.18e+05 V/m
+  Ez at z=600 mm: -6.81e+01 V/m
+  Ez at z=1000 mm: -1.64e-04 V/m
+  Ez at z=1400 mm: -3.54e-07 V/m
+  Ez at z=1800 mm: 4.96e-07 V/m
+  Ez at z=2200 mm: -0.00e+00 V/m
+  Ez at z=2600 mm: -1.42e-07 V/m
+  WARNING: Sharp field drops at z indices: 488 
+    z=-0.2 mm: Ez drops from 0.00e+00 to -5.39e+06 V/m
+
+Configuration: PRODUCTION mode
+  Timestep: 10.00 ps
+  Particles/step: 100 (weight: 1.00e+09)
+
+=== MULTI-PULSE MODE (PRODUCTION) ===
+Number of pulses: 2
+Pulse spacing: 200.0 ns
+Total simulation time: 346.0 ns
+Time steps: 34601 (dt=10.00 ps)
+
+Space charge configuration:
+  Grid: 500x100 (dz=5.63mm, dr=1.52mm)
+  Solver: 100 iterations, ?=1.40
+
+=== GAS SCATTERING MODULE ===
+Method: HYBRID
+  Pressure: 1.00e-06 mbar
+  Gas density: 3.22e+16 molecules/m³
+  Elastic ?: 2.02e-20 m²
+  Mean free path: 1.5 km
+  Effective X?: 2.28e+11 m
+  Check interval: 10 timesteps (100.0 ps)
+  Method: HYBRID
+
+=== ION ACCUMULATION MODULE ===
+  Ion super-particle weight: 1000 ions/super-particle
+  Ionization ?: 3.50e-21 m²
+  Recombination time: 10.0 µs
+
+Initializing particle pool...
+  Max particles: 4500000
+  Memory allocated: 343.3 MB
+
+Initializing particle pool...
+  Max particles: 4500000
+  Memory allocated: 343.3 MB
+Snapshot storage initialized: 7 per pulse
+Multi-pulse diagnostics initialized
+
+Magnetic field configuration:
+  Solenoid 1: -450 G at z=-279 mm
+  Solenoid 2: 135 G at z=372 mm
+  Solenoid 3: 75 G at z=1145 mm
+  Solenoid 4: 75 G at z=1268 mm
+  Solenoid 5: 50 G at z=1369 mm
+NOTE:  Solenoid 6 is a steering dipole magnet not in use currently   Solenoid 7: 25 G at z=1492 mm
+  Solenoid 8: 25 G at z=1594 mm
+  Solenoid 9: 25 G at z=1717 mm
+  Solenoid 10: 25 G at z=1819 mm
+  Solenoid 11: 20 G at z=1942 mm
+  Solenoid 12: 20 G at z=2043 mm
+NOTE:  Solenoid 13 is a steering dipole magnet not in use currently   Solenoid 14: 20 G at z=2166 mm
+  Solenoid 15: 20 G at z=2268 mm
+  Solenoid 16: 15 G at z=2391 mm
+  Solenoid 17: 15 G at z=2493 mm
+  Solenoid 18: 15 G at z=2616 mm
+  Solenoid 19: 15 G at z=2717 mm
+
+Starting simulation...
+Progress: 
+  [SCHOTTKY EMISSION] t=151.0ns:
+    E_cathode=0.06 MV/m, ??=0.009 eV
+    ?_eff=1.791 eV (0.5% reduction)
+    T_cathode=1200 K (saves 6 K vs no Schottky)
+    J=0.0 A/cm² @ I=2.2 A
+*** FIRST ION CREATION at t=151.1 ns ***
+  Particles checked: 28
+  Average electron weight: 7.66e+07
+  Average p_ionize: 7.36e-09
+  Total REAL ions created: 15
+  Super-ions created: 0.0
+  Super-ion weight: 1000 ions/super-ion
+
+  [SCHOTTKY EMISSION] t=152.0ns:
+    E_cathode=0.23 MV/m, ??=0.018 eV
+    ?_eff=1.782 eV (1.0% reduction)
+    T_cathode=1200 K (saves 12 K vs no Schottky)
+    J=0.2 A/cm² @ I=20.5 A
+  [SCHOTTKY EMISSION] t=153.0ns:
+    E_cathode=0.51 MV/m, ??=0.027 eV
+    ?_eff=1.773 eV (1.5% reduction)
+    T_cathode=1200 K (saves 18 K vs no Schottky)
+    J=0.6 A/cm² @ I=83.2 A
+  [SCHOTTKY EMISSION] t=154.0ns:
+    E_cathode=0.90 MV/m, ??=0.036 eV
+    ?_eff=1.764 eV (2.0% reduction)
+    T_cathode=1200 K (saves 24 K vs no Schottky)
+    J=1.8 A/cm² @ I=236.4 A
+  [SCHOTTKY EMISSION] t=155.0ns:
+    E_cathode=1.38 MV/m, ??=0.045 eV
+    ?_eff=1.755 eV (2.5% reduction)
+    T_cathode=1200 K (saves 30 K vs no Schottky)
+    J=4.1 A/cm² @ I=541.0 A  DEBUG: 543 particles in Gap exit (300-400 mm)
+
+  [SCHOTTKY EMISSION] t=156.0ns:
+    E_cathode=1.92 MV/m, ??=0.053 eV
+    ?_eff=1.747 eV (2.9% reduction)
+    T_cathode=1200 K (saves 36 K vs no Schottky)
+    J=7.9 A/cm² @ I=1052.8 A  DEBUG: 132 particles in danger zone 600-700mm
+  DEBUG: 865 particles in Gap exit (300-400 mm)
+  DEBUG: 132 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=157.0ns:
+    E_cathode=2.50 MV/m, ??=0.060 eV
+    ?_eff=1.740 eV (3.3% reduction)
+    T_cathode=1200 K (saves 41 K vs no Schottky)
+    J=8.5 A/cm² @ I=1131.4 A  DEBUG: 882 particles in danger zone 600-700mm
+  DEBUG: 1197 particles in Gap exit (300-400 mm)
+  DEBUG: 882 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=158.0ns:
+    E_cathode=3.06 MV/m, ??=0.066 eV
+    ?_eff=1.734 eV (3.7% reduction)
+    T_cathode=1200 K (saves 46 K vs no Schottky)
+    J=9.1 A/cm² @ I=1203.2 A  DEBUG: 1214 particles in danger zone 600-700mm
+  DEBUG: 1529 particles in Gap exit (300-400 mm)
+  DEBUG: 1214 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 551 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 1000/34601 (2.9%) | 2.3 steps/s | ETA: 245.6 min
+  Active: 22439 | Created: 22574 | At anode: 14994
+  
+  [SCHOTTKY EMISSION] t=159.0ns:
+    E_cathode=3.61 MV/m, ??=0.072 eV
+    ?_eff=1.728 eV (4.0% reduction)
+    T_cathode=1200 K (saves 50 K vs no Schottky)
+    J=9.6 A/cm² @ I=1271.1 A  [SC Field: 0.29 MV/m]
+
+  [LOSSES] Cathode:0, Walls:3, Bounds:0
+  DEBUG: 1564 particles in danger zone 600-700mm
+  DEBUG: 1890 particles in Gap exit (300-400 mm)
+  DEBUG: 1564 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1134 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=160.0ns:
+    E_cathode=4.12 MV/m, ??=0.077 eV
+    ?_eff=1.723 eV (4.3% reduction)
+    T_cathode=1200 K (saves 54 K vs no Schottky)
+    J=10.0 A/cm² @ I=1333.1 A  DEBUG: 1883 particles in danger zone 600-700mm
+  DEBUG: 2216 particles in Gap exit (300-400 mm)
+  DEBUG: 1883 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1390 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=161.0ns:
+    E_cathode=4.57 MV/m, ??=0.081 eV
+    ?_eff=1.719 eV (4.5% reduction)
+    T_cathode=1200 K (saves 57 K vs no Schottky)
+    J=10.5 A/cm² @ I=1387.5 A  DEBUG: 2247 particles in danger zone 600-700mm
+  DEBUG: 2562 particles in Gap exit (300-400 mm)
+  DEBUG: 2247 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1613 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=162.0ns:
+    E_cathode=4.95 MV/m, ??=0.084 eV
+    ?_eff=1.716 eV (4.7% reduction)
+    T_cathode=1200 K (saves 59 K vs no Schottky)
+    J=10.8 A/cm² @ I=1432.1 A  DEBUG: 2549 particles in danger zone 600-700mm
+  DEBUG: 2862 particles in Gap exit (300-400 mm)
+  DEBUG: 2549 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2043 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=163.0ns:
+    E_cathode=5.23 MV/m, ??=0.087 eV
+    ?_eff=1.713 eV (4.8% reduction)
+    T_cathode=1200 K (saves 61 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 2858 particles in danger zone 600-700mm
+  DEBUG: 3097 particles in Gap exit (300-400 mm)
+  DEBUG: 2858 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2356 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=164.0ns:
+    E_cathode=5.41 MV/m, ??=0.088 eV
+    ?_eff=1.712 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3100 particles in danger zone 600-700mm
+  DEBUG: 3275 particles in Gap exit (300-400 mm)
+  DEBUG: 3100 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2679 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=165.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3270 particles in danger zone 600-700mm
+  DEBUG: 3435 particles in Gap exit (300-400 mm)
+  DEBUG: 3270 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2957 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  [Snapshot 1 at 165.0 ns: 62522 particles]
+
+  [SCHOTTKY EMISSION] t=166.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3443 particles in danger zone 600-700mm
+  DEBUG: 3433 particles in Gap exit (300-400 mm)
+  DEBUG: 3443 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3141 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+.
+  [SCHOTTKY EMISSION] t=167.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3414 particles in danger zone 600-700mm
+  DEBUG: 3427 particles in Gap exit (300-400 mm)
+  DEBUG: 3414 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3440 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=168.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3424 particles in danger zone 600-700mm
+  DEBUG: 3447 particles in Gap exit (300-400 mm)
+  DEBUG: 3424 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3392 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 2000/34601 (5.8%) | 0.5 steps/s | ETA: 1033.2 min
+  Active: 90055 | Created: 115778 | At anode: 104697
+  
+  [SCHOTTKY EMISSION] t=169.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  [SC Field: 0.28 MV/m]
+
+  [LOSSES] Cathode:0, Walls:5, Bounds:0
+  DEBUG: 3426 particles in danger zone 600-700mm
+  DEBUG: 3471 particles in Gap exit (300-400 mm)
+  DEBUG: 3426 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3387 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 169.0 ns:
+    Emitted: 19.142 µC
+    In flight: 13.771 µC
+    Collected: 3.539 µC
+    WARNING: 1.832 µC unaccounted!
+  [SCHOTTKY EMISSION] t=170.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3432 particles in danger zone 600-700mm
+  DEBUG: 3443 particles in Gap exit (300-400 mm)
+  DEBUG: 3432 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3383 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=171.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3420 particles in danger zone 600-700mm
+  DEBUG: 3438 particles in Gap exit (300-400 mm)
+  DEBUG: 3420 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3403 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=172.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3425 particles in danger zone 600-700mm
+  DEBUG: 3459 particles in Gap exit (300-400 mm)
+  DEBUG: 3425 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3402 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=173.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3414 particles in danger zone 600-700mm
+  DEBUG: 3441 particles in Gap exit (300-400 mm)
+  DEBUG: 3414 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3375 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=174.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3438 particles in danger zone 600-700mm
+  DEBUG: 3450 particles in Gap exit (300-400 mm)
+  DEBUG: 3438 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3392 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=175.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3423 particles in danger zone 600-700mm
+  DEBUG: 3436 particles in Gap exit (300-400 mm)
+  DEBUG: 3423 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3413 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=176.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3413 particles in danger zone 600-700mm
+  DEBUG: 3428 particles in Gap exit (300-400 mm)
+  DEBUG: 3413 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3407 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=177.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3432 particles in danger zone 600-700mm
+  DEBUG: 3439 particles in Gap exit (300-400 mm)
+  DEBUG: 3432 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3400 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=178.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3444 particles in danger zone 600-700mm
+  DEBUG: 3455 particles in Gap exit (300-400 mm)
+  DEBUG: 3444 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3395 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 3000/34601 (8.7%) | 0.3 steps/s | ETA: 1513.7 min
+  Active: 94018 | Created: 215778 | At anode: 204697
+  
+  [SCHOTTKY EMISSION] t=179.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  [SC Field: 0.30 MV/m]
+
+  [LOSSES] Cathode:0, Walls:5, Bounds:0
+  DEBUG: 3422 particles in danger zone 600-700mm
+  DEBUG: 3427 particles in Gap exit (300-400 mm)
+  DEBUG: 3422 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3404 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 179.0 ns:
+    Emitted: 33.742 µC
+    In flight: 13.728 µC
+    Collected: 17.504 µC
+    WARNING: 2.510 µC unaccounted!
+  [SCHOTTKY EMISSION] t=180.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3419 particles in danger zone 600-700mm
+  DEBUG: 3431 particles in Gap exit (300-400 mm)
+  DEBUG: 3419 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3397 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=181.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3413 particles in danger zone 600-700mm
+  DEBUG: 3444 particles in Gap exit (300-400 mm)
+  DEBUG: 3413 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3379 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=182.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3422 particles in danger zone 600-700mm
+  DEBUG: 3449 particles in Gap exit (300-400 mm)
+  DEBUG: 3422 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3416 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=183.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3424 particles in danger zone 600-700mm
+  DEBUG: 3447 particles in Gap exit (300-400 mm)
+  DEBUG: 3424 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3409 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+.
+  [SCHOTTKY EMISSION] t=184.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3416 particles in danger zone 600-700mm
+  DEBUG: 3447 particles in Gap exit (300-400 mm)
+  DEBUG: 3416 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3379 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=185.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3438 particles in danger zone 600-700mm
+  DEBUG: 3424 particles in Gap exit (300-400 mm)
+  DEBUG: 3438 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3389 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=186.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3416 particles in danger zone 600-700mm
+  DEBUG: 3445 particles in Gap exit (300-400 mm)
+  DEBUG: 3416 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3389 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=187.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3431 particles in danger zone 600-700mm
+  DEBUG: 3436 particles in Gap exit (300-400 mm)
+  DEBUG: 3431 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3392 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=188.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3413 particles in danger zone 600-700mm
+  DEBUG: 3446 particles in Gap exit (300-400 mm)
+  DEBUG: 3413 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3413 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 4000/34601 (11.6%) | 0.3 steps/s | ETA: 1766.4 min
+  Active: 94167 | Created: 315778 | At anode: 304689
+  
+  [SCHOTTKY EMISSION] t=189.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  [SC Field: 0.31 MV/m]
+
+  [LOSSES] Cathode:0, Walls:10, Bounds:0
+  DEBUG: 3429 particles in danger zone 600-700mm
+  DEBUG: 3434 particles in Gap exit (300-400 mm)
+  DEBUG: 3429 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3408 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 189.0 ns:
+    Emitted: 48.343 µC
+    In flight: 13.747 µC
+    Collected: 31.608 µC
+    WARNING: 2.988 µC unaccounted!
+  [SCHOTTKY EMISSION] t=190.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3415 particles in danger zone 600-700mm
+  DEBUG: 3450 particles in Gap exit (300-400 mm)
+  DEBUG: 3415 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3394 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=191.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3438 particles in danger zone 600-700mm
+  DEBUG: 3443 particles in Gap exit (300-400 mm)
+  DEBUG: 3438 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3417 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=192.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3436 particles in danger zone 600-700mm
+  DEBUG: 3459 particles in Gap exit (300-400 mm)
+  DEBUG: 3436 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3400 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=193.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3427 particles in danger zone 600-700mm
+  DEBUG: 3453 particles in Gap exit (300-400 mm)
+  DEBUG: 3427 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3406 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=194.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3449 particles in danger zone 600-700mm
+  DEBUG: 3456 particles in Gap exit (300-400 mm)
+  DEBUG: 3449 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3394 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=195.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3408 particles in danger zone 600-700mm
+  DEBUG: 3438 particles in Gap exit (300-400 mm)
+  DEBUG: 3408 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3397 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+=== Capturing Pulse 1 Snapshot 1/7 at t=195.0 ns ===
+  Particles: 94132 | Progress: 1/7 snapshots
+
+  [SCHOTTKY EMISSION] t=196.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3424 particles in danger zone 600-700mm
+  DEBUG: 3455 particles in Gap exit (300-400 mm)
+  DEBUG: 3424 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3393 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=197.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3434 particles in danger zone 600-700mm
+  DEBUG: 3441 particles in Gap exit (300-400 mm)
+  DEBUG: 3434 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3374 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=198.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3429 particles in danger zone 600-700mm
+  DEBUG: 3424 particles in Gap exit (300-400 mm)
+  DEBUG: 3429 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3398 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 5000/34601 (14.5%) | 0.3 steps/s | ETA: 1968.6 min
+  Active: 94197 | Created: 415778 | At anode: 404692
+  
+  [SCHOTTKY EMISSION] t=199.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  [SC Field: 0.28 MV/m]
+
+  [LOSSES] Cathode:0, Walls:2, Bounds:0
+ | [ION] 274705643 real ions (274705.6 super-ions)  DEBUG: 3411 particles in danger zone 600-700mm
+  DEBUG: 3428 particles in Gap exit (300-400 mm)
+  DEBUG: 3411 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3387 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 199.0 ns:
+    Emitted: 62.944 µC
+    In flight: 13.752 µC
+    Collected: 45.584 µC
+    WARNING: 3.608 µC unaccounted!
+  [SCHOTTKY EMISSION] t=200.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3430 particles in danger zone 600-700mm
+  DEBUG: 3436 particles in Gap exit (300-400 mm)
+  DEBUG: 3430 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3389 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+=== Capturing Pulse 1 Snapshot 2/7 at t=200.0 ns ===
+  Particles: 94226 | Progress: 2/7 snapshots
+.
+  [SCHOTTKY EMISSION] t=201.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3420 particles in danger zone 600-700mm
+  DEBUG: 3456 particles in Gap exit (300-400 mm)
+  DEBUG: 3420 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3383 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=202.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3433 particles in danger zone 600-700mm
+  DEBUG: 3430 particles in Gap exit (300-400 mm)
+  DEBUG: 3433 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3378 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=203.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3436 particles in danger zone 600-700mm
+  DEBUG: 3447 particles in Gap exit (300-400 mm)
+  DEBUG: 3436 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3403 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=204.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A
+=== Capturing Full Beam Snapshot at t=204.0 ns ===
+  Total active particles: 94040
+  Z range: 1.1 to 2759.9 mm
+  DEBUG: 3425 particles in danger zone 600-700mm
+  DEBUG: 3432 particles in Gap exit (300-400 mm)
+  DEBUG: 3425 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3405 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+=== Capturing Steady-State Beam for Slice Analysis at t=204.0 ns ===
+  Total active particles captured: 94040
+  Z range: 1.1 to 2759.9 mm
+
+  [SCHOTTKY EMISSION] t=205.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3434 particles in danger zone 600-700mm
+  DEBUG: 3438 particles in Gap exit (300-400 mm)
+  DEBUG: 3434 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3401 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  [Ion snapshot 1: 120945120 ions, centroid at z=1312.6 mm]
+  [Snapshot 2 at 205.0 ns: 82981 particles]
+
+=== Capturing Pulse 1 Snapshot 3/7 at t=205.0 ns ===
+  Particles: 94059 | Progress: 3/7 snapshots
+
+  [SCHOTTKY EMISSION] t=206.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3433 particles in danger zone 600-700mm
+  DEBUG: 3448 particles in Gap exit (300-400 mm)
+  DEBUG: 3433 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3394 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=207.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3416 particles in danger zone 600-700mm
+  DEBUG: 3439 particles in Gap exit (300-400 mm)
+  DEBUG: 3416 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3395 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=208.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3407 particles in danger zone 600-700mm
+  DEBUG: 3427 particles in Gap exit (300-400 mm)
+  DEBUG: 3407 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3405 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 6000/34601 (17.3%) | 0.2 steps/s | ETA: 1994.6 min
+  Active: 94018 | Created: 515778 | At anode: 504682
+  
+  [SCHOTTKY EMISSION] t=209.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  [SC Field: 0.28 MV/m]
+
+  [LOSSES] Cathode:0, Walls:2, Bounds:0
+  DEBUG: 3446 particles in danger zone 600-700mm
+  DEBUG: 3445 particles in Gap exit (300-400 mm)
+  DEBUG: 3446 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3408 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 209.0 ns:
+    Emitted: 77.544 µC
+    In flight: 13.729 µC
+    Collected: 59.499 µC
+    WARNING: 4.317 µC unaccounted!
+  [SCHOTTKY EMISSION] t=210.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3418 particles in danger zone 600-700mm
+  DEBUG: 3429 particles in Gap exit (300-400 mm)
+  DEBUG: 3418 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3390 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+=== Capturing Pulse 1 Snapshot 4/7 at t=210.0 ns ===
+  Particles: 94041 | Progress: 4/7 snapshots
+
+  [SCHOTTKY EMISSION] t=211.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3433 particles in danger zone 600-700mm
+  DEBUG: 3428 particles in Gap exit (300-400 mm)
+  DEBUG: 3433 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3376 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=212.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3433 particles in danger zone 600-700mm
+  DEBUG: 3456 particles in Gap exit (300-400 mm)
+  DEBUG: 3433 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3396 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=213.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3435 particles in danger zone 600-700mm
+  DEBUG: 3449 particles in Gap exit (300-400 mm)
+  DEBUG: 3435 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3389 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=214.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3415 particles in danger zone 600-700mm
+  DEBUG: 3428 particles in Gap exit (300-400 mm)
+  DEBUG: 3415 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3390 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=215.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3442 particles in danger zone 600-700mm
+  DEBUG: 3455 particles in Gap exit (300-400 mm)
+  DEBUG: 3442 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3355 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+=== Capturing Pulse 1 Snapshot 5/7 at t=215.0 ns ===
+  Particles: 93970 | Progress: 5/7 snapshots
+
+  [SCHOTTKY EMISSION] t=216.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3413 particles in danger zone 600-700mm
+  DEBUG: 3418 particles in Gap exit (300-400 mm)
+  DEBUG: 3413 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3402 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=217.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3429 particles in danger zone 600-700mm
+  DEBUG: 3432 particles in Gap exit (300-400 mm)
+  DEBUG: 3429 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3406 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=218.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3436 particles in danger zone 600-700mm
+  DEBUG: 3447 particles in Gap exit (300-400 mm)
+  DEBUG: 3436 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3417 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+.
+  Step 7000/34601 (20.2%) | 0.2 steps/s | ETA: 1959.8 min
+  Active: 93945 | Created: 615778 | At anode: 604688
+  
+  [SCHOTTKY EMISSION] t=219.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  [SC Field: 0.28 MV/m]
+
+  [LOSSES] Cathode:0, Walls:4, Bounds:0
+  DEBUG: 3418 particles in danger zone 600-700mm
+  DEBUG: 3430 particles in Gap exit (300-400 mm)
+  DEBUG: 3418 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3390 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 219.0 ns:
+    Emitted: 92.145 µC
+    In flight: 13.716 µC
+    Collected: 73.361 µC
+    WARNING: 5.068 µC unaccounted!
+  [SCHOTTKY EMISSION] t=220.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3425 particles in danger zone 600-700mm
+  DEBUG: 3436 particles in Gap exit (300-400 mm)
+  DEBUG: 3425 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3409 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+=== Capturing Pulse 1 Snapshot 6/7 at t=220.0 ns ===
+  Particles: 94024 | Progress: 6/7 snapshots
+
+  [SCHOTTKY EMISSION] t=221.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3429 particles in danger zone 600-700mm
+  DEBUG: 3433 particles in Gap exit (300-400 mm)
+  DEBUG: 3429 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3403 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=222.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3435 particles in danger zone 600-700mm
+  DEBUG: 3442 particles in Gap exit (300-400 mm)
+  DEBUG: 3435 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3401 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=223.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3416 particles in danger zone 600-700mm
+  DEBUG: 3461 particles in Gap exit (300-400 mm)
+  DEBUG: 3416 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3407 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=224.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3427 particles in danger zone 600-700mm
+  DEBUG: 3430 particles in Gap exit (300-400 mm)
+  DEBUG: 3427 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3390 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=225.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3420 particles in danger zone 600-700mm
+  DEBUG: 3443 particles in Gap exit (300-400 mm)
+  DEBUG: 3420 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3403 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+=== Capturing Pulse 1 Snapshot 7/7 at t=225.0 ns ===
+  Particles: 94228 | Progress: 7/7 snapshots
+
+  [SCHOTTKY EMISSION] t=226.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3429 particles in danger zone 600-700mm
+  DEBUG: 3440 particles in Gap exit (300-400 mm)
+  DEBUG: 3429 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3394 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=227.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3407 particles in danger zone 600-700mm
+  DEBUG: 3428 particles in Gap exit (300-400 mm)
+  DEBUG: 3407 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3406 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=228.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3435 particles in danger zone 600-700mm
+  DEBUG: 3433 particles in Gap exit (300-400 mm)
+  DEBUG: 3435 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3362 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 8000/34601 (23.1%) | 0.2 steps/s | ETA: 1956.0 min
+  Active: 94035 | Created: 715778 | At anode: 704691
+  
+  [SCHOTTKY EMISSION] t=229.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  [SC Field: 0.29 MV/m]
+
+  [LOSSES] Cathode:0, Walls:3, Bounds:0
+  DEBUG: 3436 particles in danger zone 600-700mm
+  DEBUG: 3448 particles in Gap exit (300-400 mm)
+  DEBUG: 3436 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3402 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 229.0 ns:
+    Emitted: 106.745 µC
+    In flight: 13.729 µC
+    Collected: 87.224 µC
+    WARNING: 5.793 µC unaccounted!
+  [SCHOTTKY EMISSION] t=230.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3431 particles in danger zone 600-700mm
+  DEBUG: 3467 particles in Gap exit (300-400 mm)
+  DEBUG: 3431 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3408 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=231.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3427 particles in danger zone 600-700mm
+  DEBUG: 3445 particles in Gap exit (300-400 mm)
+  DEBUG: 3427 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3387 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=232.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3437 particles in danger zone 600-700mm
+  DEBUG: 3438 particles in Gap exit (300-400 mm)
+  DEBUG: 3437 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3392 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=233.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3430 particles in danger zone 600-700mm
+  DEBUG: 3460 particles in Gap exit (300-400 mm)
+  DEBUG: 3430 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3401 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=234.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3412 particles in danger zone 600-700mm
+  DEBUG: 3452 particles in Gap exit (300-400 mm)
+  DEBUG: 3412 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3379 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=235.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3433 particles in danger zone 600-700mm
+  DEBUG: 3426 particles in Gap exit (300-400 mm)
+  DEBUG: 3433 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3400 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+.
+  [SCHOTTKY EMISSION] t=236.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3407 particles in danger zone 600-700mm
+  DEBUG: 3448 particles in Gap exit (300-400 mm)
+  DEBUG: 3407 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3384 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=237.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3443 particles in danger zone 600-700mm
+  DEBUG: 3431 particles in Gap exit (300-400 mm)
+  DEBUG: 3443 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3382 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=238.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3411 particles in danger zone 600-700mm
+  DEBUG: 3446 particles in Gap exit (300-400 mm)
+  DEBUG: 3411 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3395 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 9000/34601 (26.0%) | 0.2 steps/s | ETA: 1909.8 min
+  Active: 94055 | Created: 815778 | At anode: 804705
+  
+  [SCHOTTKY EMISSION] t=239.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  [SC Field: 0.28 MV/m]
+
+  [LOSSES] Cathode:0, Walls:2, Bounds:0
+  DEBUG: 3433 particles in danger zone 600-700mm
+  DEBUG: 3438 particles in Gap exit (300-400 mm)
+  DEBUG: 3433 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3393 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 239.0 ns:
+    Emitted: 121.346 µC
+    In flight: 13.732 µC
+    Collected: 101.050 µC
+    WARNING: 6.564 µC unaccounted!
+  [SCHOTTKY EMISSION] t=240.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3424 particles in danger zone 600-700mm
+  DEBUG: 3448 particles in Gap exit (300-400 mm)
+  DEBUG: 3424 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3362 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=241.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3442 particles in danger zone 600-700mm
+  DEBUG: 3452 particles in Gap exit (300-400 mm)
+  DEBUG: 3442 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3416 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=242.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3430 particles in danger zone 600-700mm
+  DEBUG: 3449 particles in Gap exit (300-400 mm)
+  DEBUG: 3430 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3392 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=243.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3432 particles in danger zone 600-700mm
+  DEBUG: 3440 particles in Gap exit (300-400 mm)
+  DEBUG: 3432 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3394 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=244.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3423 particles in danger zone 600-700mm
+  DEBUG: 3445 particles in Gap exit (300-400 mm)
+  DEBUG: 3423 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3412 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=245.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3420 particles in danger zone 600-700mm
+  DEBUG: 3452 particles in Gap exit (300-400 mm)
+  DEBUG: 3420 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3404 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=246.0ns:
+    E_cathode=5.44 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3444 particles in danger zone 600-700mm
+  DEBUG: 3460 particles in Gap exit (300-400 mm)
+  DEBUG: 3444 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3384 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=247.0ns:
+    E_cathode=5.38 MV/m, ??=0.088 eV
+    ?_eff=1.712 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3436 particles in danger zone 600-700mm
+  DEBUG: 3423 particles in Gap exit (300-400 mm)
+  DEBUG: 3436 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3401 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=248.0ns:
+    E_cathode=5.27 MV/m, ??=0.087 eV
+    ?_eff=1.713 eV (4.8% reduction)
+    T_cathode=1200 K (saves 61 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3409 particles in danger zone 600-700mm
+  DEBUG: 3414 particles in Gap exit (300-400 mm)
+  DEBUG: 3409 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3400 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 10000/34601 (28.9%) | 0.2 steps/s | ETA: 1837.8 min
+  Active: 93876 | Created: 915573 | At anode: 904618
+  
+  [SCHOTTKY EMISSION] t=249.0ns:
+    E_cathode=5.13 MV/m, ??=0.086 eV
+    ?_eff=1.714 eV (4.8% reduction)
+    T_cathode=1200 K (saves 60 K vs no Schottky)
+    J=11.0 A/cm² @ I=1453.9 A  [SC Field: 0.30 MV/m]
+
+  [LOSSES] Cathode:0, Walls:6, Bounds:0
+
+  [SCATTER] 1 events (0 rare), <?>=0.274 µrad | [ION] 273873847 real ions (273873.8 super-ions)  DEBUG: 3425 particles in danger zone 600-700mm
+  DEBUG: 3437 particles in Gap exit (300-400 mm)
+  DEBUG: 3425 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3392 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 249.0 ns:
+    Emitted: 135.945 µC
+    In flight: 13.736 µC
+    Collected: 114.904 µC
+    WARNING: 7.306 µC unaccounted!
+  [SCHOTTKY EMISSION] t=250.0ns:
+    E_cathode=4.95 MV/m, ??=0.084 eV
+    ?_eff=1.716 eV (4.7% reduction)
+    T_cathode=1200 K (saves 59 K vs no Schottky)
+    J=10.8 A/cm² @ I=1432.4 A  DEBUG: 3405 particles in danger zone 600-700mm
+  DEBUG: 3340 particles in Gap exit (300-400 mm)
+  DEBUG: 3405 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3406 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=251.0ns:
+    E_cathode=4.74 MV/m, ??=0.083 eV
+    ?_eff=1.717 eV (4.6% reduction)
+    T_cathode=1200 K (saves 58 K vs no Schottky)
+    J=10.6 A/cm² @ I=1407.1 A  DEBUG: 3396 particles in danger zone 600-700mm
+  DEBUG: 3185 particles in Gap exit (300-400 mm)
+  DEBUG: 3396 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3371 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=252.0ns:
+    E_cathode=4.49 MV/m, ??=0.080 eV
+    ?_eff=1.720 eV (4.5% reduction)
+    T_cathode=1200 K (saves 56 K vs no Schottky)
+    J=10.4 A/cm² @ I=1378.0 A  DEBUG: 3178 particles in danger zone 600-700mm
+  DEBUG: 3040 particles in Gap exit (300-400 mm)
+  DEBUG: 3178 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3361 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+.
+  [SCHOTTKY EMISSION] t=253.0ns:
+    E_cathode=4.22 MV/m, ??=0.078 eV
+    ?_eff=1.722 eV (4.3% reduction)
+    T_cathode=1200 K (saves 54 K vs no Schottky)
+    J=10.1 A/cm² @ I=1345.4 A  DEBUG: 3028 particles in danger zone 600-700mm
+  DEBUG: 2897 particles in Gap exit (300-400 mm)
+  DEBUG: 3028 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3139 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=254.0ns:
+    E_cathode=3.93 MV/m, ??=0.075 eV
+    ?_eff=1.725 eV (4.2% reduction)
+    T_cathode=1200 K (saves 52 K vs no Schottky)
+    J=9.9 A/cm² @ I=1309.9 A  DEBUG: 2872 particles in danger zone 600-700mm
+  DEBUG: 2745 particles in Gap exit (300-400 mm)
+  DEBUG: 2872 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3023 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=255.0ns:
+    E_cathode=3.61 MV/m, ??=0.072 eV
+    ?_eff=1.728 eV (4.0% reduction)
+    T_cathode=1200 K (saves 50 K vs no Schottky)
+    J=9.6 A/cm² @ I=1271.5 A  DEBUG: 2734 particles in danger zone 600-700mm
+  DEBUG: 2563 particles in Gap exit (300-400 mm)
+  DEBUG: 2734 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2881 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=256.0ns:
+    E_cathode=3.29 MV/m, ??=0.069 eV
+    ?_eff=1.731 eV (3.8% reduction)
+    T_cathode=1200 K (saves 48 K vs no Schottky)
+    J=9.3 A/cm² @ I=1231.3 A  DEBUG: 2540 particles in danger zone 600-700mm
+  DEBUG: 2384 particles in Gap exit (300-400 mm)
+  DEBUG: 2540 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2738 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=257.0ns:
+    E_cathode=2.95 MV/m, ??=0.065 eV
+    ?_eff=1.735 eV (3.6% reduction)
+    T_cathode=1200 K (saves 45 K vs no Schottky)
+    J=9.0 A/cm² @ I=1189.7 A  DEBUG: 2351 particles in danger zone 600-700mm
+  DEBUG: 2159 particles in Gap exit (300-400 mm)
+  DEBUG: 2351 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2577 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=258.0ns:
+    E_cathode=2.61 MV/m, ??=0.061 eV
+    ?_eff=1.739 eV (3.4% reduction)
+    T_cathode=1200 K (saves 42 K vs no Schottky)
+    J=8.6 A/cm² @ I=1146.0 A  DEBUG: 2160 particles in danger zone 600-700mm
+  DEBUG: 2000 particles in Gap exit (300-400 mm)
+  DEBUG: 2160 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2348 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 11000/34601 (31.8%) | 0.2 steps/s | ETA: 1765.8 min
+  Active: 65871 | Created: 986067 | At anode: 979965
+  
+  [SCHOTTKY EMISSION] t=259.0ns:
+    E_cathode=2.28 MV/m, ??=0.057 eV
+    ?_eff=1.743 eV (3.2% reduction)
+    T_cathode=1200 K (saves 39 K vs no Schottky)
+    J=8.3 A/cm² @ I=1102.0 A  [SC Field: 0.32 MV/m]
+
+  [LOSSES] Cathode:0, Walls:5, Bounds:0
+  DEBUG: 1959 particles in danger zone 600-700mm
+  DEBUG: 1785 particles in Gap exit (300-400 mm)
+  DEBUG: 1959 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2146 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 259.0 ns:
+    Emitted: 148.937 µC
+    In flight: 12.241 µC
+    Collected: 131.039 µC
+    WARNING: 5.657 µC unaccounted!
+  [SCHOTTKY EMISSION] t=260.0ns:
+    E_cathode=1.96 MV/m, ??=0.053 eV
+    ?_eff=1.747 eV (3.0% reduction)
+    T_cathode=1200 K (saves 36 K vs no Schottky)
+    J=8.0 A/cm² @ I=1058.3 A  DEBUG: 1747 particles in danger zone 600-700mm
+  DEBUG: 1584 particles in Gap exit (300-400 mm)
+  DEBUG: 1747 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1945 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=261.0ns:
+    E_cathode=1.64 MV/m, ??=0.049 eV
+    ?_eff=1.751 eV (2.7% reduction)
+    T_cathode=1200 K (saves 33 K vs no Schottky)
+    J=5.5 A/cm² @ I=727.9 A  DEBUG: 1571 particles in danger zone 600-700mm
+  DEBUG: 1399 particles in Gap exit (300-400 mm)
+  DEBUG: 1571 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1757 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=262.0ns:
+    E_cathode=1.32 MV/m, ??=0.044 eV
+    ?_eff=1.756 eV (2.4% reduction)
+    T_cathode=1200 K (saves 30 K vs no Schottky)
+    J=3.5 A/cm² @ I=470.6 A  DEBUG: 1352 particles in danger zone 600-700mm
+  DEBUG: 1209 particles in Gap exit (300-400 mm)
+  DEBUG: 1352 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1552 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=263.0ns:
+    E_cathode=1.03 MV/m, ??=0.038 eV
+    ?_eff=1.762 eV (2.1% reduction)
+    T_cathode=1200 K (saves 26 K vs no Schottky)
+    J=2.2 A/cm² @ I=287.1 A  DEBUG: 1150 particles in danger zone 600-700mm
+  DEBUG: 1042 particles in Gap exit (300-400 mm)
+  DEBUG: 1150 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1345 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=264.0ns:
+    E_cathode=0.77 MV/m, ??=0.033 eV
+    ?_eff=1.767 eV (1.8% reduction)
+    T_cathode=1200 K (saves 23 K vs no Schottky)
+    J=1.2 A/cm² @ I=163.2 A  DEBUG: 952 particles in danger zone 600-700mm
+  DEBUG: 873 particles in Gap exit (300-400 mm)
+  DEBUG: 952 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1159 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=265.0ns:
+    E_cathode=0.54 MV/m, ??=0.028 eV
+    ?_eff=1.772 eV (1.5% reduction)
+    T_cathode=1200 K (saves 19 K vs no Schottky)
+    J=0.6 A/cm² @ I=84.8 A  DEBUG: 811 particles in danger zone 600-700mm
+  DEBUG: 736 particles in Gap exit (300-400 mm)
+  DEBUG: 811 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 977 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=266.0ns:
+    E_cathode=0.35 MV/m, ??=0.022 eV
+    ?_eff=1.778 eV (1.2% reduction)
+    T_cathode=1200 K (saves 15 K vs no Schottky)
+    J=0.3 A/cm² @ I=39.0 A  DEBUG: 690 particles in danger zone 600-700mm
+  DEBUG: 592 particles in Gap exit (300-400 mm)
+  DEBUG: 690 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 817 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=267.0ns:
+    E_cathode=0.20 MV/m, ??=0.017 eV
+    ?_eff=1.783 eV (0.9% reduction)
+    T_cathode=1200 K (saves 11 K vs no Schottky)
+    J=0.1 A/cm² @ I=14.9 A  DEBUG: 581 particles in danger zone 600-700mm
+  DEBUG: 499 particles in Gap exit (300-400 mm)
+  DEBUG: 581 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 652 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=268.0ns:
+    E_cathode=0.09 MV/m, ??=0.011 eV
+    ?_eff=1.789 eV (0.6% reduction)
+    T_cathode=1200 K (saves 8 K vs no Schottky)
+    J=0.0 A/cm² @ I=4.1 A  DEBUG: 452 particles in danger zone 600-700mm
+  DEBUG: 402 particles in Gap exit (300-400 mm)
+  DEBUG: 452 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 546 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 12000/34601 (34.7%) | 0.2 steps/s | ETA: 1743.5 min
+  Active: 17897 | Created: 1002470 | At anode: 1001216
+    [SC Field: 0.13 MV/m]
+
+  [LOSSES] Cathode:0, Walls:6, Bounds:0
+  DEBUG: 375 particles in danger zone 600-700mm
+  DEBUG: 323 particles in Gap exit (300-400 mm)
+  DEBUG: 375 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 450 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 269.0 ns:
+    Emitted: 152.312 µC
+    In flight: 3.791 µC
+    Collected: 141.162 µC
+    WARNING: 7.359 µC unaccounted!  DEBUG: 292 particles in danger zone 600-700mm
+  DEBUG: 275 particles in Gap exit (300-400 mm)
+  DEBUG: 292 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 349 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+.  DEBUG: 238 particles in danger zone 600-700mm
+  DEBUG: 225 particles in Gap exit (300-400 mm)
+  DEBUG: 238 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 294 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 191 particles in danger zone 600-700mm
+  DEBUG: 196 particles in Gap exit (300-400 mm)
+  DEBUG: 191 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 247 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 171 particles in danger zone 600-700mm
+  DEBUG: 164 particles in Gap exit (300-400 mm)
+  DEBUG: 171 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 194 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 137 particles in danger zone 600-700mm
+  DEBUG: 141 particles in Gap exit (300-400 mm)
+  DEBUG: 137 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 159 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 132 particles in danger zone 600-700mm
+  DEBUG: 142 particles in Gap exit (300-400 mm)
+  DEBUG: 132 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 125 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 106 particles in danger zone 600-700mm
+  DEBUG: 139 particles in Gap exit (300-400 mm)
+  DEBUG: 106 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 116 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 97 particles in danger zone 600-700mm
+  DEBUG: 127 particles in Gap exit (300-400 mm)
+  DEBUG: 97 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 98 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 89 particles in danger zone 600-700mm
+  DEBUG: 108 particles in Gap exit (300-400 mm)
+  DEBUG: 89 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 75 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 13000/34601 (37.6%) | 0.2 steps/s | ETA: 1711.8 min
+  Active: 2164 | Created: 1002470 | At anode: 1002221
+    [SC Field: 0.01 MV/m]
+
+  [LOSSES] Cathode:0, Walls:3, Bounds:0
+  DEBUG: 80 particles in danger zone 600-700mm
+  DEBUG: 104 particles in Gap exit (300-400 mm)
+  DEBUG: 80 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 72 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 279.0 ns:
+    Emitted: 152.312 µC
+    In flight: 0.151 µC
+    Collected: 143.016 µC
+    WARNING: 9.146 µC unaccounted!  DEBUG: 76 particles in danger zone 600-700mm
+  DEBUG: 96 particles in Gap exit (300-400 mm)
+  DEBUG: 76 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 59 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 68 particles in danger zone 600-700mm
+  DEBUG: 90 particles in Gap exit (300-400 mm)
+  DEBUG: 68 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 40 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 67 particles in danger zone 600-700mm
+  DEBUG: 72 particles in Gap exit (300-400 mm)
+  DEBUG: 67 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 36 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 73 particles in danger zone 600-700mm
+  DEBUG: 68 particles in Gap exit (300-400 mm)
+  DEBUG: 73 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 32 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 64 particles in danger zone 600-700mm
+  DEBUG: 64 particles in Gap exit (300-400 mm)
+  DEBUG: 64 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 32 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 61 particles in danger zone 600-700mm
+  DEBUG: 70 particles in Gap exit (300-400 mm)
+  DEBUG: 61 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 28 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 55 particles in danger zone 600-700mm
+  DEBUG: 73 particles in Gap exit (300-400 mm)
+  DEBUG: 55 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 16 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 43 particles in danger zone 600-700mm
+  DEBUG: 76 particles in Gap exit (300-400 mm)
+  DEBUG: 43 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 14 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+.  DEBUG: 31 particles in danger zone 600-700mm
+  DEBUG: 77 particles in Gap exit (300-400 mm)
+  DEBUG: 31 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 14 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 14000/34601 (40.5%) | 0.2 steps/s | ETA: 1659.5 min
+  Active: 546 | Created: 1002470 | At anode: 1002362
+    [SC Field: 0.00 MV/m]
+
+  [LOSSES] Cathode:0, Walls:1, Bounds:0
+  DEBUG: 23 particles in danger zone 600-700mm
+  DEBUG: 68 particles in Gap exit (300-400 mm)
+  DEBUG: 23 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 9 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 289.0 ns:
+    Emitted: 152.312 µC
+    In flight: 0.021 µC
+    Collected: 143.130 µC
+    WARNING: 9.161 µC unaccounted!  DEBUG: 24 particles in danger zone 600-700mm
+  DEBUG: 64 particles in Gap exit (300-400 mm)
+  DEBUG: 24 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 8 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 19 particles in danger zone 600-700mm
+  DEBUG: 56 particles in Gap exit (300-400 mm)
+  DEBUG: 19 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 11 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 24 particles in danger zone 600-700mm
+  DEBUG: 43 particles in Gap exit (300-400 mm)
+  DEBUG: 24 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 13 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 15 particles in danger zone 600-700mm
+  DEBUG: 28 particles in Gap exit (300-400 mm)
+  DEBUG: 15 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 9 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 17 particles in danger zone 600-700mm
+  DEBUG: 31 particles in Gap exit (300-400 mm)
+  DEBUG: 17 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 7 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 19 particles in danger zone 600-700mm
+  DEBUG: 26 particles in Gap exit (300-400 mm)
+  DEBUG: 19 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 7 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 15 particles in danger zone 600-700mm
+  DEBUG: 26 particles in Gap exit (300-400 mm)
+  DEBUG: 15 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 7 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 17 particles in danger zone 600-700mm
+  DEBUG: 25 particles in Gap exit (300-400 mm)
+  DEBUG: 17 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 17 particles in danger zone 600-700mm
+  DEBUG: 28 particles in Gap exit (300-400 mm)
+  DEBUG: 17 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 8 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 15000/34601 (43.4%) | 0.2 steps/s | ETA: 1597.2 min
+  Active: 198 | Created: 1002470 | At anode: 1002423
+    [SC Field: 0.00 MV/m]
+ | [ION] 11573 real ions (11.6 super-ions)  DEBUG: 14 particles in danger zone 600-700mm
+  DEBUG: 34 particles in Gap exit (300-400 mm)
+  DEBUG: 14 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 6 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 299.0 ns:
+    Emitted: 152.312 µC
+    In flight: 0.005 µC
+    Collected: 143.138 µC
+    WARNING: 9.168 µC unaccounted!  DEBUG: 16 particles in danger zone 600-700mm
+  DEBUG: 41 particles in Gap exit (300-400 mm)
+  DEBUG: 16 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 5 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 16 particles in danger zone 600-700mm
+  DEBUG: 43 particles in Gap exit (300-400 mm)
+  DEBUG: 16 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 15 particles in danger zone 600-700mm
+  DEBUG: 43 particles in Gap exit (300-400 mm)
+  DEBUG: 15 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 12 particles in danger zone 600-700mm
+  DEBUG: 33 particles in Gap exit (300-400 mm)
+  DEBUG: 12 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 11 particles in danger zone 600-700mm
+  DEBUG: 35 particles in Gap exit (300-400 mm)
+  DEBUG: 11 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+.  DEBUG: 13 particles in danger zone 600-700mm
+  DEBUG: 39 particles in Gap exit (300-400 mm)
+  DEBUG: 13 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 5 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 15 particles in danger zone 600-700mm
+  DEBUG: 46 particles in Gap exit (300-400 mm)
+  DEBUG: 15 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 4 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 17 particles in danger zone 600-700mm
+  DEBUG: 52 particles in Gap exit (300-400 mm)
+  DEBUG: 17 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 4 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 12 particles in danger zone 600-700mm
+  DEBUG: 51 particles in Gap exit (300-400 mm)
+  DEBUG: 12 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 16000/34601 (46.2%) | 0.2 steps/s | ETA: 1531.4 min
+  Active: 118 | Created: 1002470 | At anode: 1002443
+    [SC Field: 0.00 MV/m]
+  DEBUG: 11 particles in danger zone 600-700mm
+  DEBUG: 39 particles in Gap exit (300-400 mm)
+  DEBUG: 11 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 309.0 ns:
+    Emitted: 152.312 µC
+    In flight: 0.003 µC
+    Collected: 143.139 µC
+    WARNING: 9.170 µC unaccounted!  DEBUG: 8 particles in danger zone 600-700mm
+  DEBUG: 23 particles in Gap exit (300-400 mm)
+  DEBUG: 8 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 6 particles in danger zone 600-700mm
+  DEBUG: 23 particles in Gap exit (300-400 mm)
+  DEBUG: 6 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 4 particles in danger zone 600-700mm
+  DEBUG: 22 particles in Gap exit (300-400 mm)
+  DEBUG: 4 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 5 particles in danger zone 600-700mm
+  DEBUG: 22 particles in Gap exit (300-400 mm)
+  DEBUG: 5 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 12 particles in danger zone 600-700mm
+  DEBUG: 22 particles in Gap exit (300-400 mm)
+  DEBUG: 12 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 12 particles in danger zone 600-700mm
+  DEBUG: 21 particles in Gap exit (300-400 mm)
+  DEBUG: 12 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 13 particles in danger zone 600-700mm
+  DEBUG: 17 particles in Gap exit (300-400 mm)
+  DEBUG: 13 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 13 particles in danger zone 600-700mm
+  DEBUG: 16 particles in Gap exit (300-400 mm)
+  DEBUG: 13 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 12 particles in danger zone 600-700mm
+  DEBUG: 12 particles in Gap exit (300-400 mm)
+  DEBUG: 12 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 17000/34601 (49.1%) | 0.2 steps/s | ETA: 1460.2 min
+  Active: 102 | Created: 1002470 | At anode: 1002443
+    [SC Field: 0.00 MV/m]
+  DEBUG: 12 particles in danger zone 600-700mm
+  DEBUG: 11 particles in Gap exit (300-400 mm)
+  DEBUG: 12 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 319.0 ns:
+    Emitted: 152.312 µC
+    In flight: 0.002 µC
+    Collected: 143.140 µC
+    WARNING: 9.170 µC unaccounted!  DEBUG: 13 particles in danger zone 600-700mm
+  DEBUG: 1 particles in Gap exit (300-400 mm)
+  DEBUG: 13 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 13 particles in danger zone 600-700mm
+  DEBUG: 13 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+.  DEBUG: 12 particles in danger zone 600-700mm
+  DEBUG: 12 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 13 particles in danger zone 600-700mm
+  DEBUG: 13 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 12 particles in danger zone 600-700mm
+  DEBUG: 12 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 12 particles in danger zone 600-700mm
+  DEBUG: 12 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 12 particles in danger zone 600-700mm
+  DEBUG: 12 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 12 particles in danger zone 600-700mm
+  DEBUG: 12 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 4 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 13 particles in danger zone 600-700mm
+  DEBUG: 13 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 7 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 18000/34601 (52.0%) | 0.2 steps/s | ETA: 1390.6 min
+  Active: 97 | Created: 1002470 | At anode: 1002443
+    [SC Field: 0.00 MV/m]
+  DEBUG: 13 particles in danger zone 600-700mm
+  DEBUG: 13 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 8 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 329.0 ns:
+    Emitted: 152.312 µC
+    In flight: 0.002 µC
+    Collected: 143.140 µC
+    WARNING: 9.170 µC unaccounted!  DEBUG: 14 particles in danger zone 600-700mm
+  DEBUG: 14 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 9 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 17 particles in danger zone 600-700mm
+  DEBUG: 17 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 7 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 17 particles in danger zone 600-700mm
+  DEBUG: 17 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 7 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 18 particles in danger zone 600-700mm
+  DEBUG: 18 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 7 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 22 particles in danger zone 600-700mm
+  DEBUG: 22 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 4 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 27 particles in danger zone 600-700mm
+  DEBUG: 27 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 28 particles in danger zone 600-700mm
+  DEBUG: 28 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 29 particles in danger zone 600-700mm
+  DEBUG: 29 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 30 particles in danger zone 600-700mm
+  DEBUG: 30 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 19000/34601 (54.9%) | 0.2 steps/s | ETA: 1320.3 min
+  Active: 88 | Created: 1002470 | At anode: 1002443
+    [SC Field: 0.00 MV/m]
+  DEBUG: 29 particles in danger zone 600-700mm
+  DEBUG: 29 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 339.0 ns:
+    Emitted: 152.312 µC
+    In flight: 0.002 µC
+    Collected: 143.140 µC
+    WARNING: 9.170 µC unaccounted!.  DEBUG: 29 particles in danger zone 600-700mm
+  DEBUG: 29 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 29 particles in danger zone 600-700mm
+  DEBUG: 29 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 33 particles in danger zone 600-700mm
+  DEBUG: 33 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 30 particles in danger zone 600-700mm
+  DEBUG: 30 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 28 particles in danger zone 600-700mm
+  DEBUG: 28 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 25 particles in danger zone 600-700mm
+  DEBUG: 25 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 27 particles in danger zone 600-700mm
+  DEBUG: 27 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 6 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 27 particles in danger zone 600-700mm
+  DEBUG: 27 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 8 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 25 particles in danger zone 600-700mm
+  DEBUG: 25 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 10 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 20000/34601 (57.8%) | 0.2 steps/s | ETA: 1263.5 min
+  Active: 81 | Created: 1002470 | At anode: 1002443
+    [SC Field: 0.00 MV/m]
+ | [ION] 1323 real ions (1.3 super-ions)  DEBUG: 24 particles in danger zone 600-700mm
+  DEBUG: 24 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 10 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 349.0 ns:
+    Emitted: 152.312 µC
+    In flight: 0.002 µC
+    Collected: 143.141 µC
+    WARNING: 9.170 µC unaccounted!
+=== CAPTURING INTER-PULSE ELECTRON CLOUD at t=349.0 ns ===
+  Total residual electrons: 81
+  From Pulse 1: 81 (100.0%)
+  Z range: 609.3 to 2207.9 mm
+  Energy range: 0.000 to 0.002 MeV
+  Slow electrons (<1 MeV): 81 (100.0%)
+  Average energy (slow): 0.000 MeV
+  Slow electron centroid: z=889 mm, r=18.3 mm
+  DEBUG: 21 particles in danger zone 600-700mm
+  DEBUG: 21 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 10 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=351.0ns:
+    E_cathode=0.06 MV/m, ??=0.009 eV
+    ?_eff=1.791 eV (0.5% reduction)
+    T_cathode=1200 K (saves 6 K vs no Schottky)
+    J=0.0 A/cm² @ I=2.2 A  DEBUG: 20 particles in danger zone 600-700mm
+  DEBUG: 20 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 9 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=352.0ns:
+    E_cathode=0.23 MV/m, ??=0.018 eV
+    ?_eff=1.782 eV (1.0% reduction)
+    T_cathode=1200 K (saves 12 K vs no Schottky)
+    J=0.2 A/cm² @ I=20.5 A  DEBUG: 18 particles in danger zone 600-700mm
+  DEBUG: 18 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 9 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=353.0ns:
+    E_cathode=0.51 MV/m, ??=0.027 eV
+    ?_eff=1.773 eV (1.5% reduction)
+    T_cathode=1200 K (saves 18 K vs no Schottky)
+    J=0.6 A/cm² @ I=83.2 A  DEBUG: 17 particles in danger zone 600-700mm
+  DEBUG: 17 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 9 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=354.0ns:
+    E_cathode=0.90 MV/m, ??=0.036 eV
+    ?_eff=1.764 eV (2.0% reduction)
+    T_cathode=1200 K (saves 24 K vs no Schottky)
+    J=1.8 A/cm² @ I=236.4 A  DEBUG: 14 particles in danger zone 600-700mm
+  DEBUG: 14 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 6 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=355.0ns:
+    E_cathode=1.38 MV/m, ??=0.045 eV
+    ?_eff=1.755 eV (2.5% reduction)
+    T_cathode=1200 K (saves 30 K vs no Schottky)
+    J=4.1 A/cm² @ I=541.0 A  DEBUG: 11 particles in danger zone 600-700mm
+  DEBUG: 535 particles in Gap exit (300-400 mm)
+  DEBUG: 11 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=356.0ns:
+    E_cathode=1.92 MV/m, ??=0.053 eV
+    ?_eff=1.747 eV (2.9% reduction)
+    T_cathode=1200 K (saves 36 K vs no Schottky)
+    J=7.9 A/cm² @ I=1052.9 A  DEBUG: 128 particles in danger zone 600-700mm
+  DEBUG: 880 particles in Gap exit (300-400 mm)
+  DEBUG: 128 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+.
+  [SCHOTTKY EMISSION] t=357.0ns:
+    E_cathode=2.50 MV/m, ??=0.060 eV
+    ?_eff=1.740 eV (3.3% reduction)
+    T_cathode=1200 K (saves 41 K vs no Schottky)
+    J=8.5 A/cm² @ I=1131.4 A  DEBUG: 899 particles in danger zone 600-700mm
+  DEBUG: 1202 particles in Gap exit (300-400 mm)
+  DEBUG: 899 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=358.0ns:
+    E_cathode=3.06 MV/m, ??=0.066 eV
+    ?_eff=1.734 eV (3.7% reduction)
+    T_cathode=1200 K (saves 46 K vs no Schottky)
+    J=9.1 A/cm² @ I=1202.9 A  DEBUG: 1231 particles in danger zone 600-700mm
+  DEBUG: 1553 particles in Gap exit (300-400 mm)
+  DEBUG: 1231 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 545 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 21000/34601 (60.7%) | 0.2 steps/s | ETA: 1201.5 min
+  Active: 22534 | Created: 1025042 | At anode: 1017438
+  
+  [SCHOTTKY EMISSION] t=359.0ns:
+    E_cathode=3.61 MV/m, ??=0.072 eV
+    ?_eff=1.728 eV (4.0% reduction)
+    T_cathode=1200 K (saves 50 K vs no Schottky)
+    J=9.6 A/cm² @ I=1271.5 A  [SC Field: 0.30 MV/m]
+
+  [LOSSES] Cathode:0, Walls:3, Bounds:0
+  DEBUG: 1572 particles in danger zone 600-700mm
+  DEBUG: 1885 particles in Gap exit (300-400 mm)
+  DEBUG: 1572 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1128 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 359.0 ns:
+    Emitted: 157.170 µC
+    In flight: 4.841 µC
+    Collected: 144.450 µC
+    WARNING: 7.879 µC unaccounted!
+  [SCHOTTKY EMISSION] t=360.0ns:
+    E_cathode=4.12 MV/m, ??=0.077 eV
+    ?_eff=1.723 eV (4.3% reduction)
+    T_cathode=1200 K (saves 54 K vs no Schottky)
+    J=10.0 A/cm² @ I=1333.1 A  DEBUG: 1895 particles in danger zone 600-700mm
+  DEBUG: 2221 particles in Gap exit (300-400 mm)
+  DEBUG: 1895 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1396 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=361.0ns:
+    E_cathode=4.57 MV/m, ??=0.081 eV
+    ?_eff=1.719 eV (4.5% reduction)
+    T_cathode=1200 K (saves 57 K vs no Schottky)
+    J=10.5 A/cm² @ I=1387.6 A  DEBUG: 2245 particles in danger zone 600-700mm
+  DEBUG: 2566 particles in Gap exit (300-400 mm)
+  DEBUG: 2245 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1642 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=362.0ns:
+    E_cathode=4.95 MV/m, ??=0.084 eV
+    ?_eff=1.716 eV (4.7% reduction)
+    T_cathode=1200 K (saves 59 K vs no Schottky)
+    J=10.8 A/cm² @ I=1432.0 A  DEBUG: 2546 particles in danger zone 600-700mm
+  DEBUG: 2863 particles in Gap exit (300-400 mm)
+  DEBUG: 2546 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2009 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=363.0ns:
+    E_cathode=5.23 MV/m, ??=0.087 eV
+    ?_eff=1.713 eV (4.8% reduction)
+    T_cathode=1200 K (saves 61 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 2844 particles in danger zone 600-700mm
+  DEBUG: 3094 particles in Gap exit (300-400 mm)
+  DEBUG: 2844 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2366 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=364.0ns:
+    E_cathode=5.40 MV/m, ??=0.088 eV
+    ?_eff=1.712 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3094 particles in danger zone 600-700mm
+  DEBUG: 3265 particles in Gap exit (300-400 mm)
+  DEBUG: 3094 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2688 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=365.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3281 particles in danger zone 600-700mm
+  DEBUG: 3443 particles in Gap exit (300-400 mm)
+  DEBUG: 3281 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2968 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  [Ion snapshot 2: 292754954 ions, centroid at z=1341.2 mm]
+  [Snapshot 3 at 365.0 ns: 62567 particles]
+
+  [SCHOTTKY EMISSION] t=366.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3444 particles in danger zone 600-700mm
+  DEBUG: 3433 particles in Gap exit (300-400 mm)
+  DEBUG: 3444 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3187 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=367.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3440 particles in danger zone 600-700mm
+  DEBUG: 3453 particles in Gap exit (300-400 mm)
+  DEBUG: 3440 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3452 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=368.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3414 particles in danger zone 600-700mm
+  DEBUG: 3451 particles in Gap exit (300-400 mm)
+  DEBUG: 3414 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3444 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 22000/34601 (63.6%) | 0.2 steps/s | ETA: 1127.3 min
+  Active: 90069 | Created: 1118245 | At anode: 1107122
+  
+  [SCHOTTKY EMISSION] t=369.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  [SC Field: 0.29 MV/m]
+
+  [LOSSES] Cathode:0, Walls:3, Bounds:0
+  DEBUG: 3433 particles in danger zone 600-700mm
+  DEBUG: 3453 particles in Gap exit (300-400 mm)
+  DEBUG: 3433 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3405 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 369.0 ns:
+    Emitted: 171.454 µC
+    In flight: 13.763 µC
+    Collected: 147.723 µC
+    WARNING: 9.968 µC unaccounted!
+  [SCHOTTKY EMISSION] t=370.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3440 particles in danger zone 600-700mm
+  DEBUG: 3456 particles in Gap exit (300-400 mm)
+  DEBUG: 3440 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3387 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=371.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3426 particles in danger zone 600-700mm
+  DEBUG: 3420 particles in Gap exit (300-400 mm)
+  DEBUG: 3426 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3413 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=372.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3434 particles in danger zone 600-700mm
+  DEBUG: 3438 particles in Gap exit (300-400 mm)
+  DEBUG: 3434 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3412 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=373.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3402 particles in danger zone 600-700mm
+  DEBUG: 3458 particles in Gap exit (300-400 mm)
+  DEBUG: 3402 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3437 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+.
+  [SCHOTTKY EMISSION] t=374.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3421 particles in danger zone 600-700mm
+  DEBUG: 3434 particles in Gap exit (300-400 mm)
+  DEBUG: 3421 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3404 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=375.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3424 particles in danger zone 600-700mm
+  DEBUG: 3442 particles in Gap exit (300-400 mm)
+  DEBUG: 3424 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3401 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=376.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3405 particles in danger zone 600-700mm
+  DEBUG: 3450 particles in Gap exit (300-400 mm)
+  DEBUG: 3405 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3394 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=377.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3418 particles in danger zone 600-700mm
+  DEBUG: 3448 particles in Gap exit (300-400 mm)
+  DEBUG: 3418 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3384 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=378.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3437 particles in danger zone 600-700mm
+  DEBUG: 3451 particles in Gap exit (300-400 mm)
+  DEBUG: 3437 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3384 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 23000/34601 (66.5%) | 0.2 steps/s | ETA: 1043.2 min
+  Active: 94133 | Created: 1218245 | At anode: 1207124
+  
+  [SCHOTTKY EMISSION] t=379.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  [SC Field: 0.29 MV/m]
+
+  [LOSSES] Cathode:0, Walls:4, Bounds:0
+  DEBUG: 3436 particles in danger zone 600-700mm
+  DEBUG: 3451 particles in Gap exit (300-400 mm)
+  DEBUG: 3436 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3409 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 379.0 ns:
+    Emitted: 186.054 µC
+    In flight: 13.733 µC
+    Collected: 160.958 µC
+    WARNING: 11.363 µC unaccounted!
+  [SCHOTTKY EMISSION] t=380.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3415 particles in danger zone 600-700mm
+  DEBUG: 3456 particles in Gap exit (300-400 mm)
+  DEBUG: 3415 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3408 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=381.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3438 particles in danger zone 600-700mm
+  DEBUG: 3440 particles in Gap exit (300-400 mm)
+  DEBUG: 3438 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3391 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=382.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3423 particles in danger zone 600-700mm
+  DEBUG: 3439 particles in Gap exit (300-400 mm)
+  DEBUG: 3423 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3414 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=383.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3439 particles in danger zone 600-700mm
+  DEBUG: 3456 particles in Gap exit (300-400 mm)
+  DEBUG: 3439 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3396 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=384.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3446 particles in danger zone 600-700mm
+  DEBUG: 3443 particles in Gap exit (300-400 mm)
+  DEBUG: 3446 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3418 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=385.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3447 particles in danger zone 600-700mm
+  DEBUG: 3435 particles in Gap exit (300-400 mm)
+  DEBUG: 3447 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3400 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=386.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3398 particles in danger zone 600-700mm
+  DEBUG: 3423 particles in Gap exit (300-400 mm)
+  DEBUG: 3398 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3401 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=387.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3437 particles in danger zone 600-700mm
+  DEBUG: 3433 particles in Gap exit (300-400 mm)
+  DEBUG: 3437 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3389 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=388.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3443 particles in danger zone 600-700mm
+  DEBUG: 3457 particles in Gap exit (300-400 mm)
+  DEBUG: 3443 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3408 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 24000/34601 (69.4%) | 0.2 steps/s | ETA: 955.9 min
+  Active: 94235 | Created: 1318245 | At anode: 1307132
+  
+  [SCHOTTKY EMISSION] t=389.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  [SC Field: 0.28 MV/m]
+
+  [LOSSES] Cathode:0, Walls:3, Bounds:0
+  DEBUG: 3436 particles in danger zone 600-700mm
+  DEBUG: 3451 particles in Gap exit (300-400 mm)
+  DEBUG: 3436 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3395 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 389.0 ns:
+    Emitted: 200.655 µC
+    In flight: 13.751 µC
+    Collected: 174.799 µC
+    WARNING: 12.104 µC unaccounted!
+  [SCHOTTKY EMISSION] t=390.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3416 particles in danger zone 600-700mm
+  DEBUG: 3442 particles in Gap exit (300-400 mm)
+  DEBUG: 3416 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3396 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=391.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3412 particles in danger zone 600-700mm
+  DEBUG: 3450 particles in Gap exit (300-400 mm)
+  DEBUG: 3412 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3406 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+.
+  [SCHOTTKY EMISSION] t=392.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3425 particles in danger zone 600-700mm
+  DEBUG: 3434 particles in Gap exit (300-400 mm)
+  DEBUG: 3425 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3435 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=393.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3450 particles in danger zone 600-700mm
+  DEBUG: 3449 particles in Gap exit (300-400 mm)
+  DEBUG: 3450 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3415 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=394.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3428 particles in danger zone 600-700mm
+  DEBUG: 3445 particles in Gap exit (300-400 mm)
+  DEBUG: 3428 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3420 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=395.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3420 particles in danger zone 600-700mm
+  DEBUG: 3461 particles in Gap exit (300-400 mm)
+  DEBUG: 3420 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3403 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+=== Capturing Pulse 2 Snapshot 1/7 at t=395.0 ns ===
+  Particles: 94091 | Progress: 1/7 snapshots
+
+  [SCHOTTKY EMISSION] t=396.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3448 particles in danger zone 600-700mm
+  DEBUG: 3435 particles in Gap exit (300-400 mm)
+  DEBUG: 3448 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3402 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=397.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3429 particles in danger zone 600-700mm
+  DEBUG: 3452 particles in Gap exit (300-400 mm)
+  DEBUG: 3429 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3389 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=398.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3422 particles in danger zone 600-700mm
+  DEBUG: 3436 particles in Gap exit (300-400 mm)
+  DEBUG: 3422 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3390 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 25000/34601 (72.3%) | 0.2 steps/s | ETA: 869.1 min
+  Active: 94125 | Created: 1418245 | At anode: 1407130
+  
+  [SCHOTTKY EMISSION] t=399.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  [SC Field: 0.29 MV/m]
+
+  [LOSSES] Cathode:0, Walls:5, Bounds:0
+
+  [SCATTER] 2 events (0 rare), <?>=0.124 µrad | [ION] 274284244 real ions (274284.2 super-ions)  DEBUG: 3435 particles in danger zone 600-700mm
+  DEBUG: 3456 particles in Gap exit (300-400 mm)
+  DEBUG: 3435 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3410 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 399.0 ns:
+    Emitted: 215.255 µC
+    In flight: 13.735 µC
+    Collected: 188.645 µC
+    WARNING: 12.875 µC unaccounted!
+  [SCHOTTKY EMISSION] t=400.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3424 particles in danger zone 600-700mm
+  DEBUG: 3435 particles in Gap exit (300-400 mm)
+  DEBUG: 3424 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3376 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+=== Capturing Pulse 2 Snapshot 2/7 at t=400.0 ns ===
+  Particles: 94148 | Progress: 2/7 snapshots
+
+  [SCHOTTKY EMISSION] t=401.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3443 particles in danger zone 600-700mm
+  DEBUG: 3451 particles in Gap exit (300-400 mm)
+  DEBUG: 3443 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3395 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=402.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3421 particles in danger zone 600-700mm
+  DEBUG: 3447 particles in Gap exit (300-400 mm)
+  DEBUG: 3421 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3391 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=403.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3437 particles in danger zone 600-700mm
+  DEBUG: 3432 particles in Gap exit (300-400 mm)
+  DEBUG: 3437 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3406 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=404.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3449 particles in danger zone 600-700mm
+  DEBUG: 3443 particles in Gap exit (300-400 mm)
+  DEBUG: 3449 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3412 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=405.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3426 particles in danger zone 600-700mm
+  DEBUG: 3452 particles in Gap exit (300-400 mm)
+  DEBUG: 3426 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3411 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+=== Capturing Pulse 2 Steady-State Beam at t=405.0 ns ===
+  Total active particles captured: 94096
+  Z range: 1.1 to 2760.0 mm
+
+=== TWISS PARAMETER ANALYSIS - PULSE 2 (t=405.0 ns) ===
+
+Anode (254mm):
+  Particles analyzed: 1034
+  RMS radius: 4.86 mm
+  RMS divergence: 29.85 mrad
+  Geometric emittance: 96.32 mm-mrad
+  Normalized emittance: 381.47 mm-mrad
+  Twiss parameters:
+    ? = 0.245 m
+    ? = 1.125 (Converging)
+    ? = 9.249 1/m
+  Consistency check (??-?²): 1.0000
+
+Transition (600mm):
+  Particles analyzed: 1020
+  RMS radius: 5.59 mm
+  RMS divergence: 22.23 mrad
+  Geometric emittance: 76.84 mm-mrad
+  Normalized emittance: 322.03 mm-mrad
+  Twiss parameters:
+    ? = 0.406 m
+    ? = -1.270 (Diverging)
+    ? = 6.432 1/m
+  Consistency check (??-?²): 1.0000
+
+Transition (1000mm):
+  Particles analyzed: 1039
+  RMS radius: 10.40 mm
+  RMS divergence: 15.58 mrad
+  Geometric emittance: 137.98 mm-mrad
+  Normalized emittance: 577.23 mm-mrad
+  Twiss parameters:
+    ? = 0.784 m
+    ? = -0.615 (Diverging)
+    ? = 1.758 1/m
+  Consistency check (??-?²): 1.0000
+
+Transition (1700mm):
+  Particles analyzed: 955
+  RMS radius: 7.53 mm
+  RMS divergence: 17.75 mrad
+  Geometric emittance: 130.88 mm-mrad
+  Normalized emittance: 548.51 mm-mrad
+  Twiss parameters:
+    ? = 0.433 m
+    ? = 0.205 (Converging)
+    ? = 2.406 1/m
+  Consistency check (??-?²): 1.0000
+
+Drift Exit (2700mm):
+  Particles analyzed: 963
+  RMS radius: 6.35 mm
+  RMS divergence: 18.14 mrad
+  Geometric emittance: 115.19 mm-mrad
+  Normalized emittance: 482.63 mm-mrad
+  Twiss parameters:
+    ? = 0.350 m
+    ? = 0.005 (Nearly collimated)
+    ? = 2.855 1/m
+  Consistency check (??-?²): 1.0000
+
+Twiss analysis (Pulse 2) saved to twiss_analysis_pulse2_results.mat
+  [Ion snapshot 3: 400917289 ions, centroid at z=1346.5 mm]
+  [Snapshot 4 at 405.0 ns: 83007 particles]
+
+=== Capturing Pulse 2 Snapshot 3/7 at t=405.0 ns ===
+  Particles: 94096 | Progress: 3/7 snapshots
+
+  [SCHOTTKY EMISSION] t=406.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3430 particles in danger zone 600-700mm
+  DEBUG: 3456 particles in Gap exit (300-400 mm)
+  DEBUG: 3430 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3410 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=407.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3446 particles in danger zone 600-700mm
+  DEBUG: 3447 particles in Gap exit (300-400 mm)
+  DEBUG: 3446 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3412 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=408.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3432 particles in danger zone 600-700mm
+  DEBUG: 3456 particles in Gap exit (300-400 mm)
+  DEBUG: 3432 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3403 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+.
+  Step 26000/34601 (75.1%) | 0.2 steps/s | ETA: 784.2 min
+  Active: 94149 | Created: 1518245 | At anode: 1507131
+  
+  [SCHOTTKY EMISSION] t=409.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  [SC Field: 0.28 MV/m]
+
+  [LOSSES] Cathode:0, Walls:4, Bounds:0
+  DEBUG: 3433 particles in danger zone 600-700mm
+  DEBUG: 3412 particles in Gap exit (300-400 mm)
+  DEBUG: 3433 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3416 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 409.0 ns:
+    Emitted: 229.856 µC
+    In flight: 13.738 µC
+    Collected: 202.488 µC
+    WARNING: 13.630 µC unaccounted!
+  [SCHOTTKY EMISSION] t=410.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3419 particles in danger zone 600-700mm
+  DEBUG: 3419 particles in Gap exit (300-400 mm)
+  DEBUG: 3419 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3393 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+=== Capturing Pulse 2 Snapshot 4/7 at t=410.0 ns ===
+  Particles: 94125 | Progress: 4/7 snapshots
+
+  [SCHOTTKY EMISSION] t=411.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3437 particles in danger zone 600-700mm
+  DEBUG: 3460 particles in Gap exit (300-400 mm)
+  DEBUG: 3437 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3385 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=412.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3440 particles in danger zone 600-700mm
+  DEBUG: 3444 particles in Gap exit (300-400 mm)
+  DEBUG: 3440 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3419 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=413.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3420 particles in danger zone 600-700mm
+  DEBUG: 3418 particles in Gap exit (300-400 mm)
+  DEBUG: 3420 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3400 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=414.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3431 particles in danger zone 600-700mm
+  DEBUG: 3416 particles in Gap exit (300-400 mm)
+  DEBUG: 3431 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3401 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=415.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3447 particles in danger zone 600-700mm
+  DEBUG: 3429 particles in Gap exit (300-400 mm)
+  DEBUG: 3447 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3420 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+=== Capturing Pulse 2 Snapshot 5/7 at t=415.0 ns ===
+  Particles: 94288 | Progress: 5/7 snapshots
+
+  [SCHOTTKY EMISSION] t=416.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3434 particles in danger zone 600-700mm
+  DEBUG: 3450 particles in Gap exit (300-400 mm)
+  DEBUG: 3434 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3399 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=417.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3440 particles in danger zone 600-700mm
+  DEBUG: 3433 particles in Gap exit (300-400 mm)
+  DEBUG: 3440 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3397 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=418.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3427 particles in danger zone 600-700mm
+  DEBUG: 3452 particles in Gap exit (300-400 mm)
+  DEBUG: 3427 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3408 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 27000/34601 (78.0%) | 0.2 steps/s | ETA: 695.1 min
+  Active: 94104 | Created: 1618245 | At anode: 1607120
+  
+  [SCHOTTKY EMISSION] t=419.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  [SC Field: 0.29 MV/m]
+
+  [LOSSES] Cathode:0, Walls:8, Bounds:0
+  DEBUG: 3429 particles in danger zone 600-700mm
+  DEBUG: 3475 particles in Gap exit (300-400 mm)
+  DEBUG: 3429 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3409 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 419.0 ns:
+    Emitted: 244.456 µC
+    In flight: 13.730 µC
+    Collected: 216.339 µC
+    WARNING: 14.388 µC unaccounted!
+  [SCHOTTKY EMISSION] t=420.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3422 particles in danger zone 600-700mm
+  DEBUG: 3452 particles in Gap exit (300-400 mm)
+  DEBUG: 3422 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3398 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+=== Capturing Pulse 2 Snapshot 6/7 at t=420.0 ns ===
+  Particles: 94095 | Progress: 6/7 snapshots
+
+  [SCHOTTKY EMISSION] t=421.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3433 particles in danger zone 600-700mm
+  DEBUG: 3441 particles in Gap exit (300-400 mm)
+  DEBUG: 3433 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3392 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=422.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3427 particles in danger zone 600-700mm
+  DEBUG: 3448 particles in Gap exit (300-400 mm)
+  DEBUG: 3427 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3391 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=423.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3438 particles in danger zone 600-700mm
+  DEBUG: 3436 particles in Gap exit (300-400 mm)
+  DEBUG: 3438 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3431 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=424.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3408 particles in danger zone 600-700mm
+  DEBUG: 3429 particles in Gap exit (300-400 mm)
+  DEBUG: 3408 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3397 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=425.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3436 particles in danger zone 600-700mm
+  DEBUG: 3438 particles in Gap exit (300-400 mm)
+  DEBUG: 3436 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3414 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+=== Capturing Pulse 2 Snapshot 7/7 at t=425.0 ns ===
+  Particles: 94086 | Progress: 7/7 snapshots
+.
+  [SCHOTTKY EMISSION] t=426.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3438 particles in danger zone 600-700mm
+  DEBUG: 3427 particles in Gap exit (300-400 mm)
+  DEBUG: 3438 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3382 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=427.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3424 particles in danger zone 600-700mm
+  DEBUG: 3440 particles in Gap exit (300-400 mm)
+  DEBUG: 3424 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3395 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=428.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3432 particles in danger zone 600-700mm
+  DEBUG: 3437 particles in Gap exit (300-400 mm)
+  DEBUG: 3432 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3400 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 28000/34601 (80.9%) | 0.2 steps/s | ETA: 605.0 min
+  Active: 94045 | Created: 1718245 | At anode: 1707131
+  
+  [SCHOTTKY EMISSION] t=429.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  [SC Field: 0.28 MV/m]
+
+  [LOSSES] Cathode:0, Walls:11, Bounds:0
+  DEBUG: 3426 particles in danger zone 600-700mm
+  DEBUG: 3459 particles in Gap exit (300-400 mm)
+  DEBUG: 3426 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3410 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 429.0 ns:
+    Emitted: 259.057 µC
+    In flight: 13.721 µC
+    Collected: 230.160 µC
+    WARNING: 15.176 µC unaccounted!
+  [SCHOTTKY EMISSION] t=430.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3431 particles in danger zone 600-700mm
+  DEBUG: 3448 particles in Gap exit (300-400 mm)
+  DEBUG: 3431 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3391 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=431.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3458 particles in danger zone 600-700mm
+  DEBUG: 3447 particles in Gap exit (300-400 mm)
+  DEBUG: 3458 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3423 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=432.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3426 particles in danger zone 600-700mm
+  DEBUG: 3437 particles in Gap exit (300-400 mm)
+  DEBUG: 3426 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3410 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=433.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3444 particles in danger zone 600-700mm
+  DEBUG: 3438 particles in Gap exit (300-400 mm)
+  DEBUG: 3444 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3400 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=434.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3424 particles in danger zone 600-700mm
+  DEBUG: 3440 particles in Gap exit (300-400 mm)
+  DEBUG: 3424 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3400 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=435.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3410 particles in danger zone 600-700mm
+  DEBUG: 3432 particles in Gap exit (300-400 mm)
+  DEBUG: 3410 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3404 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=436.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3441 particles in danger zone 600-700mm
+  DEBUG: 3437 particles in Gap exit (300-400 mm)
+  DEBUG: 3441 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3407 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=437.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3434 particles in danger zone 600-700mm
+  DEBUG: 3437 particles in Gap exit (300-400 mm)
+  DEBUG: 3434 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3391 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=438.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3434 particles in danger zone 600-700mm
+  DEBUG: 3446 particles in Gap exit (300-400 mm)
+  DEBUG: 3434 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3401 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 29000/34601 (83.8%) | 0.2 steps/s | ETA: 514.3 min
+  Active: 94161 | Created: 1818245 | At anode: 1807140
+  
+  [SCHOTTKY EMISSION] t=439.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  [SC Field: 0.28 MV/m]
+
+  [LOSSES] Cathode:0, Walls:4, Bounds:0
+  DEBUG: 3437 particles in danger zone 600-700mm
+  DEBUG: 3402 particles in Gap exit (300-400 mm)
+  DEBUG: 3437 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3387 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 439.0 ns:
+    Emitted: 273.657 µC
+    In flight: 13.742 µC
+    Collected: 243.967 µC
+    WARNING: 15.948 µC unaccounted!
+  [SCHOTTKY EMISSION] t=440.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3454 particles in danger zone 600-700mm
+  DEBUG: 3423 particles in Gap exit (300-400 mm)
+  DEBUG: 3454 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3373 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=441.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3446 particles in danger zone 600-700mm
+  DEBUG: 3447 particles in Gap exit (300-400 mm)
+  DEBUG: 3446 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3408 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=442.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3439 particles in danger zone 600-700mm
+  DEBUG: 3442 particles in Gap exit (300-400 mm)
+  DEBUG: 3439 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3386 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=443.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3429 particles in danger zone 600-700mm
+  DEBUG: 3426 particles in Gap exit (300-400 mm)
+  DEBUG: 3429 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3415 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+.
+  [SCHOTTKY EMISSION] t=444.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3426 particles in danger zone 600-700mm
+  DEBUG: 3447 particles in Gap exit (300-400 mm)
+  DEBUG: 3426 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3409 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=445.0ns:
+    E_cathode=5.46 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3432 particles in danger zone 600-700mm
+  DEBUG: 3448 particles in Gap exit (300-400 mm)
+  DEBUG: 3432 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3408 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=446.0ns:
+    E_cathode=5.44 MV/m, ??=0.089 eV
+    ?_eff=1.711 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3425 particles in danger zone 600-700mm
+  DEBUG: 3444 particles in Gap exit (300-400 mm)
+  DEBUG: 3425 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3389 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=447.0ns:
+    E_cathode=5.38 MV/m, ??=0.088 eV
+    ?_eff=1.712 eV (4.9% reduction)
+    T_cathode=1200 K (saves 62 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3426 particles in danger zone 600-700mm
+  DEBUG: 3428 particles in Gap exit (300-400 mm)
+  DEBUG: 3426 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3419 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=448.0ns:
+    E_cathode=5.27 MV/m, ??=0.087 eV
+    ?_eff=1.713 eV (4.8% reduction)
+    T_cathode=1200 K (saves 61 K vs no Schottky)
+    J=11.0 A/cm² @ I=1460.1 A  DEBUG: 3418 particles in danger zone 600-700mm
+  DEBUG: 3406 particles in Gap exit (300-400 mm)
+  DEBUG: 3418 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3375 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 30000/34601 (86.7%) | 0.2 steps/s | ETA: 423.2 min
+  Active: 93959 | Created: 1918040 | At anode: 1907051
+  
+  [SCHOTTKY EMISSION] t=449.0ns:
+    E_cathode=5.13 MV/m, ??=0.086 eV
+    ?_eff=1.714 eV (4.8% reduction)
+    T_cathode=1200 K (saves 60 K vs no Schottky)
+    J=11.0 A/cm² @ I=1454.0 A  [SC Field: 0.30 MV/m]
+
+  [LOSSES] Cathode:0, Walls:4, Bounds:0
+
+  [SCATTER] 3 events (0 rare), <?>=0.108 µrad | [ION] 273974036 real ions (273974.0 super-ions)  DEBUG: 3437 particles in danger zone 600-700mm
+  DEBUG: 3432 particles in Gap exit (300-400 mm)
+  DEBUG: 3437 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3384 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 449.0 ns:
+    Emitted: 288.257 µC
+    In flight: 13.740 µC
+    Collected: 257.821 µC
+    WARNING: 16.696 µC unaccounted!
+  [SCHOTTKY EMISSION] t=450.0ns:
+    E_cathode=4.95 MV/m, ??=0.084 eV
+    ?_eff=1.716 eV (4.7% reduction)
+    T_cathode=1200 K (saves 59 K vs no Schottky)
+    J=10.8 A/cm² @ I=1432.6 A  DEBUG: 3408 particles in danger zone 600-700mm
+  DEBUG: 3349 particles in Gap exit (300-400 mm)
+  DEBUG: 3408 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3412 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=451.0ns:
+    E_cathode=4.74 MV/m, ??=0.083 eV
+    ?_eff=1.717 eV (4.6% reduction)
+    T_cathode=1200 K (saves 58 K vs no Schottky)
+    J=10.6 A/cm² @ I=1407.0 A  DEBUG: 3373 particles in danger zone 600-700mm
+  DEBUG: 3160 particles in Gap exit (300-400 mm)
+  DEBUG: 3373 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3366 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=452.0ns:
+    E_cathode=4.49 MV/m, ??=0.080 eV
+    ?_eff=1.720 eV (4.5% reduction)
+    T_cathode=1200 K (saves 56 K vs no Schottky)
+    J=10.4 A/cm² @ I=1377.9 A  DEBUG: 3174 particles in danger zone 600-700mm
+  DEBUG: 3027 particles in Gap exit (300-400 mm)
+  DEBUG: 3174 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3372 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=453.0ns:
+    E_cathode=4.22 MV/m, ??=0.078 eV
+    ?_eff=1.722 eV (4.3% reduction)
+    T_cathode=1200 K (saves 54 K vs no Schottky)
+    J=10.1 A/cm² @ I=1345.5 A  DEBUG: 3054 particles in danger zone 600-700mm
+  DEBUG: 2899 particles in Gap exit (300-400 mm)
+  DEBUG: 3054 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3146 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=454.0ns:
+    E_cathode=3.92 MV/m, ??=0.075 eV
+    ?_eff=1.725 eV (4.2% reduction)
+    T_cathode=1200 K (saves 52 K vs no Schottky)
+    J=9.9 A/cm² @ I=1309.7 A  DEBUG: 2884 particles in danger zone 600-700mm
+  DEBUG: 2736 particles in Gap exit (300-400 mm)
+  DEBUG: 2884 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3038 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=455.0ns:
+    E_cathode=3.61 MV/m, ??=0.072 eV
+    ?_eff=1.728 eV (4.0% reduction)
+    T_cathode=1200 K (saves 50 K vs no Schottky)
+    J=9.6 A/cm² @ I=1271.3 A  DEBUG: 2724 particles in danger zone 600-700mm
+  DEBUG: 2572 particles in Gap exit (300-400 mm)
+  DEBUG: 2724 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2864 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=456.0ns:
+    E_cathode=3.29 MV/m, ??=0.069 eV
+    ?_eff=1.731 eV (3.8% reduction)
+    T_cathode=1200 K (saves 48 K vs no Schottky)
+    J=9.3 A/cm² @ I=1231.6 A  DEBUG: 2546 particles in danger zone 600-700mm
+  DEBUG: 2368 particles in Gap exit (300-400 mm)
+  DEBUG: 2546 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2703 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=457.0ns:
+    E_cathode=2.95 MV/m, ??=0.065 eV
+    ?_eff=1.735 eV (3.6% reduction)
+    T_cathode=1200 K (saves 45 K vs no Schottky)
+    J=9.0 A/cm² @ I=1189.3 A  DEBUG: 2364 particles in danger zone 600-700mm
+  DEBUG: 2173 particles in Gap exit (300-400 mm)
+  DEBUG: 2364 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2525 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=458.0ns:
+    E_cathode=2.61 MV/m, ??=0.061 eV
+    ?_eff=1.739 eV (3.4% reduction)
+    T_cathode=1200 K (saves 42 K vs no Schottky)
+    J=8.6 A/cm² @ I=1146.0 A  DEBUG: 2171 particles in danger zone 600-700mm
+  DEBUG: 1969 particles in Gap exit (300-400 mm)
+  DEBUG: 2171 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2339 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 31000/34601 (89.6%) | 0.2 steps/s | ETA: 331.7 min
+  Active: 65903 | Created: 1988534 | At anode: 1982416
+  
+  [SCHOTTKY EMISSION] t=459.0ns:
+    E_cathode=2.28 MV/m, ??=0.057 eV
+    ?_eff=1.743 eV (3.2% reduction)
+    T_cathode=1200 K (saves 39 K vs no Schottky)
+    J=8.3 A/cm² @ I=1102.0 A  [SC Field: 0.32 MV/m]
+
+  [LOSSES] Cathode:0, Walls:6, Bounds:0
+  DEBUG: 1966 particles in danger zone 600-700mm
+  DEBUG: 1772 particles in Gap exit (300-400 mm)
+  DEBUG: 1966 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 2175 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 459.0 ns:
+    Emitted: 301.248 µC
+    In flight: 12.239 µC
+    Collected: 274.067 µC
+    WARNING: 14.942 µC unaccounted!
+  [SCHOTTKY EMISSION] t=460.0ns:
+    E_cathode=1.96 MV/m, ??=0.053 eV
+    ?_eff=1.747 eV (3.0% reduction)
+    T_cathode=1200 K (saves 36 K vs no Schottky)
+    J=8.0 A/cm² @ I=1058.3 A  DEBUG: 1742 particles in danger zone 600-700mm
+  DEBUG: 1591 particles in Gap exit (300-400 mm)
+  DEBUG: 1742 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1970 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+.
+  [SCHOTTKY EMISSION] t=461.0ns:
+    E_cathode=1.64 MV/m, ??=0.049 eV
+    ?_eff=1.751 eV (2.7% reduction)
+    T_cathode=1200 K (saves 33 K vs no Schottky)
+    J=5.5 A/cm² @ I=727.9 A  DEBUG: 1563 particles in danger zone 600-700mm
+  DEBUG: 1384 particles in Gap exit (300-400 mm)
+  DEBUG: 1563 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1758 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=462.0ns:
+    E_cathode=1.32 MV/m, ??=0.044 eV
+    ?_eff=1.756 eV (2.4% reduction)
+    T_cathode=1200 K (saves 30 K vs no Schottky)
+    J=3.5 A/cm² @ I=470.6 A  DEBUG: 1366 particles in danger zone 600-700mm
+  DEBUG: 1197 particles in Gap exit (300-400 mm)
+  DEBUG: 1366 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1546 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=463.0ns:
+    E_cathode=1.03 MV/m, ??=0.038 eV
+    ?_eff=1.762 eV (2.1% reduction)
+    T_cathode=1200 K (saves 26 K vs no Schottky)
+    J=2.2 A/cm² @ I=287.1 A  DEBUG: 1170 particles in danger zone 600-700mm
+  DEBUG: 1018 particles in Gap exit (300-400 mm)
+  DEBUG: 1170 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1343 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=464.0ns:
+    E_cathode=0.76 MV/m, ??=0.033 eV
+    ?_eff=1.767 eV (1.8% reduction)
+    T_cathode=1200 K (saves 23 K vs no Schottky)
+    J=1.2 A/cm² @ I=163.2 A  DEBUG: 981 particles in danger zone 600-700mm
+  DEBUG: 866 particles in Gap exit (300-400 mm)
+  DEBUG: 981 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1166 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=465.0ns:
+    E_cathode=0.54 MV/m, ??=0.028 eV
+    ?_eff=1.772 eV (1.5% reduction)
+    T_cathode=1200 K (saves 19 K vs no Schottky)
+    J=0.6 A/cm² @ I=84.8 A  DEBUG: 818 particles in danger zone 600-700mm
+  DEBUG: 736 particles in Gap exit (300-400 mm)
+  DEBUG: 818 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1001 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=466.0ns:
+    E_cathode=0.35 MV/m, ??=0.022 eV
+    ?_eff=1.778 eV (1.2% reduction)
+    T_cathode=1200 K (saves 15 K vs no Schottky)
+    J=0.3 A/cm² @ I=39.0 A  DEBUG: 698 particles in danger zone 600-700mm
+  DEBUG: 608 particles in Gap exit (300-400 mm)
+  DEBUG: 698 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 800 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=467.0ns:
+    E_cathode=0.20 MV/m, ??=0.017 eV
+    ?_eff=1.783 eV (0.9% reduction)
+    T_cathode=1200 K (saves 11 K vs no Schottky)
+    J=0.1 A/cm² @ I=14.9 A  DEBUG: 571 particles in danger zone 600-700mm
+  DEBUG: 489 particles in Gap exit (300-400 mm)
+  DEBUG: 571 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 693 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [SCHOTTKY EMISSION] t=468.0ns:
+    E_cathode=0.09 MV/m, ??=0.011 eV
+    ?_eff=1.789 eV (0.6% reduction)
+    T_cathode=1200 K (saves 8 K vs no Schottky)
+    J=0.0 A/cm² @ I=4.1 A  DEBUG: 483 particles in danger zone 600-700mm
+  DEBUG: 412 particles in Gap exit (300-400 mm)
+  DEBUG: 483 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 540 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 32000/34601 (92.5%) | 0.2 steps/s | ETA: 240.0 min
+  Active: 17901 | Created: 2004937 | At anode: 2003649
+    [SC Field: 0.14 MV/m]
+
+  [LOSSES] Cathode:0, Walls:1, Bounds:0
+  DEBUG: 370 particles in danger zone 600-700mm
+  DEBUG: 338 particles in Gap exit (300-400 mm)
+  DEBUG: 370 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 460 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 469.0 ns:
+    Emitted: 304.623 µC
+    In flight: 3.788 µC
+    Collected: 284.273 µC
+    WARNING: 16.561 µC unaccounted!  DEBUG: 308 particles in danger zone 600-700mm
+  DEBUG: 262 particles in Gap exit (300-400 mm)
+  DEBUG: 308 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 348 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 258 particles in danger zone 600-700mm
+  DEBUG: 227 particles in Gap exit (300-400 mm)
+  DEBUG: 258 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 292 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 196 particles in danger zone 600-700mm
+  DEBUG: 192 particles in Gap exit (300-400 mm)
+  DEBUG: 196 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 237 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 171 particles in danger zone 600-700mm
+  DEBUG: 174 particles in Gap exit (300-400 mm)
+  DEBUG: 171 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 200 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 140 particles in danger zone 600-700mm
+  DEBUG: 159 particles in Gap exit (300-400 mm)
+  DEBUG: 140 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 164 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 123 particles in danger zone 600-700mm
+  DEBUG: 152 particles in Gap exit (300-400 mm)
+  DEBUG: 123 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 131 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 117 particles in danger zone 600-700mm
+  DEBUG: 125 particles in Gap exit (300-400 mm)
+  DEBUG: 117 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 111 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 80 particles in danger zone 600-700mm
+  DEBUG: 119 particles in Gap exit (300-400 mm)
+  DEBUG: 80 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 94 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+.  DEBUG: 95 particles in danger zone 600-700mm
+  DEBUG: 106 particles in Gap exit (300-400 mm)
+  DEBUG: 95 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 52 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 33000/34601 (95.4%) | 0.2 steps/s | ETA: 148.2 min
+  Active: 1998 | Created: 2004937 | At anode: 2004661
+    [SC Field: 0.02 MV/m]
+
+  [LOSSES] Cathode:0, Walls:1, Bounds:0
+  DEBUG: 88 particles in danger zone 600-700mm
+  DEBUG: 110 particles in Gap exit (300-400 mm)
+  DEBUG: 88 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 60 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 479.0 ns:
+    Emitted: 304.623 µC
+    In flight: 0.133 µC
+    Collected: 286.068 µC
+    WARNING: 18.421 µC unaccounted!  DEBUG: 87 particles in danger zone 600-700mm
+  DEBUG: 99 particles in Gap exit (300-400 mm)
+  DEBUG: 87 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 40 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 68 particles in danger zone 600-700mm
+  DEBUG: 97 particles in Gap exit (300-400 mm)
+  DEBUG: 68 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 50 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 55 particles in danger zone 600-700mm
+  DEBUG: 89 particles in Gap exit (300-400 mm)
+  DEBUG: 55 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 42 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 54 particles in danger zone 600-700mm
+  DEBUG: 77 particles in Gap exit (300-400 mm)
+  DEBUG: 54 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 16 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 32 particles in danger zone 600-700mm
+  DEBUG: 61 particles in Gap exit (300-400 mm)
+  DEBUG: 32 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 28 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 24 particles in danger zone 600-700mm
+  DEBUG: 52 particles in Gap exit (300-400 mm)
+  DEBUG: 24 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 29 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 26 particles in danger zone 600-700mm
+  DEBUG: 42 particles in Gap exit (300-400 mm)
+  DEBUG: 26 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 17 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 30 particles in danger zone 600-700mm
+  DEBUG: 43 particles in Gap exit (300-400 mm)
+  DEBUG: 30 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 19 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 27 particles in danger zone 600-700mm
+  DEBUG: 37 particles in Gap exit (300-400 mm)
+  DEBUG: 27 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 18 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  Step 34000/34601 (98.3%) | 0.2 steps/s | ETA: 56.1 min
+  Active: 326 | Created: 2004937 | At anode: 2004771
+    [SC Field: 0.01 MV/m]
+
+  [LOSSES] Cathode:0, Walls:1, Bounds:0
+  DEBUG: 19 particles in danger zone 600-700mm
+  DEBUG: 34 particles in Gap exit (300-400 mm)
+  DEBUG: 19 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 19 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+  [CHARGE AUDIT] at 489.0 ns:
+    Emitted: 304.623 µC
+    In flight: 0.013 µC
+    Collected: 286.141 µC
+    WARNING: 18.468 µC unaccounted!  DEBUG: 18 particles in danger zone 600-700mm
+  DEBUG: 31 particles in Gap exit (300-400 mm)
+  DEBUG: 18 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 12 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 16 particles in danger zone 600-700mm
+  DEBUG: 30 particles in Gap exit (300-400 mm)
+  DEBUG: 16 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 6 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 17 particles in danger zone 600-700mm
+  DEBUG: 21 particles in Gap exit (300-400 mm)
+  DEBUG: 17 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 5 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 12 particles in danger zone 600-700mm
+  DEBUG: 16 particles in Gap exit (300-400 mm)
+  DEBUG: 12 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 3 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 14 particles in danger zone 600-700mm
+  DEBUG: 14 particles in Gap exit (300-400 mm)
+  DEBUG: 14 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+.  DEBUG: 22 particles in danger zone 600-700mm
+  DEBUG: 17 particles in Gap exit (300-400 mm)
+  DEBUG: 22 particles in Injector end (600-700 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+  DEBUG: 1 particles in Near Sol3 (1000-1100 mm)
+    WARNING: Very weak fields (<10000 V/m)!
+
+=================================================================
+  POST-PROCESSING VALIDATION                                     
+=================================================================
+
+=== GAS SCATTERING SUMMARY ===
+Method: HYBRID
+Total scatter events: 3564
+Scattering rate: 0.00 events/electron
+Large-angle events: 36 (1.0%)
+
+Scattering angle distribution:
+  Mean: 16.715 µrad
+  RMS: 242.020 µrad
+  Max: 6.019 mrad
+  Median: 0.157 µrad
+  Events >1 mrad: 18 (0.51%)
+
+Scattering spatial distribution:
+  First event at z=1.1 mm
+  Last event at z=2759.8 mm
+  Mean position z=1357.9 mm
+
+=== SCATTERING HALO CONTRIBUTION ===
+Large-angle scatters (>100µrad): 36
+Potential halo particles: 36 (1.01% of scattered)
+Fraction of total beam: 0.002%
+
+*** NOTE: Elevated pressure for demonstration ***
+Operational accelerators run at 1e-9 to 1e-7 mbar
+This 1.000000e-06 mbar demonstrates scattering physics
+At operational pressure, scattering contributes ~0.01% to halo
+
+=== Diagnostic Data Check ===
+Total RMS data points collected: 37861
+
+Done!
+
+=== Performance ===
+  Runtime: 204176.4 seconds (3402.94 min)
+  Speed: 0.2 steps/sec
+
+=== Results ===
+  Particles created: 2004937
+  At anode: 2004778 (100.0%)
+  Transmitted to 1700mm: 1883318 (93.9%)
+
+=== PER-PULSE ANALYSIS ===
+
+Pulse 1 (t = 150.0 ns):
+  Emitted: 1002470 particles
+  Reached anode: 1002443 (100.0%)
+  Transmitted to exit: 942107 (94.0%)
+
+Pulse 2 (t = 350.0 ns):
+  Emitted: 1002467 particles
+  Reached anode: 1002335 (100.0%)
+  Transmitted to exit: 941211 (93.9%)
+
+=== PULSE-TO-PULSE COMPARISON ===
+  Pulse 1 efficiency: 93.98%
+  Pulse 2 efficiency: 93.89%
+  Difference: -0.09% (pulse 2 - pulse 1)
+
+=== LONGITUDINAL BEAM SLICE ANALYSIS (STEADY STATE) ===
+Analyzing beam captured at t=204.0 ns (mid-pulse)
+
+=== Particle Distribution at Steady State ===
+First 10 bins (0-1000mm):
+  z=0-100 mm: 5617 particles
+  z=100-200 mm: 3580 particles
+  z=200-3.000000e+02 mm: 3463 particles
+  z=3.000000e+02-400 mm: 3432 particles
+  z=400-500 mm: 3427 particles
+  z=500-6.000000e+02 mm: 3446 particles
+  z=6.000000e+02-7.000000e+02 mm: 3425 particles
+  z=7.000000e+02-800 mm: 3406 particles
+  z=800-900 mm: 3448 particles
+  z=900-1000 mm: 3428 particles
+  Total particles in analysis: 94040
+  Processed slice 5/30: z=360-450 mm, 3098 particles
+  Processed slice 10/30: z=810-900 mm, 3066 particles
+  Processed slice 15/30: z=1260-1350 mm, 2893 particles
+  Processed slice 20/30: z=1710-1800 mm, 2898 particles
+  Processed slice 25/30: z=2160-2250 mm, 2943 particles
+  Processed slice 30/30: z=2610-2700 mm, 2919 particles
+
+=== ION ACCUMULATION ANALYSIS ===
+Total ionization events: 5.708510e+11
+Ionization rate: 284722.6655 ions/electron
+
+Ions created per pulse:
+  Pulse 1: 2.842257e+11 ions (49.8% of total)
+  Pulse 2: 2.841661e+11 ions (49.8% of total)
+
+Peak ion count in system: 561568066863 ions
+Peak local density: 3.77e+08 ions/m³
+Ratio to neutral gas density: 1.17e-08
+
+Pulse configuration verified for plotting:
+  n_pulses: 2
+  pulse_starts:    150   350
+
+
+=== Ion Diagnostic Data Quality Check ===
+Total timesteps: 34601
+Timesteps with ion data: 34342 (99.3%)
+Update interval: every 50 timesteps
+Expected data points: ~692
+Time between updates: 1 timesteps (10.0 ps)
+Data continuity: Good
+Ion data range: 2.7e+02 to 5.6e+11 ions
+
+=== ION ACCUMULATION ANALYSIS ===
+Total ionization events: 5.708510e+11
+Ionization rate: 284722.6655 ions/electron
+
+Ions created per pulse:
+  Pulse 1: 2.842257e+11 ions (49.8% of total)
+  Pulse 2: 2.841661e+11 ions (49.8% of total)
+
+Peak ion count in system: 561568066863 ions
+Peak local density: 3.77e+08 ions/m³
+Ratio to neutral gas density: 1.17e-08
+
+Enhanced ion diagnostics complete!
+
+=== SLICE ANALYSIS SUMMARY (STEADY STATE) ===
+Analysis time point: 204.0 ns (mid-pulse)
+Total particles analyzed: 94040
+Total slices with data: 30/30
+
+Beam Envelope:
+  Average RMS radius: 41.12 mm
+  Maximum RMS radius: 45.31 mm (at z=1125 mm)
+  Minimum RMS radius: 33.32 mm (at z=315 mm)
+
+Energy Distribution:
+  At cathode (z<100mm): 0.181 MeV
+  After anode (z>300mm): 1.690 MeV
+  At drift exit (z>1600mm): 1.691 MeV
+
+Current Distribution:
+  Average current: 1412.20 A
+  Peak current: 1463.29 A
+
+Beam Quality:
+  Radius variation coefficient: 9.2%
+  Beam envelope is relatively uniform (<15% variation)
+
+Steady-state analysis saved to steady_state_slice_analysis.mat
+
+=== DETAILED PARTICLE ACCOUNTING ===
+  Total particles created:        2004937
+  Successfully transmitted:       1883318 (93.9%)
+  Currently active (in flight):   186 (0.0%)
+
+  PARTICLE LOSSES:
+  Lost to cathode (backstream):   0 (0.0%)
+  Lost to walls (total):          121433 (6.1%)
+  Lost to boundaries:             0 (0.0%)
+  ----------------------------------------
+  Total losses:                   121433 (6.1%)
+
+=== TRUE TRANSMISSION EFFICIENCY ===
+  From creation:    93.9%
+  From anode:       93.9%
+
+=== SPACE CHARGE PARAMETERS ===
+  Enhancement (gap):    0.263
+  Enhancement (drift):  0.237
+  Peak SC field:        0.80 MV/m
+
+=== Collection Efficiency Correction ===
+Pulse 1 steady emission: 1460.06 A
+Pulse 2 steady emission: 1460.06 A
+Average steady emission: 1460.06 A
+
+=== Collection Efficiency Correction ===
+Steady-state emission current: 1460.06 A
+
+Particle-based transmission efficiencies:
+  Anode efficiency: 100.0%
+  Drift exit efficiency: 93.9%
+
+=== EMISSION DIAGNOSTICS SUMMARY ===
+Peak emission current: 1460.06 A
+Average collection efficiency: 115.1%
+Peak space charge field: 0.80 MV/m
+Drift exit transmission: 111.8%
+
+Corrected efficiency data saved to collection_efficiency_corrected.mat
+
+Corrected efficiency data saved to collection_efficiency_corrected.mat
+
+=== Generating Schottky Effect Analysis Figure ===
+Array size check:
+  t: 34601 elements
+  E_cathode: 34601 elements
+  phi_eff: 34601 elements
+  Plotting timesteps 101 to 12101 (12001 points)
+? Schottky Effect Figure Generated!
+
+=== ANALYZING PULSE 2 BEAM SNAPSHOTS ===
+
+=== PULSE 2 EXIT ENERGY DIAGNOSTIC ===
+Particles selected: 5944
+Gamma range: [3.047414, 4.310911]
+  NaN count: 0
+  Inf count: 0
+  <1 count: 0
+Energy range: [1.046226, 1.691872] MeV
+  NaN count: 0
+  Inf count: 0
+  Negative count: 0
+
+=== PULSE 2 EXIT ENERGY DIAGNOSTIC ===
+Particles selected: 6002
+Gamma range: [4.300393, 4.316767]
+  NaN count: 0
+  Inf count: 0
+  <1 count: 0
+Energy range: [1.686497, 1.694864] MeV
+  NaN count: 0
+  Inf count: 0
+  Negative count: 0
+
+=== PULSE 2 EXIT ENERGY DIAGNOSTIC ===
+Particles selected: 5992
+Gamma range: [1.001211, 4.313976]
+  NaN count: 0
+  Inf count: 0
+  <1 count: 0
+Energy range: [0.000619, 1.693438] MeV
+  NaN count: 0
+  Inf count: 0
+  Negative count: 0
+
+=== PULSE 2 EXIT ENERGY DIAGNOSTIC ===
+Particles selected: 5696
+Gamma range: [4.303997, 4.316704]
+  NaN count: 0
+  Inf count: 0
+  <1 count: 0
+Energy range: [1.688339, 1.694832] MeV
+  NaN count: 0
+  Inf count: 0
+  Negative count: 0
+
+=== PULSE 2 EXIT ENERGY DIAGNOSTIC ===
+Particles selected: 4774
+Gamma range: [4.294683, 4.326718]
+  NaN count: 0
+  Inf count: 0
+  <1 count: 0
+Energy range: [1.683580, 1.699949] MeV
+  NaN count: 0
+  Inf count: 0
+  Negative count: 0
+
+=== TWISS PARAMETER ANALYSIS AT KEY LOCATIONS ===
+
+Anode (254mm):
+  Particles analyzed: 5965
+  RMS radius: 5.10 mm
+  RMS divergence: 37.70 mrad
+  Geometric emittance: 147.46 mm-mrad
+  Normalized emittance: 561.24 mm-mrad
+  Twiss parameters:
+    ? = 0.177 m
+    ? = 0.838 (Converging)
+    ? = 9.640 1/m
+    Consistency check (??-?²): 1.0000
+
+Transition (600mm):
+  Particles analyzed: 5992
+  RMS radius: 5.67 mm
+  RMS divergence: 22.95 mrad
+  Geometric emittance: 92.27 mm-mrad
+  Normalized emittance: 386.81 mm-mrad
+  Twiss parameters:
+    ? = 0.348 m
+    ? = -0.994 (Diverging)
+    ? = 5.707 1/m
+    Consistency check (??-?²): 1.0000
+
+Transition (1000mm):
+  Particles analyzed: 5970
+  RMS radius: 10.44 mm
+  RMS divergence: 15.02 mrad
+  Geometric emittance: 139.22 mm-mrad
+  Normalized emittance: 583.26 mm-mrad
+  Twiss parameters:
+    ? = 0.782 m
+    ? = -0.517 (Diverging)
+    ? = 1.620 1/m
+    Consistency check (??-?²): 1.0000
+
+Transition (1700mm):
+  Particles analyzed: 5670
+  RMS radius: 7.67 mm
+  RMS divergence: 17.49 mrad
+  Geometric emittance: 129.78 mm-mrad
+  Normalized emittance: 544.06 mm-mrad
+  Twiss parameters:
+    ? = 0.453 m
+    ? = 0.262 (Converging)
+    ? = 2.357 1/m
+    Consistency check (??-?²): 1.0000
+
+Drift Exit (2700mm):
+  Particles analyzed: 4828
+  RMS radius: 7.95 mm
+  RMS divergence: 16.68 mrad
+  Geometric emittance: 132.02 mm-mrad
+  Normalized emittance: 553.08 mm-mrad
+  Twiss parameters:
+    ? = 0.479 m
+    ? = -0.099 (Nearly collimated)
+    ? = 2.107 1/m
+    Consistency check (??-?²): 1.0000
+
+Twiss analysis results saved to twiss_analysis_results.mat
+
+=== Checking Diagnostic Arrays ===
+r_rms_history dimensions: 34601x160
+Non-zero RMS values: 37861
+n_particles_vs_z dimensions: 34601x160
+Non-zero particle counts: 37861
+Current active particles: 186
+Z range: 150.6 to 2748.0 mm
+R range: 0.6 to 74.8 mm
+
+=== ION-INDUCED FOCUSING ANALYSIS ===
+Regions with >0.5mm RMS radius difference:
+  z=1150 mm: ?r=-0.61 mm (P2 TIGHTER - ion focusing!)
+  z=1250 mm: ?r=0.95 mm (P2 WIDER - ion defocusing)
+  z=1550 mm: ?r=-1.44 mm (P2 TIGHTER - ion focusing!)
+  z=1750 mm: ?r=1.84 mm (P2 WIDER - ion defocusing)
+  z=1850 mm: ?r=-1.17 mm (P2 TIGHTER - ion focusing!)
+  z=1950 mm: ?r=-1.15 mm (P2 TIGHTER - ion focusing!)
+  z=2050 mm: ?r=1.36 mm (P2 WIDER - ion defocusing)
+  z=2150 mm: ?r=-1.61 mm (P2 TIGHTER - ion focusing!)
+  z=2250 mm: ?r=-1.34 mm (P2 TIGHTER - ion focusing!)
+  z=2350 mm: ?r=3.50 mm (P2 WIDER - ion defocusing)
+  z=2450 mm: ?r=6.29 mm (P2 WIDER - ion defocusing)
+  z=2550 mm: ?r=3.82 mm (P2 WIDER - ion defocusing)
+  z=2650 mm: ?r=-2.54 mm (P2 TIGHTER - ion focusing!)
+
+=== QUANTITATIVE ION FOCUSING METRICS ===
+
+=== QUANTITATIVE ION FOCUSING METRICS ===
+
+At z=600 mm:
+  P1 RMS radius: 38.05 mm
+  P2 RMS radius: 38.11 mm
+  Difference: 0.058 mm (0.15%)
+  (Within statistical noise)
+
+At z=1000 mm:
+  P1 RMS radius: 43.80 mm
+  P2 RMS radius: 44.19 mm
+  Difference: 0.390 mm (0.89%)
+  (Within statistical noise)
+
+At z=1700 mm:
+  P1 RMS radius: 42.96 mm
+  P2 RMS radius: 44.45 mm
+  Difference: 1.490 mm (3.47%)
+  *** DEFOCUSING from ions detected! ***
+
+At z=2700 mm:
+  P1 RMS radius: 42.53 mm
+  P2 RMS radius: 36.16 mm
+  Difference: -6.366 mm (-14.97%)
+  *** FOCUSING from ions detected! ***
+
+=== ION IMPACT ON TRANSMISSION ===
+Pulse 1 efficiency: 93.979% (clean vacuum)
+Pulse 2 efficiency: 93.889% (with ~561568066863 ions)
+Difference: -0.089%
+Ion effect on transmission: negligible (<0.1%)
+
+=== Preparing workspace save ===
+  Including Pulse 1 snapshot
+  Including Pulse 1 Twiss analysis
+  Including slice analysis
+  Including Pulse 2 snapshot
+  Including Pulse 2 Twiss analysis
+  Including inter-pulse cloud data
+  Including ion density grid
+  Including ion snapshots
+  Including ion diagnostics
+  Including Pulse 1 betatron snapshots (7)
+  Including Pulse 2 betatron snapshots (7)
+
+Complete workspace saved to: PIC_v8_workspace_20260226_170332.mat
+Variables saved: 44
+File size: 66.1 MB
+
+Complete workspace saved to: PIC_v8_workspace_20260226_170332.mat
+File size: 66.1 MB
+
+=== GENERATING PULSE COMPARISON PLOTS ===
+
+=== GENERATING PULSE COMPARISON PLOTS ===
+
+=== CREATING INTER-PULSE CLOUD DIAGNOSTIC PLOTS ===
+  Inter-pulse cloud data saved to interpulse_electron_cloud.mat
+  Plotting cloud centroid at z=889 mm, r=18.3 mm
+
+=== SEPARATING ELECTRON CLOUD vs ION EFFECTS ===
+
+=== SEPARATING ELECTRON CLOUD vs ION EFFECTS ===
+
+=== BETATRON-AVERAGED TWISS ANALYSIS - PULSE 1 ===
+Processing 7 snapshots...
+
+Anode (z=254 mm) - PULSE 1:
+  ? = 0.250 ± 0.001 m
+  ? = 1.186 ± 0.094 (Converging)
+  r_rms = 4.84 ± 0.24 mm
+
+Trans1 (z=600 mm) - PULSE 1:
+  ? = 0.370 ± 0.038 m
+  ? = -1.184 ± 0.155 (Diverging)
+  r_rms = 5.55 ± 0.17 mm
+
+Trans2 (z=1000 mm) - PULSE 1:
+  ? = 0.829 ± 0.048 m
+  ? = -0.618 ± 0.082 (Diverging)
+  r_rms = 10.53 ± 0.25 mm
+
+Trans3 (z=1700 mm) - PULSE 1:
+  ? = 0.429 ± 0.063 m
+  ? = 0.167 ± 0.079 (Converging)
+  r_rms = 7.46 ± 0.81 mm
+
+Exit (z=2700 mm) - PULSE 1:
+  ? = 0.350 ± 0.080 m
+  ? = -0.085 ± 0.179 (Collimated)
+  r_rms = 6.23 ± 0.82 mm
+
+Anode (z=254 mm) - PULSE 1:
+  ? = 0.252 ± 0.004 m
+  ? = 1.205 ± 0.086 (Converging)
+  r_rms = 4.85 ± 0.19 mm
+
+Trans1 (z=600 mm) - PULSE 1:
+  ? = 0.375 ± 0.033 m
+  ? = -1.172 ± 0.129 (Diverging)
+  r_rms = 5.59 ± 0.17 mm
+
+Trans2 (z=1000 mm) - PULSE 1:
+  ? = 0.810 ± 0.055 m
+  ? = -0.575 ± 0.110 (Diverging)
+  r_rms = 10.46 ± 0.25 mm
+
+Trans3 (z=1700 mm) - PULSE 1:
+  ? = 0.421 ± 0.054 m
+  ? = 0.172 ± 0.065 (Converging)
+  r_rms = 7.33 ± 0.71 mm
+
+Exit (z=2700 mm) - PULSE 1:
+  ? = 0.346 ± 0.066 m
+  ? = -0.088 ± 0.147 (Collimated)
+  r_rms = 6.21 ± 0.67 mm
+
+Anode (z=254 mm) - PULSE 1:
+  ? = 0.251 ± 0.004 m
+  ? = 1.203 ± 0.074 (Converging)
+  r_rms = 4.84 ± 0.17 mm
+
+Trans1 (z=600 mm) - PULSE 1:
+  ? = 0.377 ± 0.029 m
+  ? = -1.177 ± 0.112 (Diverging)
+  r_rms = 5.61 ± 0.15 mm
+
+Trans2 (z=1000 mm) - PULSE 1:
+  ? = 0.796 ± 0.056 m
+  ? = -0.541 ± 0.122 (Diverging)
+  r_rms = 10.38 ± 0.27 mm
+
+Trans3 (z=1700 mm) - PULSE 1:
+  ? = 0.419 ± 0.047 m
+  ? = 0.182 ± 0.061 (Converging)
+  r_rms = 7.32 ± 0.61 mm
+
+Exit (z=2700 mm) - PULSE 1:
+  ? = 0.367 ± 0.073 m
+  ? = -0.106 ± 0.133 (Diverging)
+  r_rms = 6.43 ± 0.76 mm
+
+Anode (z=254 mm) - PULSE 1:
+  ? = 0.251 ± 0.004 m
+  ? = 1.192 ± 0.071 (Converging)
+  r_rms = 4.84 ± 0.15 mm
+
+Trans1 (z=600 mm) - PULSE 1:
+  ? = 0.387 ± 0.036 m
+  ? = -1.208 ± 0.126 (Diverging)
+  r_rms = 5.63 ± 0.15 mm
+
+Trans2 (z=1000 mm) - PULSE 1:
+  ? = 0.799 ± 0.051 m
+  ? = -0.550 ± 0.112 (Diverging)
+  r_rms = 10.37 ± 0.25 mm
+
+Trans3 (z=1700 mm) - PULSE 1:
+  ? = 0.410 ± 0.046 m
+  ? = 0.188 ± 0.056 (Converging)
+  r_rms = 7.17 ± 0.66 mm
+
+Exit (z=2700 mm) - PULSE 1:
+  ? = 0.364 ± 0.066 m
+  ? = -0.115 ± 0.121 (Diverging)
+  r_rms = 6.40 ± 0.68 mm
+
+Anode (z=254 mm) - PULSE 1:
+  ? = 0.251 ± 0.004 m
+  ? = 1.197 ± 0.066 (Converging)
+  r_rms = 4.85 ± 0.14 mm
+
+Trans1 (z=600 mm) - PULSE 1:
+  ? = 0.391 ± 0.034 m
+  ? = -1.228 ± 0.126 (Diverging)
+  r_rms = 5.66 ± 0.15 mm
+
+Trans2 (z=1000 mm) - PULSE 1:
+  ? = 0.799 ± 0.046 m
+  ? = -0.544 ± 0.104 (Diverging)
+  r_rms = 10.37 ± 0.23 mm
+
+Trans3 (z=1700 mm) - PULSE 1:
+  ? = 0.414 ± 0.043 m
+  ? = 0.195 ± 0.055 (Converging)
+  r_rms = 7.23 ± 0.63 mm
+
+Exit (z=2700 mm) - PULSE 1:
+  ? = 0.379 ± 0.073 m
+  ? = -0.107 ± 0.113 (Diverging)
+  r_rms = 6.59 ± 0.80 mm
+
+=== BETATRON-AVERAGED TWISS ANALYSIS - PULSE 2 ===
+Processing 7 snapshots...
+
+Anode (z=254 mm):
+  PULSE 1 (averaged over 7 snapshots):
+    ? = 0.251 ± 0.004 m
+    ? = 1.197 ± 0.066 (Converging)
+    ? = 9.686 ± 0.566 1/m
+    r_rms = 4.85 ± 0.14 mm
+  PULSE 2 (averaged over 7 snapshots):
+    ? = 0.246 ± 0.011 m
+    ? = 1.134 ± 0.053 (Converging)
+    ? = 9.295 ± 0.223 1/m
+    r_rms = 4.81 ± 0.09 mm
+  DIFFERENCE (P2 - P1):
+    ?? = -0.005 m (-2.1%)
+    ?? = -0.063
+    ?r_rms = -0.044 mm (-0.9%)
+
+Trans1 (z=600 mm):
+  PULSE 1 (averaged over 7 snapshots):
+    ? = 0.391 ± 0.034 m
+    ? = -1.228 ± 0.126 (Diverging)
+    ? = 6.435 ± 0.361 1/m
+    r_rms = 5.66 ± 0.15 mm
+  PULSE 2 (averaged over 7 snapshots):
+    ? = 0.371 ± 0.017 m
+    ? = -1.173 ± 0.075 (Diverging)
+    ? = 6.415 ± 0.344 1/m
+    r_rms = 5.61 ± 0.07 mm
+  DIFFERENCE (P2 - P1):
+    ?? = -0.020 m (-5.1%)
+    ?? = 0.054
+    ?r_rms = -0.048 mm (-0.9%)
+
+Trans2 (z=1000 mm):
+  PULSE 1 (averaged over 7 snapshots):
+    ? = 0.799 ± 0.046 m
+    ? = -0.544 ± 0.104 (Diverging)
+    ? = 1.633 ± 0.057 1/m
+    r_rms = 10.37 ± 0.23 mm
+  PULSE 2 (averaged over 7 snapshots):
+    ? = 0.816 ± 0.031 m
+    ? = -0.607 ± 0.061 (Diverging)
+    ? = 1.680 ± 0.061 1/m
+    r_rms = 10.55 ± 0.31 mm
+  DIFFERENCE (P2 - P1):
+    ?? = 0.018 m (2.2%)
+    ?? = -0.062
+    ?r_rms = 0.181 mm (1.7%)
+
+Trans3 (z=1700 mm):
+  PULSE 1 (averaged over 7 snapshots):
+    ? = 0.414 ± 0.043 m
+    ? = 0.195 ± 0.055 (Converging)
+    ? = 2.535 ± 0.217 1/m
+    r_rms = 7.23 ± 0.63 mm
+  PULSE 2 (averaged over 7 snapshots):
+    ? = 0.462 ± 0.037 m
+    ? = 0.204 ± 0.051 (Converging)
+    ? = 2.268 ± 0.145 1/m
+    r_rms = 7.66 ± 0.35 mm
+  DIFFERENCE (P2 - P1):
+    ?? = 0.049 m (11.8%)
+    ?? = 0.009
+    ?r_rms = 0.436 mm (6.0%)
+
+Exit (z=2700 mm):
+  PULSE 1 (averaged over 7 snapshots):
+    ? = 0.379 ± 0.073 m
+    ? = -0.107 ± 0.113 (Diverging)
+    ? = 2.789 ± 0.562 1/m
+    r_rms = 6.59 ± 0.80 mm
+  PULSE 2 (averaged over 7 snapshots):
+    ? = 0.436 ± 0.110 m
+    ? = -0.183 ± 0.154 (Diverging)
+    ? = 2.532 ± 0.549 1/m
+    r_rms = 7.28 ± 1.32 mm
+  DIFFERENCE (P2 - P1):
+    ?? = 0.057 m (15.0%)
+    ?? = -0.077
+    ?r_rms = 0.684 mm (10.4%)
+
+=== BETATRON WAVELENGTH ESTIMATION ===
+Anode (z=254 mm):
+  ? = 0.251 m ? ?_? = 1.58 m
+  Expected oscillation period: ~5.6 ns at v?0.94c
+  Observed ? variation: 0.011 m (4.4% of mean)
+Trans1 (z=600 mm):
+  ? = 0.391 m ? ?_? = 2.46 m
+  Expected oscillation period: ~8.7 ns at v?0.94c
+  Observed ? variation: 0.094 m (24.0% of mean)
+Trans2 (z=1000 mm):
+  ? = 0.799 m ? ?_? = 5.02 m
+  Expected oscillation period: ~17.8 ns at v?0.94c
+  Observed ? variation: 0.141 m (17.7% of mean)
+Trans3 (z=1700 mm):
+  ? = 0.414 m ? ?_? = 2.60 m
+  Expected oscillation period: ~9.2 ns at v?0.94c
+  Observed ? variation: 0.130 m (31.4% of mean)
+Exit (z=2700 mm):
+  ? = 0.379 m ? ?_? = 2.38 m
+  Expected oscillation period: ~8.4 ns at v?0.94c
+  Observed ? variation: 0.198 m (52.4% of mean)
+
+? Multi-pulse betatron-averaged Twiss saved (both pulses)
+
+=== PHASE-AVERAGED TWISS PARAMETERS (EXPORT) ===
+Location     |        ? (m) |            ? |   r_rms (mm) | Significance
+-------------+--------------+--------------+--------------+-------------
+Anode P1     | 0.251±0.004 | 1.197±0.066 |   4.9±0.1 | Converging  
+Anode P2     | 0.246±0.011 | 1.134±0.053 |   4.8±0.1 | t=0.70 
+
+Trans1 P1    | 0.391±0.034 | -1.228±0.126 |   5.7±0.2 | Diverging   
+Trans1 P2    | 0.371±0.017 | -1.173±0.075 |   5.6±0.1 | t=0.77 
+
+Trans2 P1    | 0.799±0.046 | -0.544±0.104 |  10.4±0.2 | Diverging   
+Trans2 P2    | 0.816±0.031 | -0.607±0.061 |  10.5±0.3 | t=1.26 
+
+Trans3 P1    | 0.414±0.043 | 0.195±0.055 |   7.2±0.6 | Converging  
+Trans3 P2    | 0.462±0.037 | 0.204±0.051 |   7.7±0.4 | t=1.60 *
+
+Exit P1      | 0.379±0.073 | -0.107±0.113 |   6.6±0.8 | Diverging   
+Exit P2      | 0.436±0.110 | -0.183±0.154 |   7.3±1.3 | t=1.17 
+
+*** = statistically significant difference (t > 2.0)
+* = marginally significant (t > 1.5)
+>>
