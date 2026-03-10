@@ -60,7 +60,7 @@ solenoid27_field = 0.0025;  % Drift solenoid 23 at 3615.91mm
 solenoid28_field = 0.0025;  % Drift solenoid 24 at 3738.87mm
 solenoid29_field = 0.0025;  % Drift solenoid 25 at 3840.58mm
 solenoid30_field = 0.0025;  % Drift solenoid 26 at 3963.54mm
-solenoid31_field = 0.0015;  % Drift solenoid 27 at 4065.24mm
+solenoid31_field = 0.0025;  % Drift solenoid 27 at 4065.24mm
 solenoid32_field = 0.0030;  % Drift solenoid 28 at 4188.20mm
 solenoid33_field = 0.0030;  % Drift solenoid 29 at 4289.93mm
 solenoid34_field = 0.0030;  % Drift solenoid 30 at 4412.89mm
@@ -93,29 +93,27 @@ TWISS_PULSE2_TIME = 405e-9;      % Middle of Pulse 2 flat-top
 ENABLE_BETATRON_AVERAGING = true;  % Master toggle
 %ENABLE_BETATRON_AVERAGING = false;  % Master toggle 2
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% new dual pulse configuration %%%%%%%%%%%%%%%%%%%%%%%%%
-% REGULAR MULTIPULSE OPTION IN UNTITLED25
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% QUICK_TEST_OPTION %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Updated 03.09.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ==================== MULTI-PULSE CONFIGURATION ====================
 %ENABLE_MULTIPULSE = true;  % Keep enabled
 ENABLE_MULTIPULSE = false;  % Single pulse operation
 
 if ENABLE_BETATRON_AVERAGING == true
     if ENABLE_MULTIPULSE == true
-        % Multi-pulse mode: P1 and P2 snapshots
-        SNAPSHOT_P1_TIMES = [195e-9, 200e-9, 205e-9, 210e-9, 215e-9, 220e-9, 225e-9];
-        SNAPSHOT_P2_TIMES = [395e-9, 400e-9, 405e-9, 410e-9, 415e-9, 420e-9, 425e-9];
-        % Pulse 3 snapshots (NEW - add after P2)
-        SNAPSHOT_P3_TIMES = [570e-9, 575e-9, 580e-9, 585e-9, 590e-9, 595e-9, 600e-9];
-        %ADD THIS LINE after SNAPSHOT_P3_TIMES:
-        SNAPSHOT_P4_TIMES = [770e-9, 775e-9, 780e-9, 785e-9, 790e-9, 795e-9, 800e-9];
-        N_SNAPSHOTS = 7;
-        % ===== ADD THIS SAFETY CHECK =====
-        N_SNAPSHOTS_EARLY = N_SNAPSHOTS;  % For consistency
+        % Multi-pulse mode: 11 snapshots per pulse, 3ns spacing
+        
+        SNAPSHOT_P1_TIMES = [220e-9, 223e-9, 226e-9, 229e-9, 232e-9, 235e-9, 238e-9, 241e-9, 244e-9, 247e-9, 250e-9];
+        SNAPSHOT_P2_TIMES = [420e-9, 423e-9, 426e-9, 429e-9, 432e-9, 435e-9, 438e-9, 441e-9, 444e-9, 447e-9, 450e-9];
+        SNAPSHOT_P3_TIMES = [620e-9, 623e-9, 626e-9, 629e-9, 632e-9, 635e-9, 638e-9, 641e-9, 644e-9, 647e-9, 650e-9];
+        SNAPSHOT_P4_TIMES = [820e-9, 823e-9, 826e-9, 829e-9, 832e-9, 835e-9, 838e-9, 841e-9, 844e-9, 847e-9, 850e-9];
+        N_SNAPSHOTS = 11;
+        
+        % Early/late snapshots for consistency
+        N_SNAPSHOTS_EARLY = N_SNAPSHOTS;
         N_SNAPSHOTS_LATE = N_SNAPSHOTS;
-        SNAPSHOT_EARLY_TIMES = [165e-9, 168e-9, 171e-9, 174e-9, 177e-9, 180e-9, 183e-9];
-        %SNAPSHOT_LATE_TIMES  = [210e-9, 213e-9, 216e-9, 219e-9, 222e-9, 225e-9, 228e-9];
-        SNAPSHOT_LATE_TIMES  = [227e-9, 230e-9, 233e-9, 236e-9, 239e-9, 242e-9, 245e-9];
+
+        SNAPSHOT_EARLY_TIMES = [195e-9, 198e-9, 201e-9, 204e-9, 207e-9, 210e-9, 213e-9, 216e-9, 219e-9, 222e-9, 225e-9];
+        SNAPSHOT_LATE_TIMES  = [250e-9, 253e-9, 256e-9, 259e-9, 262e-9, 265e-9, 268e-9, 271e-9, 274e-9, 277e-9, 280e-9];
         
         fprintf('\n=== BETATRON AVERAGING MODE (MULTI-PULSE) ===\n');
         fprintf('Snapshots per pulse: %d\n', N_SNAPSHOTS);
@@ -124,37 +122,30 @@ if ENABLE_BETATRON_AVERAGING == true
                 (SNAPSHOT_P1_TIMES(end)-SNAPSHOT_P1_TIMES(1))*1e9);
     else
         % Single-pulse mode: EARLY vs LATE for intra-pulse ion focusing study
-        % Early beam: 165-180ns (ions just starting to accumulate)
-        % Late beam: 210-225ns (ions have accumulated, ~300M ions present)
- %%%%%%%%%%%%%%%%%%%%%%%%%%% Updated 01.29.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %SNAPSHOT_EARLY_TIMES = [165e-9, 170e-9, 175e-9, 180e-9];
-        %SNAPSHOT_LATE_TIMES  = [210e-9, 215e-9, 220e-9, 225e-9];
-        % Change from 4 to 7 snapshots per window
-        SNAPSHOT_EARLY_TIMES = [165e-9, 168e-9, 171e-9, 174e-9, 177e-9, 180e-9, 183e-9];
-        SNAPSHOT_LATE_TIMES  = [210e-9, 213e-9, 216e-9, 219e-9, 222e-9, 225e-9, 228e-9];
+        % Early beam: 165-195ns (11 snapshots, 3ns spacing - ions just starting)
+        % Late beam: 220-250ns (11 snapshots, 3ns spacing - closer to pulse end at 270ns)
+        
+        SNAPSHOT_EARLY_TIMES = [195e-9, 198e-9, 201e-9, 204e-9, 207e-9, 210e-9, 213e-9, 216e-9, 219e-9, 222e-9, 225e-9];
+        SNAPSHOT_LATE_TIMES  = [250e-9, 253e-9, 256e-9, 259e-9, 262e-9, 265e-9, 268e-9, 271e-9, 274e-9, 277e-9, 280e-9];
 
         N_SNAPSHOTS_EARLY = length(SNAPSHOT_EARLY_TIMES);
         N_SNAPSHOTS_LATE = length(SNAPSHOT_LATE_TIMES);
- %%%%%%%%%%%%%%%%%%%%%%%%%% updated 02.25.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- % ADD after the existing early/late initialization:
- % Also initialize P1 mid-pulse snapshots for betatron averaging
-%       snapshot_p1 = cell(N_SNAPSHOTS, 1);
-%       snapshot_p1_count = 0;
-      
-        % Single pulse regime with ENABLE_BETATRON_AVERAGING == true
-        SNAPSHOT_P1_TIMES = [195e-9, 200e-9, 205e-9, 210e-9, 215e-9, 220e-9, 225e-9];
-        N_SNAPSHOTS = 7;
+        
+        % Also initialize P1 mid-pulse snapshots for betatron averaging compatibility
+        SNAPSHOT_P1_TIMES = [220e-9, 223e-9, 226e-9, 229e-9, 232e-9, 235e-9, 238e-9, 241e-9, 244e-9, 247e-9, 250e-9];
+        N_SNAPSHOTS = 11;
         
         fprintf('\n=== INTRA-PULSE ION FOCUSING MODE ===\n');
         fprintf('Early beam snapshots: %d (t=%.0f-%.0f ns, minimal ions)\n', ...
                 N_SNAPSHOTS_EARLY, SNAPSHOT_EARLY_TIMES(1)*1e9, SNAPSHOT_EARLY_TIMES(end)*1e9);
         fprintf('Late beam snapshots: %d (t=%.0f-%.0f ns, with ion focusing)\n', ...
                 N_SNAPSHOTS_LATE, SNAPSHOT_LATE_TIMES(1)*1e9, SNAPSHOT_LATE_TIMES(end)*1e9);
-        fprintf('Snapshot Pi times: %d (t=%.0f-%.0f ns, with ion focusing)\n', ...
+        fprintf('Snapshot P1 times: %d (t=%.0f-%.0f ns, mid-pulse reference)\n', ...
                 N_SNAPSHOTS, SNAPSHOT_P1_TIMES(1)*1e9, SNAPSHOT_P1_TIMES(end)*1e9);
         
-        % Estimate ion difference
+        % Estimate ion difference (late window now closer to pulse end)
         fprintf('Expected ion increase: ~50M → ~300M (6x growth)\n');
+        fprintf('Late window ends 20ns before pulse end (better ion accumulation capture)\n');
     end
 else
     % Legacy single snapshot mode
@@ -1449,31 +1440,38 @@ if ENABLE_ION_ACCUMULATION == true && mod(it, sc_interval) == 0
         valid_ion = ir_ion > 1 & ir_ion < sc_nr & jz_ion > 1 & jz_ion < sc_nz;
         ir_ion = ir_ion(valid_ion);
         jz_ion = jz_ion(valid_ion);
-        
-        if ~isempty(ir_ion)
-            % Vectorized field interpolation (all ion cells at once)
-            z_pts = sc_z(jz_ion)';
-            r_pts = sc_r(ir_ion)';
-            
-            E_z_local = interp2(z, r, Ez_capped, z_pts, r_pts, 'linear', 0);
-            E_r_local = interp2(z, r, Er_capped, z_pts, r_pts, 'linear', 0);
-            
-            if exist('Ez_sc', 'var')
-                lin_idx = sub2ind(size(Ez_sc), ir_ion, jz_ion);
-                E_z_local = E_z_local + Ez_sc(lin_idx)';
-                E_r_local = E_r_local + Er_sc(lin_idx)';
-            end
-            
-            % Update velocities (vectorized via linear indexing)
-            lin_idx_vz = sub2ind(size(ion_vz_grid), ir_ion, jz_ion);
-            ion_vz_grid(lin_idx_vz) = ion_physics.mobility * E_z_local;
-        end
-        
+  
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+ if ~isempty(ir_ion)
+    % Vectorized field interpolation (all ion cells at once)
+    z_pts = sc_z(jz_ion);
+    r_pts = sc_r(ir_ion);
+    
+    % FORCE COLUMN VECTORS (critical fix!)
+    z_pts = z_pts(:);
+    r_pts = r_pts(:);
+    
+    E_z_local = interp2(z, r, Ez_capped, z_pts, r_pts, 'linear', 0);
+    E_r_local = interp2(z, r, Er_capped, z_pts, r_pts, 'linear', 0);
+    
+    if exist('Ez_sc', 'var')
+        lin_idx = sub2ind(size(Ez_sc), ir_ion, jz_ion);
+        E_z_local = E_z_local + Ez_sc(lin_idx);
+        E_r_local = E_r_local + Er_sc(lin_idx);
+    end
+    
+    % Update velocities (vectorized via linear indexing)
+    lin_idx_vz = sub2ind(size(ion_vz_grid), ir_ion, jz_ion);
+    ion_vz_grid(lin_idx_vz) = ion_physics.mobility * E_z_local;
+end 
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Recombination every 1ns (every 100 timesteps at dt=10ps)
         if mod(it, 100) == 0
             decay_factor = exp(-dt * 100 / ion_physics.t_recomb_effective);
             ion_density_grid = ion_density_grid * decay_factor;
         end
+ 
     end
 end
 
@@ -1514,10 +1512,10 @@ if n_dep > 0
     % Region-dependent enhancement (vectorized)
     enhancement_vec = zeros(n_dep, 1);
     in_gap = z_active < 0.254;
-    enhancement_vec(in_gap) = 1.050 * 0.25;
-    enhancement_vec(~in_gap) = 0.950 * 0.25;
-    enhancement1 = 1.050 * 0.25;
-    enhancement2 = 0.950 * 0.25;
+    enhancement_vec(in_gap) = 1.050 * 0.10; % Changed from 0.25 down to 0.10
+    enhancement_vec(~in_gap) = 0.950 * 0.10;
+    enhancement1 = 1.050 * 0.10;
+    enhancement2 = 0.950 * 0.10;
     
     % Compute charge contributions (vectorized)
     charge_contrib = -enhancement_vec .* e_charge .* weight_particles(active_idx) ./ cell_vol;
@@ -1582,7 +1580,7 @@ end
         
         % Limit space charge (30%, 50%, 70% or 100% of max applied field)
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        sc_strength_factor = 3.0;  % Changed from 2.0 / 10.08.2025
+        sc_strength_factor = 2.0;  % Changed back from 3.0 / 10.08.2025
         max_sc = sc_strength_factor * 7.5e6;
         Ez_mag = max(abs(Ez_sc(:)));   
         if Ez_mag > max_sc
@@ -5816,7 +5814,7 @@ if ~isempty(active_idx)
     fprintf('Z range: %.1f to %.1f mm\n', min(z_test)*1000, max(z_test)*1000);
     fprintf('R range: %.1f to %.1f mm\n', min(r_test)*1000, max(r_test)*1000);
 end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 22 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 25 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ==================== POST-PROCESSING VISUALIZATION Pulse 1 Envelope====================
 % Add after simulation completes (after line 415)
 % Plot beam envelope evolution
@@ -5824,7 +5822,7 @@ figure('Position', [100 100 1400 800]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(2,1,1);
 % Find time indices with good statistics
-time_indices = 1500:1000:9500;  % Sample every 1000 steps
+time_indices = 1700:1000:9700;  % Sample every 1000 steps
 colors = jet(length(time_indices));
 hold on;
 
@@ -5938,7 +5936,7 @@ grid on;
 % Replace the subplot(2,1,2) section with:
 subplot(2,1,2);
 % Plot particle survival vs z at end of flat-top
-it_steady = 5500;  % During steady state
+it_steady = 5700;  % During steady state
 % Find non-zero data
 valid_data = n_particles_vs_z(it_steady, :) > 0;
 if any(valid_data)
@@ -5965,7 +5963,7 @@ figure('Position', [100 100 1400 800]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(2,1,1);
 % Find time indices with good statistics
-time_indices = 21500:1000:29500;  % +20000 Sample every 1000 steps
+time_indices = 21700:1000:29700;  % +20000 Sample every 1000 steps
 colors = jet(length(time_indices));
 hold on;
 
@@ -6079,7 +6077,7 @@ grid on;
 % Replace the subplot(2,1,2) section with:
 subplot(2,1,2);
 % Plot particle survival vs z at end of flat-top
-it_steady = 25000;  % During steady state
+it_steady = 25700;  % During steady state
 % Find non-zero data
 valid_data = n_particles_vs_z(it_steady, :) > 0;
 if any(valid_data)
@@ -6106,7 +6104,7 @@ figure('Position', [100 100 1400 800]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(2,1,1);
 % Find time indices with good statistics
-time_indices = 41500:1000:49500;  % +20000 Sample every 1000 steps
+time_indices = 41700:1000:49700;  % +20000 Sample every 1000 steps
 colors = jet(length(time_indices));
 hold on;
 
@@ -6220,7 +6218,7 @@ grid on;
 % Replace the subplot(2,1,2) section with:
 subplot(2,1,2);
 % Plot particle survival vs z at end of flat-top
-it_steady = 45000;  % During steady state
+it_steady = 45700;  % During steady state
 % Find non-zero data
 valid_data = n_particles_vs_z(it_steady, :) > 0;
 if any(valid_data)
@@ -6248,7 +6246,7 @@ figure('Position', [100 100 1400 800]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(2,1,1);
 % Find time indices with good statistics
-time_indices = 61500:1000:69500;  % +60000 Sample every 1000 steps
+time_indices = 61700:1000:69700;  % +60000 Sample every 1000 steps
 colors = jet(length(time_indices));
 hold on;
 
@@ -6348,7 +6346,7 @@ grid on;
 % Replace the subplot(2,1,2) section with:
 subplot(2,1,2);
 % Plot particle survival vs z at end of flat-top
-it_steady = 65000;  % During steady state
+it_steady = 65700;  % During steady state
 % Find non-zero data
 valid_data = n_particles_vs_z(it_steady, :) > 0;
 if any(valid_data)
