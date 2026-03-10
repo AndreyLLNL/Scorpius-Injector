@@ -102,18 +102,18 @@ if ENABLE_BETATRON_AVERAGING == true
     if ENABLE_MULTIPULSE == true
         % Multi-pulse mode: 11 snapshots per pulse, 3ns spacing
         
-        SNAPSHOT_P1_TIMES = [220e-9, 223e-9, 226e-9, 229e-9, 232e-9, 235e-9, 238e-9, 241e-9, 244e-9, 247e-9, 250e-9];
-        SNAPSHOT_P2_TIMES = [420e-9, 423e-9, 426e-9, 429e-9, 432e-9, 435e-9, 438e-9, 441e-9, 444e-9, 447e-9, 450e-9];
-        SNAPSHOT_P3_TIMES = [620e-9, 623e-9, 626e-9, 629e-9, 632e-9, 635e-9, 638e-9, 641e-9, 644e-9, 647e-9, 650e-9];
-        SNAPSHOT_P4_TIMES = [820e-9, 823e-9, 826e-9, 829e-9, 832e-9, 835e-9, 838e-9, 841e-9, 844e-9, 847e-9, 850e-9];
+        SNAPSHOT_P1_TIMES = [210e-9, 213e-9, 216e-9, 219e-9, 222e-9, 225e-9, 228e-9, 231e-9, 234e-9, 237e-9, 240e-9];
+        SNAPSHOT_P2_TIMES = [410e-9, 413e-9, 416e-9, 419e-9, 422e-9, 425e-9, 428e-9, 431e-9, 434e-9, 437e-9, 440e-9];
+        SNAPSHOT_P3_TIMES = [610e-9, 613e-9, 616e-9, 619e-9, 622e-9, 625e-9, 628e-9, 631e-9, 634e-9, 637e-9, 640e-9];
+        SNAPSHOT_P4_TIMES = [810e-9, 813e-9, 816e-9, 819e-9, 822e-9, 825e-9, 828e-9, 831e-9, 834e-9, 837e-9, 840e-9];
         N_SNAPSHOTS = 11;
         
         % Early/late snapshots for consistency
         N_SNAPSHOTS_EARLY = N_SNAPSHOTS;
         N_SNAPSHOTS_LATE = N_SNAPSHOTS;
 
-        SNAPSHOT_EARLY_TIMES = [195e-9, 198e-9, 201e-9, 204e-9, 207e-9, 210e-9, 213e-9, 216e-9, 219e-9, 222e-9, 225e-9];
-        SNAPSHOT_LATE_TIMES  = [250e-9, 253e-9, 256e-9, 259e-9, 262e-9, 265e-9, 268e-9, 271e-9, 274e-9, 277e-9, 280e-9];
+        SNAPSHOT_EARLY_TIMES = [190e-9, 193e-9, 196e-9, 199e-9, 202e-9, 205e-9, 208e-9, 211e-9, 214e-9, 217e-9, 220e-9];
+        SNAPSHOT_LATE_TIMES  = [220e-9, 223e-9, 226e-9, 229e-9, 232e-9, 235e-9, 238e-9, 241e-9, 244e-9, 247e-9, 250e-9];
         
         fprintf('\n=== BETATRON AVERAGING MODE (MULTI-PULSE) ===\n');
         fprintf('Snapshots per pulse: %d\n', N_SNAPSHOTS);
@@ -125,14 +125,14 @@ if ENABLE_BETATRON_AVERAGING == true
         % Early beam: 165-195ns (11 snapshots, 3ns spacing - ions just starting)
         % Late beam: 220-250ns (11 snapshots, 3ns spacing - closer to pulse end at 270ns)
         
-        SNAPSHOT_EARLY_TIMES = [195e-9, 198e-9, 201e-9, 204e-9, 207e-9, 210e-9, 213e-9, 216e-9, 219e-9, 222e-9, 225e-9];
-        SNAPSHOT_LATE_TIMES  = [250e-9, 253e-9, 256e-9, 259e-9, 262e-9, 265e-9, 268e-9, 271e-9, 274e-9, 277e-9, 280e-9];
-
+        SNAPSHOT_EARLY_TIMES = [190e-9, 193e-9, 196e-9, 199e-9, 202e-9, 205e-9, 208e-9, 211e-9, 214e-9, 217e-9, 220e-9];
+        SNAPSHOT_LATE_TIMES  = [220e-9, 223e-9, 226e-9, 229e-9, 232e-9, 235e-9, 238e-9, 241e-9, 244e-9, 247e-9, 250e-9];
+        
         N_SNAPSHOTS_EARLY = length(SNAPSHOT_EARLY_TIMES);
         N_SNAPSHOTS_LATE = length(SNAPSHOT_LATE_TIMES);
         
         % Also initialize P1 mid-pulse snapshots for betatron averaging compatibility
-        SNAPSHOT_P1_TIMES = [220e-9, 223e-9, 226e-9, 229e-9, 232e-9, 235e-9, 238e-9, 241e-9, 244e-9, 247e-9, 250e-9];
+        SNAPSHOT_P1_TIMES = [210e-9, 213e-9, 216e-9, 219e-9, 222e-9, 225e-9, 228e-9, 231e-9, 234e-9, 237e-9, 240e-9];
         N_SNAPSHOTS = 11;
         
         fprintf('\n=== INTRA-PULSE ION FOCUSING MODE ===\n');
@@ -1580,7 +1580,7 @@ end
         
         % Limit space charge (30%, 50%, 70% or 100% of max applied field)
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        sc_strength_factor = 2.0;  % Changed back from 3.0 / 10.08.2025
+        sc_strength_factor = 3.0;  % Changed from 2.0 / 10.08.2025
         max_sc = sc_strength_factor * 7.5e6;
         Ez_mag = max(abs(Ez_sc(:)));   
         if Ez_mag > max_sc
@@ -5822,7 +5822,7 @@ figure('Position', [100 100 1400 800]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(2,1,1);
 % Find time indices with good statistics
-time_indices = 1700:1000:9700;  % Sample every 1000 steps
+time_indices = 4500:500:9500;  % Sample every 1000 steps
 colors = jet(length(time_indices));
 hold on;
 
@@ -5936,7 +5936,7 @@ grid on;
 % Replace the subplot(2,1,2) section with:
 subplot(2,1,2);
 % Plot particle survival vs z at end of flat-top
-it_steady = 5700;  % During steady state
+it_steady = 7000;  % During steady state
 % Find non-zero data
 valid_data = n_particles_vs_z(it_steady, :) > 0;
 if any(valid_data)
@@ -5963,7 +5963,7 @@ figure('Position', [100 100 1400 800]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(2,1,1);
 % Find time indices with good statistics
-time_indices = 21700:1000:29700;  % +20000 Sample every 1000 steps
+time_indices = 24500:500:29500;  % +20000 Sample every 1000 steps
 colors = jet(length(time_indices));
 hold on;
 
@@ -6077,7 +6077,7 @@ grid on;
 % Replace the subplot(2,1,2) section with:
 subplot(2,1,2);
 % Plot particle survival vs z at end of flat-top
-it_steady = 25700;  % During steady state
+it_steady = 27000;  % During steady state
 % Find non-zero data
 valid_data = n_particles_vs_z(it_steady, :) > 0;
 if any(valid_data)
@@ -6104,7 +6104,7 @@ figure('Position', [100 100 1400 800]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(2,1,1);
 % Find time indices with good statistics
-time_indices = 41700:1000:49700;  % +20000 Sample every 1000 steps
+time_indices = 44500:500:49500;  % +20000 Sample every 1000 steps
 colors = jet(length(time_indices));
 hold on;
 
@@ -6218,7 +6218,7 @@ grid on;
 % Replace the subplot(2,1,2) section with:
 subplot(2,1,2);
 % Plot particle survival vs z at end of flat-top
-it_steady = 45700;  % During steady state
+it_steady = 47000;  % During steady state
 % Find non-zero data
 valid_data = n_particles_vs_z(it_steady, :) > 0;
 if any(valid_data)
@@ -6246,7 +6246,7 @@ figure('Position', [100 100 1400 800]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(2,1,1);
 % Find time indices with good statistics
-time_indices = 61700:1000:69700;  % +60000 Sample every 1000 steps
+time_indices = 64500:500:69500;  % +60000 Sample every 1000 steps
 colors = jet(length(time_indices));
 hold on;
 
@@ -6346,7 +6346,7 @@ grid on;
 % Replace the subplot(2,1,2) section with:
 subplot(2,1,2);
 % Plot particle survival vs z at end of flat-top
-it_steady = 65700;  % During steady state
+it_steady = 67000;  % During steady state
 % Find non-zero data
 valid_data = n_particles_vs_z(it_steady, :) > 0;
 if any(valid_data)
