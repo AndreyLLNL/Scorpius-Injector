@@ -1733,10 +1733,20 @@ end
             tz = t_factor .* Bz_local;
             tr = t_factor .* Br_local;
             
+            % First rotation: p' = p⁻ + p⁻ × t
+            pr_prime = pr_minus + ptheta_minus.*tz;
+            ptheta_prime = ptheta_minus + (pz_minus.*tr - pr_minus.*tz);
+            pz_prime = pz_minus - ptheta_minus.*tr;
+
+            % Compute s = 2t/(1 + t²)
             s_factor = 2./(1 + tz.^2 + tr.^2);
-            pz_plus = pz_minus + s_factor.*(pr_minus.*tr);
-            pr_plus = pr_minus + s_factor.*(ptheta_minus.*tz);
-            ptheta_plus = ptheta_minus + s_factor.*(pz_minus.*tr - pr_minus.*tz);
+            sr = s_factor .* tr;
+            sz = s_factor .* tz;
+
+            % Second rotation: p⁺ = p⁻ + p' × s
+            pz_plus = pz_minus - ptheta_prime.*sr;
+            pr_plus = pr_minus + ptheta_prime.*sz;
+            ptheta_plus = ptheta_minus + (pz_prime.*sr - pr_prime.*sz);
             
             % Second half push
             pz_particles(active_idx) = pz_plus - 0.5*e_charge*Ez_local*dt;
