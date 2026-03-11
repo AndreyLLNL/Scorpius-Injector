@@ -1077,6 +1077,15 @@ r_wall = 0.075;  % 75mm drift tube radius (unchanged)
 fprintf('Diagnostic grid: %d positions over %.1f m (dz=%.1f mm)\n', ...
         n_z_diagnostic, max(z_diagnostic), ...
         (z_diagnostic(2)-z_diagnostic(1))*1000);
+%% ==================== CREATE FIELD INTERPOLATION GRIDS ====================
+% Create meshgrid for field interpolation (do this ONCE before loop)
+fprintf('Creating field interpolation grids...\n');
+[Z_grid, R_grid] = meshgrid(z, r);  % [500 × 11000] grids matching Ez_capped
+[SC_Z_grid, SC_R_grid] = meshgrid(sc_z, sc_r);  % For space charge fields
+
+fprintf('  Z_grid: [%d × %d]\n', size(Z_grid, 1), size(Z_grid, 2));
+fprintf('  R_grid: [%d × %d]\n', size(R_grid, 1), size(R_grid, 2));
+fprintf('  SC grids: [%d × %d]\n', size(SC_Z_grid, 1), size(SC_Z_grid, 2));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ==================== MAIN TIME LOOP ====================
 fprintf('\nStarting simulation...\n');
@@ -1702,46 +1711,61 @@ end
             %Ez_local = interp2(z, r, Ez_capped, z_active, r_active, 'linear', 0);
             %Er_local = interp2(z, r, Er_capped, z_active, r_active, 'linear', 0);
 
-            Ez_local = interp2(z, r, Ez_capped, z_clamped, r_clamped, 'linear', 0);
-            Er_local = interp2(z, r, Er_capped, z_clamped, r_clamped, 'linear', 0);
+            Ez_local = interp2(Z_grid, R_grid, Ez_capped, z_clamped, r_clamped, 'linear', 0);
+            Er_local = interp2(Z_grid, R_grid, Er_capped, z_clamped, r_clamped, 'linear', 0);
             
             Ez_local = Ez_local * pulse_factor;
             Er_local = Er_local * pulse_factor;
             
             % Add space charge
             if ENABLE_SPACE_CHARGE && exist('Ez_sc', 'var') && any(Ez_sc(:) ~= 0)
-                Ez_sc_local = interp2(sc_z, sc_r, Ez_sc, z_active, r_active, 'linear', 0);
-                Er_sc_local = interp2(sc_z, sc_r, Er_sc, z_active, r_active, 'linear', 0);
+                Ez_sc_local = interp2(SC_Z_grid, SC_R_grid, Ez_sc, z_clamped, r_clamped, 'linear', 0);
+                Er_sc_local = interp2(SC_Z_grid, SC_R_grid, Er_sc, z_clamped, r_clamped, 'linear', 0);
                 
                 Ez_local = Ez_local + Ez_sc_local;
                 Er_local = Er_local + Er_sc_local;
             end
             
-            % Boris push
+            %% ==================== CORRECTED BORIS PUSHER ====================
+            % First half electric push: p⁻ = p - (|e|/2)E·dt  (q_electron = -e_charge)
             pz_minus = pz_particles(active_idx) - 0.5*e_charge*Ez_local*dt;
             pr_minus = pr_particles(active_idx) - 0.5*e_charge*Er_local*dt;
             ptheta_minus = ptheta_particles(active_idx);
             
-            % Magnetic field
+            % Magnetic field at particle positions
             Bz_local = Bz_func(z_active, r_active, current_t);
             Br_local = Br_func(z_active, r_active, current_t);
             
+            % Compute gamma for relativistic correction
             p_mag = sqrt(pz_minus.^2 + pr_minus.^2 + ptheta_minus.^2);
             gamma_minus = sqrt(1 + (p_mag/(m_e*c)).^2);
             
+            % Rotation vectors t = (q*dt/2γm) * B
             t_factor = -e_charge*dt./(2*gamma_minus*m_e);
             tz = t_factor .* Bz_local;
             tr = t_factor .* Br_local;
             
-            s_factor = 2./(1 + tz.^2 + tr.^2);
-            pz_plus = pz_minus + s_factor.*(pr_minus.*tr);
-            pr_plus = pr_minus + s_factor.*(ptheta_minus.*tz);
-            ptheta_plus = ptheta_minus + s_factor.*(pz_minus.*tr - pr_minus.*tz);
+            % STEP 1: First rotation p' = p⁻ + p⁻ × t
+            % Cross product in cylindrical: (pr, pθ, pz) × (tr, 0, tz)
+            pr_prime = pr_minus + ptheta_minus.*tz;
+            ptheta_prime = ptheta_minus + (pz_minus.*tr - pr_minus.*tz);
+            pz_prime = pz_minus - ptheta_minus.*tr;
             
-            % Second half push
+            % STEP 2: Compute s = 2t/(1 + t²)
+            s_factor = 2./(1 + tz.^2 + tr.^2);
+            sr = s_factor .* tr;
+            sz = s_factor .* tz;
+            
+            % STEP 3: Second rotation p⁺ = p⁻ + p' × s
+            pz_plus = pz_minus - ptheta_prime.*sr;
+            pr_plus = pr_minus + ptheta_prime.*sz;
+            ptheta_plus = ptheta_minus + (pz_prime.*sr - pr_prime.*sz);
+            
+            % Second half electric push: p_new = p⁺ - (|e|/2)E·dt  (q_electron = -e_charge)
             pz_particles(active_idx) = pz_plus - 0.5*e_charge*Ez_local*dt;
             pr_particles(active_idx) = pr_plus - 0.5*e_charge*Er_local*dt;
             ptheta_particles(active_idx) = ptheta_plus;
+            %% ==================== END BORIS PUSHER ====================
        
        
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
