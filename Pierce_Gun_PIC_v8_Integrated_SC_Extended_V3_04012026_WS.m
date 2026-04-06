@@ -1,3300 +1,2200 @@
-%%MATLAB model Pierce_Gun_PIC_v8_Integrated_SC_Extended_V2.m
-%%Tis particular folder dedicated to tests with longer and softer AK pulse modulation
-%% Pierce_Gun_PIC_v8_Integrated_SC.m - Complete with Space Charge
-% Performance-optimized PIC simulator for extended domain (0-2760mm)
-% Includes space charge, magnetic fields, ion accumulation and full diagnostics
-%Focus on pulse to pulse lensing in  multi-pulse mode, four pulses
-% Date: 2025-11-06
-%pulse_config.n_pulses=4; % Line 229
-
-%% V2 CHANGELOG (2026-03-05):
-%  - Vectorized Poisson SOR solver (10-30x speedup)
-%  - Vectorized charge deposition using accumarray (20-50x speedup)
-%  - Vectorized ion-to-space-charge contribution (5-10x speedup)
-%  - Vectorized ion drift calculation (5-10x speedup)
-%  - Eliminated redundant find(active_particles) calls (5x speedup)
-%  - Overall expected main loop speedup: 3-5x
+%% Pierce_Gun_PIC_V3.m
+%% Clean rebuild from verified blocks — 2026-03-18
+%% Based on V2_3 with the following fixes applied:
+%%   [FIX-11] Duplicate position update (UPDATE POSITIONS block) deleted
+%%   [FIX-11] All crossing detection moved inside push block, after single z update
+%%   [FIX-10] particle_KE_at_anode and particle_KE_at_exit recorded at crossing
+%%   [FIX-10] Exited particles removed from active set immediately at exit crossing
+%%   Duplicate diagnostic blocks removed
+%%   gamma_particles updated inside push block (was in deleted UPDATE POSITION
 
 clear all; close all; clc;
 
-fprintf('\n=== Pierce_Gun_PIC_v8_Integrated_SC_Extended_V2.m ===\n');
+fprintf('\n=== Pierce_Gun_PIC_v8_Integrated_SC_Extended_V3_04012026_WS.m ===\n');
+fprintf('Single-pulse, PRODUCTION mode, SC enabled\n\n');
 
-%% ==================== CONFIGURATION ====================
-simulation_mode = 'PRODUCTION';  % 'QUICK_TEST', 'OPTIMIZATION', 'PRODUCTION'
-%simulation_mode = 'QUICK_TEST';  % 'QUICK_TEST', 'OPTIMIZATION', 'PRODUCTION'
-%ENABLE_SPACE_CHARGE = false;      % Toggle for A/B testing false or true
-ENABLE_SPACE_CHARGE = true;      % Toggle for A/B testing false or true
-%%%%%%%%%%%%%%%%%%%%% Complete Solenoids Listing 02.12.2026 %%%%%%%%%%%%%%%%%%%
+%% ==================== MASTER SWITCHES ====================
+simulation_mode      = 'PRODUCTION';
+ENABLE_SPACE_CHARGE  = true;
+ENABLE_MULTIPULSE    = false;   % single pulse for Test 102
+ENABLE_BETATRON_AVERAGING   = true;
+ENABLE_GAS_SCATTERING       = true;
+ENABLE_ION_ACCUMULATION     = true;
+ENABLE_SNAPSHOTS            = true;
+ENABLE_INTERPULSE_SNAPSHOT  = false;  % not used in single-pulse mode
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== SOLENOID FIELD STRENGTHS (ALL 49) ====================
-% Original solenoids 1-19 (EXISTING - no changes needed)
-solenoid1_field = -0.0450;  % Cathode solenoid at z = -279 mm
-solenoid2_field = 0.0135;   % Anode Solenoid at z = 372 mm
-solenoid3_field = 0.0075;   % Drift solenoid 1 at 1144.61mm
-solenoid4_field = 0.0075;   % Drift solenoid 2 at 1267.57mm
-solenoid5_field = 0.0050;   % Drift solenoid 3 at 1369.27mm
-% solenoid6 = Steering magnet (OFF)
-solenoid7_field = 0.0025;   % Drift solenoid 4 at 1492.23mm
-solenoid8_field = 0.0025;   % Drift solenoid 5 at 1593.93mm
-solenoid9_field = 0.0025;   % Drift solenoid 6 at 1716.89mm
-solenoid10_field = 0.0025;  % Drift solenoid 7 at 1818.60mm
-solenoid11_field = 0.0020;  % Drift solenoid 8 at 1941.56mm
-solenoid12_field = 0.0020;  % Drift solenoid 9 at 2043.26mm
-% solenoid13 = Steering magnet (OFF)
-solenoid14_field = 0.0020;  % Drift solenoid 10 at 2166.22mm
-solenoid15_field = 0.0020;  % Drift solenoid 11 at 2267.93mm
-solenoid16_field = 0.0015;  % Drift solenoid 12 at 2390.89mm
-solenoid17_field = 0.0015;  % Drift solenoid 13 at 2492.59mm
-solenoid18_field = 0.0015;  % Drift solenoid 14 at 2615.55mm
-solenoid19_field = 0.0015;  % Drift solenoid 15 at 2717.26mm
-% ==================== EXTENDED SOLENOIDS 20-49 (NEW) ====================
-solenoid20_field = 0.0015;  % Drift solenoid 16 at 2840.22mm
-solenoid21_field = 0.0015;  % Drift solenoid 17 at 2941.92mm
-solenoid22_field = 0.0015;  % Drift solenoid 18 at 3064.88mm
-solenoid23_field = 0.0015;  % Drift solenoid 19 at 3166.58mm
-solenoid24_field = 0.0015;  % Drift solenoid 20 at 3289.54mm
-solenoid25_field = 0.0015;  % Drift solenoid 21 at 3391.25mm
-solenoid26_field = 0.0015;  % Drift solenoid 22 at 3514.21mm
-solenoid27_field = 0.0015;  % Drift solenoid 23 at 3615.91mm
-solenoid28_field = 0.0015;  % Drift solenoid 24 at 3738.87mm
-solenoid29_field = 0.0015;  % Drift solenoid 25 at 3840.58mm
-solenoid30_field = 0.0015;  % Drift solenoid 26 at 3963.54mm
-solenoid31_field = 0.0015;  % Drift solenoid 27 at 4065.24mm
-solenoid32_field = 0.0015;  % Drift solenoid 28 at 4188.20mm
-solenoid33_field = 0.0015;  % Drift solenoid 29 at 4289.93mm
-solenoid34_field = 0.0015;  % Drift solenoid 30 at 4412.89mm
-solenoid35_field = 0.0015;  % Drift solenoid 31 at 4514.59mm
-solenoid36_field = 0.0015;  % Drift solenoid 32 at 4637.55mm
-% solenoid37 = Steering magnet 3 at 4677.00mm (OFF)
-solenoid38_field = 0.0015;  % Drift solenoid 33 at 4739.25mm
-solenoid39_field = 0.0015;  % Drift solenoid 34 at 4862.21mm
-solenoid40_field = 0.0015;  % Drift solenoid 35 at 4963.92mm
-solenoid41_field = 0.0015;  % Drift solenoid 36 at 5086.88mm
-solenoid42_field = 0.0015;  % Drift solenoid 37 at 5188.58mm
-solenoid43_field = 0.0015;  % Drift solenoid 38 at 5311.54mm
-% solenoid44 = Steering magnet 4 at 5377.00mm (OFF)
-solenoid45_field = 0.0015;  % Drift solenoid 39 at 5413.24mm
-solenoid46_field = 0.0015;  % Drift solenoid 40 at 5536.20mm
-solenoid47_field = 0.0015;  % Drift solenoid 41 at 5637.91mm
-solenoid48_field = 0.0015;  % Drift solenoid 42 at 5760.87mm
-solenoid49_field = 0.0015;  % Drift solenoid 43 at 7448.00mm (LAST SOLENOID)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== SNAPSHOT TIMING CONFIGURATION ====================
-% TWISS ANALYSIS TIMING CONFIGURATION
-TWISS_PULSE1_TIME = 205e-9;      % Middle of Pulse 1 flat-top
-TWISS_PULSE2_TIME = 405e-9;      % Middle of Pulse 2 flat-top
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% Corrected BETATRON AVERAGING Setup %%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 01.26.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== STEP 1: SNAPSHOT TIMING CONFIGURATION ====================
-% Place this at the top of your code (around line 50)
+%% ==================== DIAGNOSTIC TRACKING VARIABLES ====================
+step_history      = [];
+wall_loss_history = [];
+fprintf('Diagnostic tracking initialized.\n');
 
-% Multi-snapshot configuration for betatron averaging
-ENABLE_BETATRON_AVERAGING = true;  % Master toggle
-%ENABLE_BETATRON_AVERAGING = false;  % Master toggle 2
+%% ==================== SOLENOID FIELD STRENGTHS ====================
+solenoid1_field  = -0.0450;
+solenoid2_field  =  0.0185;
+solenoid3_field  =  0.0070;
+solenoid4_field  =  0.0050;
+solenoid5_field  =  0.0020;
+solenoid7_field  =  0.0015;
+solenoid8_field  =  0.0013;
+solenoid9_field  =  0.0012;
+solenoid10_field =  0.0012;
+solenoid11_field =  0.0012;
+solenoid12_field =  0.0012;
+solenoid14_field =  0.0012;
+solenoid15_field =  0.0012;
+solenoid16_field =  0.0012;
+solenoid17_field =  0.0012;
+solenoid18_field =  0.0012;
+solenoid19_field =  0.0012;
+solenoid20_field =  0.0012;
+solenoid21_field =  0.0012;
+solenoid22_field =  0.0012;
+solenoid23_field =  0.0012;
+solenoid24_field =  0.0012;
+solenoid25_field =  0.0012;
+solenoid26_field =  0.0012;
+solenoid27_field =  0.0012;
+solenoid28_field =  0.0012;
+solenoid29_field =  0.0012;
+solenoid30_field =  0.0012;
+solenoid31_field =  0.0012;
+solenoid32_field =  0.0012;
+solenoid33_field =  0.0012;
+solenoid34_field =  0.0012;
+solenoid35_field =  0.0012;
+solenoid36_field =  0.0012;
+solenoid38_field =  0.0012;
+solenoid39_field =  0.0012;
+solenoid40_field =  0.0012;
+solenoid41_field =  0.0015;
+solenoid42_field =  0.0015;
+solenoid43_field =  0.0015;
+solenoid45_field =  0.0015;
+solenoid46_field =  0.0015;
+solenoid47_field =  0.0020;
+solenoid48_field =  0.0035;
+solenoid49_field =  0.0075;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% new dual pulse configuration %%%%%%%%%%%%%%%%%%%%%%%%%
-% REGULAR MULTIPULSE OPTION IN UNTITLED25
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% QUICK_TEST_OPTION %%%%%%%%%%%%%%%%%%%%%%
-%% ==================== MULTI-PULSE CONFIGURATION ====================
-%ENABLE_MULTIPULSE = true;  % Keep enabled
-ENABLE_MULTIPULSE = false;  % Single pulse operation
+%% ==================== SNAPSHOT TIMING ====================
+TWISS_PULSE1_TIME = 205e-9;
 
-if ENABLE_BETATRON_AVERAGING == true
-    if ENABLE_MULTIPULSE == true
-        % Multi-pulse mode: P1 and P2 snapshots
-        SNAPSHOT_P1_TIMES = [195e-9, 200e-9, 205e-9, 210e-9, 215e-9, 220e-9, 225e-9];
-        SNAPSHOT_P2_TIMES = [395e-9, 400e-9, 405e-9, 410e-9, 415e-9, 420e-9, 425e-9];
-        % Pulse 3 snapshots (NEW - add after P2)
-        SNAPSHOT_P3_TIMES = [570e-9, 575e-9, 580e-9, 585e-9, 590e-9, 595e-9, 600e-9];
-        %ADD THIS LINE after SNAPSHOT_P3_TIMES:
-        SNAPSHOT_P4_TIMES = [770e-9, 775e-9, 780e-9, 785e-9, 790e-9, 795e-9, 800e-9];
-        N_SNAPSHOTS = 7;
-        % ===== ADD THIS SAFETY CHECK =====
-        N_SNAPSHOTS_EARLY = N_SNAPSHOTS;  % For consistency
-        N_SNAPSHOTS_LATE = N_SNAPSHOTS;
-        SNAPSHOT_EARLY_TIMES = [165e-9, 168e-9, 171e-9, 174e-9, 177e-9, 180e-9, 183e-9];
-        %SNAPSHOT_LATE_TIMES  = [210e-9, 213e-9, 216e-9, 219e-9, 222e-9, 225e-9, 228e-9];
-        SNAPSHOT_LATE_TIMES  = [227e-9, 230e-9, 233e-9, 236e-9, 239e-9, 242e-9, 245e-9];
-        
-        fprintf('\n=== BETATRON AVERAGING MODE (MULTI-PULSE) ===\n');
-        fprintf('Snapshots per pulse: %d\n', N_SNAPSHOTS);
-        fprintf('Temporal spacing: %.1f ns\n', (SNAPSHOT_P1_TIMES(2)-SNAPSHOT_P1_TIMES(1))*1e9);
-        fprintf('Total window: %.1f ns (~1 betatron period)\n', ...
-                (SNAPSHOT_P1_TIMES(end)-SNAPSHOT_P1_TIMES(1))*1e9);
-    else
-        % Single-pulse mode: EARLY vs LATE for intra-pulse ion focusing study
-        % Early beam: 165-180ns (ions just starting to accumulate)
-        % Late beam: 210-225ns (ions have accumulated, ~300M ions present)
- %%%%%%%%%%%%%%%%%%%%%%%%%%% Updated 01.29.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %SNAPSHOT_EARLY_TIMES = [165e-9, 170e-9, 175e-9, 180e-9];
-        %SNAPSHOT_LATE_TIMES  = [210e-9, 215e-9, 220e-9, 225e-9];
-        % Change from 4 to 7 snapshots per window
-        SNAPSHOT_EARLY_TIMES = [165e-9, 168e-9, 171e-9, 174e-9, 177e-9, 180e-9, 183e-9];
-        SNAPSHOT_LATE_TIMES  = [210e-9, 213e-9, 216e-9, 219e-9, 222e-9, 225e-9, 228e-9];
+SNAPSHOT_EARLY_TIMES = [190e-9,193e-9,196e-9,199e-9,202e-9, ...
+                        205e-9,208e-9,211e-9,214e-9,217e-9,220e-9];
+SNAPSHOT_LATE_TIMES  = [220e-9,223e-9,226e-9,229e-9,232e-9, ...
+                        235e-9,238e-9,241e-9,244e-9,247e-9,250e-9];
+SNAPSHOT_P1_TIMES    = [205e-9,208e-9,211e-9,214e-9,217e-9, ...
+                        220e-9,223e-9,226e-9,229e-9,232e-9,235e-9];
+N_SNAPSHOTS       = 11;
+N_SNAPSHOTS_EARLY = length(SNAPSHOT_EARLY_TIMES);
+N_SNAPSHOTS_LATE  = length(SNAPSHOT_LATE_TIMES);
 
-        N_SNAPSHOTS_EARLY = length(SNAPSHOT_EARLY_TIMES);
-        N_SNAPSHOTS_LATE = length(SNAPSHOT_LATE_TIMES);
- %%%%%%%%%%%%%%%%%%%%%%%%%% updated 02.25.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- % ADD after the existing early/late initialization:
- % Also initialize P1 mid-pulse snapshots for betatron averaging
-%       snapshot_p1 = cell(N_SNAPSHOTS, 1);
-%       snapshot_p1_count = 0;
-      
-        % Single pulse regime with ENABLE_BETATRON_AVERAGING == true
-        SNAPSHOT_P1_TIMES = [195e-9, 200e-9, 205e-9, 210e-9, 215e-9, 220e-9, 225e-9];
-        N_SNAPSHOTS = 7;
-        
-        fprintf('\n=== INTRA-PULSE ION FOCUSING MODE ===\n');
-        fprintf('Early beam snapshots: %d (t=%.0f-%.0f ns, minimal ions)\n', ...
-                N_SNAPSHOTS_EARLY, SNAPSHOT_EARLY_TIMES(1)*1e9, SNAPSHOT_EARLY_TIMES(end)*1e9);
-        fprintf('Late beam snapshots: %d (t=%.0f-%.0f ns, with ion focusing)\n', ...
-                N_SNAPSHOTS_LATE, SNAPSHOT_LATE_TIMES(1)*1e9, SNAPSHOT_LATE_TIMES(end)*1e9);
-        fprintf('Snapshot Pi times: %d (t=%.0f-%.0f ns, with ion focusing)\n', ...
-                N_SNAPSHOTS, SNAPSHOT_P1_TIMES(1)*1e9, SNAPSHOT_P1_TIMES(end)*1e9);
-        
-        % Estimate ion difference
-        fprintf('Expected ion increase: ~50M → ~300M (6x growth)\n');
-    end
-else
-    % Legacy single snapshot mode
-    SNAPSHOT_P1_TIMES = 205e-9;
-    N_SNAPSHOTS = 1;
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+fprintf('=== INTRA-PULSE ION FOCUSING MODE ===\n');
+fprintf('Early snapshots: %d  (t=%.0f-%.0f ns)\n', ...
+        N_SNAPSHOTS_EARLY, ...
+        SNAPSHOT_EARLY_TIMES(1)*1e9, SNAPSHOT_EARLY_TIMES(end)*1e9);
+fprintf('Late  snapshots: %d  (t=%.0f-%.0f ns)\n', ...
+        N_SNAPSHOTS_LATE, ...
+        SNAPSHOT_LATE_TIMES(1)*1e9, SNAPSHOT_LATE_TIMES(end)*1e9);
 
 %% ==================== LOAD RESOURCES ====================
-fprintf('================================================================\n');
-fprintf('  PIERCE GUN PIC v8 - WITH SPACE CHARGE                        \n');
+fprintf('\n================================================================\n');
+fprintf('  PIERCE GUN PIC V3 — SINGLE PULSE, SC ENABLED\n');
 fprintf('================================================================\n\n');
 
-% Check required files
-%if ~exist('pierce_gun_geometry_extended_scale_1.mat', 'file')
-if ~exist('pierce_gun_lego_theta80_gap10_recess20.mat', 'file')    
-    error('Geometry file not found. Run geometry builder first.');
+if ~exist('pierce_gun_lego_theta68_gap0_recess0.mat','file')
+    error('Geometry file not found.');
 end
-if ~exist('pierce_gun_field_solution_ready.mat', 'file')
-    error('Field solution not found. Run field solver first.');
+if ~exist('pierce_gun_field_solution_ready.mat','file')
+    error('Field solution not found.');
 end
 
-% Load geometry and fields
 fprintf('Loading resources...\n');
-%load('pierce_gun_geometry_extended_scale_1.mat');
-%load('pierce_gun_lego_theta80_gap10_recess20.mat');
 load('pierce_gun_lego_theta68_gap0_recess0.mat');
-
-%load('pierce_gun_field_solution_capped.mat');
 load('pierce_gun_field_solution_ready.mat');
+fprintf('  Geometry loaded (mesh: %dx%d)\n', nz, nr);
+fprintf('  Fields loaded   (max E: %.1f MV/m)\n', max(abs(Ez_capped(:)))/1e6);
 
-fprintf('  ✓ Geometry loaded (mesh: %dx%d)\n', nz, nr);
-fprintf('  ✓ Fields loaded (max E: %.1f MV/m)\n', max(abs(Ez_capped(:)))/1e6);
-%%%%%%%%%%%%%%%%%%%%%%%%% added 02.25.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================================================================================
-%% FIX 1b: ALSO ADD THIS AT PIC INITIALIZATION (after loading fields)
-%% Place around line 175, after "load('pierce_gun_field_solution_capped.mat')"
-%% This provides an early diagnostic before the main loop starts
-%% ==================================================================================
+%% ==================== VOLTAGE BOUNDARY CHECK ====================
+fprintf('\n=== Voltage boundary conditions ===\n');
+fprintf('  V_cathode    = %.0f V  (%.0f kV)\n', V_cathode, V_cathode/1e3);
+fprintf('  V_anode      = %.0f V  (%.0f kV)\n', V_anode,   V_anode/1e3);
+fprintf('  V_total      = %.0f V  (%.0f kV)\n', ...
+        V_anode-V_cathode, (V_anode-V_cathode)/1e3);
+fprintf('  gap_distance = %.1f mm\n', gap_distance*1000);
+fprintf('  E_analytical = %.3f MV/m\n', ...
+        abs(V_anode-V_cathode)/gap_distance/1e6);
+fprintf('  Expected: V_cathode=-850000, V_anode=+850000, V_total=1700000\n');
 
-%% ==================== CATHODE FIELD DIAGNOSTIC (AT STARTUP) ====================
-fprintf('\n=== Cathode Surface Field Analysis ===\n');
-
-% Extract field at cathode surface
-z_cath_search = find(z >= 0 & z <= 0.010);  % 0 to 10mm
-if ~isempty(z_cath_search)
-    Ez_cath_profile = abs(Ez_capped(1, z_cath_search));
-    [E_peak, peak_idx] = max(Ez_cath_profile);
-    z_peak = z(z_cath_search(peak_idx));
-    
-    fprintf('  Peak cathode field: %.2f MV/m at z=%.1f mm\n', E_peak/1e6, z_peak*1000);
-    fprintf('  (This value will be used for Schottky emission calculation)\n');
-    
-    % Compare with expected analytical value
-    E_analytical = abs(V_anode - V_cathode) / gap_distance;
-    fprintf('  Analytical gap field: %.2f MV/m (V/d)\n', E_analytical/1e6);
-    fprintf('  Enhancement factor: %.2f\n', E_peak / E_analytical);
-    
-    % Store for later use
-    E_CATHODE_BASE_DETECTED = E_peak;
+%% ==================== CATHODE FIELD DIAGNOSTIC ====================
+fprintf('\n=== Cathode Field Analysis ===\n');
+iz_cath_search = find(z >= 0 & z <= 0.010);
+if ~isempty(iz_cath_search)
+    Ez_cath_profile = abs(Ez_capped(1, iz_cath_search));
+    [E_peak_cath, peak_idx] = max(Ez_cath_profile);
+    z_peak_cath = z(iz_cath_search(peak_idx));
+    fprintf('  Peak cathode field : %.2f MV/m at z=%.1f mm\n', ...
+            E_peak_cath/1e6, z_peak_cath*1000);
+    fprintf('  Analytical gap field: %.2f MV/m\n', ...
+            abs(V_anode-V_cathode)/gap_distance/1e6);
+    E_CATHODE_BASE_DETECTED = E_peak_cath;
 else
-    fprintf('  WARNING: Cannot find cathode region in z array\n');
-    E_CATHODE_BASE_DETECTED = 5.37e6;  % Legacy fallback
+    E_CATHODE_BASE_DETECTED = 5.37e6;
+    fprintf('  WARNING: cathode region not found — using fallback %.2f MV/m\n', ...
+            E_CATHODE_BASE_DETECTED/1e6);
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% added 02.25.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================================================================================
-%% FIX 4: STARTUP GEOMETRY-FIELD CONSISTENCY CHECK
-%% ==================================================================================
-%% Add this after loading both geometry and field files in the PIC code
-%% (around line 180, after both load() calls)
-%% Verifies that the field solution matches the current geometry
-%% ==================================================================================
-
-%% ==================== GEOMETRY-FIELD CONSISTENCY CHECK ====================
-fprintf('\n=== Geometry-Field Consistency Check ===\n');
-
-% Check 1: Domain boundaries match
-fprintf('  Domain check:\n');
-fprintf('    Geometry z-range: [%.1f, %.1f] mm\n', z(1)*1000, z(end)*1000);
-fprintf('    Expected: [-400, 8305] mm\n');
-
-if abs(z(1)*1000 - (-400)) > 1 || abs(z(end)*1000 - 8305) > 1
-    fprintf('    WARNING: Domain mismatch! Re-run field solver with current geometry.\n');
-else
-    fprintf('    OK: Domain boundaries match\n');
-end
-
-% Check 2: Mesh dimensions match
-fprintf('  Mesh check: %d x %d\n', nz, nr);
-
-% Check 3: Cathode field available
-if exist('cathode_field_info', 'var') && isfield(cathode_field_info, 'E_peak_on_axis')
-    fprintf('  Cathode field (from solver): %.2f MV/m\n', ...
-            cathode_field_info.E_peak_on_axis/1e6);
-    
-    % Cross-check with direct extraction
-    z_cath_idx = find(z >= 0 & z <= 0.010);
-    if ~isempty(z_cath_idx)
-        E_direct = max(abs(Ez_capped(1, z_cath_idx)));
-        fprintf('  Cathode field (direct check): %.2f MV/m\n', E_direct/1e6);
-        
-        if abs(E_direct - cathode_field_info.E_peak_on_axis) / E_direct > 0.01
-            fprintf('  WARNING: Cathode field mismatch (>1%%)!\n');
-            fprintf('  The field solution may not match the loaded geometry.\n');
-            fprintf('  Re-run the field solver.\n');
-        else
-            fprintf('  OK: Cathode field consistent\n');
-        end
-    end
-else
-    fprintf('  NOTE: cathode_field_info not in field file (legacy format)\n');
-    fprintf('  Using direct extraction from Ez_capped\n');
-end
-
-% Check 4: Electrode count sanity
-n_cathode = sum(electrode_map(:) == 1);
-n_anode = sum(electrode_map(:) == 2);
-n_ground = sum(electrode_map(:) == 3);
-fprintf('  Electrodes: Cathode=%d, Anode=%d, Ground=%d\n', ...
-        n_cathode, n_anode, n_ground);
-
-if n_cathode < 50000
-    fprintf('  WARNING: Unusually low cathode point count!\n');
-end
-
-fprintf('  Consistency check complete.\n');
-
-%% ==================================================================================
-%% SUMMARY OF EXPECTED CATHODE FIELDS BY PIERCE ANGLE
-%% (For reference - actual values should come from dynamic extraction)
-%% ==================================================================================
-%
-% These are APPROXIMATE values based on field solver results:
-%
-%   Pierce Angle | E_cathode_base | Gap Field | Notes
-%   -------------|----------------|-----------|------------------
-%   68°          | ~5.37 MV/m     | ~6.7 MV/m | Original design
-%   80°          | ~6.0  MV/m     | ~6.7 MV/m | Moderate angle
-%   89° (flat)   | ~6.5  MV/m     | ~6.7 MV/m | Nearly flat cathode
-%
-% The gap center field (V/d = 1.7MV/254mm = 6.69 MV/m) is relatively
-% independent of Pierce angle because it depends mainly on the gap
-% voltage and distance. However, the cathode SURFACE field varies
-% because the electrode geometry near z=0 changes the local field
-% enhancement/suppression.
-%
-% With dynamic extraction (FIX 1), you never need to update this
-% manually - just re-run geometry builder + field solver + PIC.
-%
-%% ==================================================================================
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Check field array continuity
+%% ==================== FIELD ARRAY DIAGNOSTICS ====================
 fprintf('\n=== Field Array Diagnostics ===\n');
-fprintf('  z array: %.1f to %.1f mm (%d points)\n', z(1)*1000, z(end)*1000, length(z));
-fprintf('  r array: %.1f to %.1f mm (%d points)\n', r(1)*1000, r(end)*1000, length(r));
-fprintf('  Ez_capped size: %dx%d\n', size(Ez_capped));
-fprintf('  Er_capped size: %dx%d\n', size(Er_capped));
+fprintf('  z: %.1f to %.1f mm  (%d pts)\n', z(1)*1000, z(end)*1000, length(z));
+fprintf('  r: %.1f to %.1f mm  (%d pts)\n', r(1)*1000, r(end)*1000, length(r));
+fprintf('  Ez_capped: %dx%d\n', size(Ez_capped,1), size(Ez_capped,2));
+fprintf('  Er_capped: %dx%d\n', size(Er_capped,1), size(Er_capped,2));
 
-% Check for discontinuities in Ez along axis
 Ez_axis = Ez_capped(1,:);
-z_checks = [250, 350, 600, 1000, 1400, 1800, 2200, 2600]; %added 1800, 2200, 2600
-for zc = z_checks
-    [~, iz] = min(abs(z*1000 - zc));
-    fprintf('  Ez at z=%d mm: %.2e V/m\n', zc, Ez_axis(iz));
+for zc = [250,350,500,1000,2000,4000,8000]
+    [~,iz] = min(abs(z*1000 - zc));
+    fprintf('  Ez at z=%4d mm: %+.3e V/m\n', zc, Ez_axis(iz));
 end
 
-% Look for sharp drops
-Ez_diff = diff(Ez_axis);
-large_drops = find(abs(Ez_diff) > 0.5*max(abs(Ez_axis)));
-if ~isempty(large_drops)
-    fprintf('  WARNING: Sharp field drops at z indices: ');
-    fprintf('%d ', large_drops);
-    fprintf('\n');
-    for ld = large_drops
-        fprintf('    z=%.1f mm: Ez drops from %.2e to %.2e V/m\n', ...
-                z(ld)*1000, Ez_axis(ld), Ez_axis(ld+1));
-    end
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% On-axis potential integral (field normalization check)
+iz0 = find(z >= 0.0,   1,'first');
+izD = find(z >= 0.500, 1,'first');
+V_integral = -trapz(z(iz0:izD), Ez_capped(1,iz0:izD));
+fprintf('  Potential rise z=0→500mm: %+.4f MV  (expected +1.694 MV)\n', ...
+        V_integral/1e6);
 
 %% ==================== PHYSICAL CONSTANTS ====================
-c = 299792458;
+c        = 299792458;
 e_charge = 1.602176634e-19;
-m_e = 9.10938356e-31;
-eps0 = 8.854187817e-12;
-k_B = 1.380649e-23;
+m_e      = 9.10938356e-31;
+eps0     = 8.854187817e-12;
+k_B      = 1.380649e-23;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%nr = 500;  % Radial points (unchanged)
-%nz = 11000; % Axial points for -400 to 8305mm (dz ≈ 0.79mm)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ==================== MODE CONFIGURATION ====================
 switch simulation_mode
     case 'QUICK_TEST'
-        dt = 10e-12;
+        dt             = 10e-12;
         base_particles = 20;
-        base_weight = 5e9;
-        sc_interval = 50;
-        diag_interval = 500;
-        
+        base_weight    = 5e9;
+        sc_interval    = 50;
+        diag_interval  = 500;
     case 'OPTIMIZATION'
-        dt = 10e-12;
+        dt             = 10e-12;
         base_particles = 50;
-        base_weight = 7e8;
-        sc_interval = 25;
-        diag_interval = 100;
-        
+        base_weight    = 7e8;
+        sc_interval    = 25;
+        diag_interval  = 100;
     case 'PRODUCTION'
-        dt = 10e-12;
-        base_particles = 100; % Changed down from 200
-        base_weight = 1e9;   % Changed up from 5e8
-        sc_interval = 50;    % Changed up from 25
-        diag_interval = 100; %Changed up from 50
+        dt             = 10e-12;
+        base_particles = 100;
+        base_weight    = 1e9;
+        sc_interval    = 50;
+        diag_interval  = 100;
 end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== SPACE CHARGE ARRAY INITIALIZATION ====================
-% Initialize to prevent "variable doesn't exist" errors
-%if ENABLE_SPACE_CHARGE
-%   Ez_sc = zeros(sc_nr, sc_nz);
-%   Er_sc = zeros(sc_nr, sc_nz);
-%   phi_grid = zeros(sc_nr, sc_nz);
-%   rho_grid = zeros(sc_nr, sc_nz);
-%   fprintf('Space charge arrays initialized\n');
-%end
-%UNrecognized function or variable sc_nr (sc_nz)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+fprintf('\nMode: %s  |  dt=%.0f ps  |  %d particles/step  |  weight=%.1e\n', ...
+        simulation_mode, dt*1e12, base_particles, base_weight);
 
-% Don't define t_start/t_end here - let multi-pulse section handle it
-fprintf('\nConfiguration: %s mode\n', simulation_mode);
-fprintf('  Timestep: %.2f ps\n', dt*1e12);
-fprintf('  Particles/step: %d (weight: %.2e)\n', base_particles, base_weight);
+%% ==================== PULSE CONFIGURATION (SINGLE PULSE) ====================
+pulse_config             = struct();
+pulse_config.n_pulses    = 1;
+pulse_config.pulse_starts = 150e-9;
+pulse_config.rise_time   = 15e-9;
+pulse_config.flat_time   = 80e-9;
+pulse_config.fall_time   = 25e-9;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% new dual pulse configuration %%%%%%%%%%%%%%%%%%%%%%%%%
-% REGULAR MULTIPULSE OPTION IN UNTITLED25
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% QUICK_TEST_OPTION %%%%%%%%%%%%%%%%%%%%%%
-%% ==================== MULTI-PULSE CONFIGURATION ====================
-%ENABLE_MULTIPULSE = true;  % Keep enabled - second time call!!!!
-%ENABLE_MULTIPULSE = false;  % Single pulse operation
+n_interpulse_snapshots   = 0;
+interpulse_clouds        = cell(0,1);
+interpulse_capture_count = 0;
 
-if ENABLE_MULTIPULSE == true
-    pulse_config = struct();
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% added 02.06.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    pulse_config.n_pulses = 4;  % Changed from 3 to 4
-    pulse_config.pulse_starts = [150e-9, 350e-9, 550e-9, 750e-9];  % Added 750ns for P4
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %pulse_config.n_pulses = 3; %Changed from 2 to 3
-    %pulse_config.pulse_starts = [150e-9, 350e-9, 550e-9];  % Closer spacing for quick test
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %pulse_config.n_pulses = 2; % Two pulse regime
-    %pulse_config.pulse_starts = [150e-9, 350e-9];  % Closer spacing for quick test
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Updated 02.06.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% At top of code (around line 230), define capture times:
-% Inter-pulse electron cloud capture configuration
-ENABLE_INTERPULSE_SNAPSHOT = true;
-INTERPULSE_SNAPSHOT_TIMES = [349e-9, 549e-9, 749e-9];  % Before P2, P3, P4
-n_interpulse_snapshots = pulse_config.n_pulses - 1;  % One less than total pulses
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+pulse_shape = @(t_curr) pulse_shape_func(t_curr, ...
+                  pulse_config.pulse_starts, ...
+                  pulse_config.rise_time, ...
+                  pulse_config.flat_time, ...
+                  pulse_config.fall_time);
 
-    pulse_config.rise_time = 15e-9;    % Shorter rise (was 15ns)
-    pulse_config.flat_time = 80e-9;   % Shorter flat (was 80ns)
-    pulse_config.fall_time = 25e-9;    % Shorter fall (was 25ns)
-    
-    % Calculate total simulation window
-    last_pulse_end = pulse_config.pulse_starts(end) + ...
-                     pulse_config.rise_time + ...
-                     pulse_config.flat_time + ...
-                     pulse_config.fall_time;
-    
-    t_start = pulse_config.pulse_starts(1) - 1e-9; % t_start 1ns before first pulse start
-    %t_end = last_pulse_end + 35e-9;  % See line 390
-    
-    %fprintf('\n=== MULTI-PULSE MODE (QUICK TEST) ===\n');
-    fprintf('\n=== MULTI-PULSE MODE (PRODUCTION) ===\n');
-    % ... rest of output ...
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    fprintf('Number of pulses: %d\n', pulse_config.n_pulses);
-    fprintf('Pulse spacing: %.1f ns\n', ...
-            (pulse_config.pulse_starts(2) - pulse_config.pulse_starts(1))*1e9);
-    %fprintf('Total simulation time: %.1f ns\n', (t_end - t_start)*1e9);
-    
-    % ===== ADD THIS LINE HERE (inside if block) =====
-    pulse_shape = @(t_curr) pulse_shape_multipulse(t_curr, pulse_config);
-    
-%%%%%%%%%%%%%%%%%%%%%%%%  Corrected 01.26.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-else
-    % Single pulse mode - CORRECTED to match multi-pulse structure
-    pulse_config = struct();
-    pulse_config.n_pulses = 1;
-    pulse_config.pulse_starts = 150e-9;
-    pulse_config.rise_time = 15e-9;   % ← ADD THESE TO STRUCT
-    pulse_config.flat_time = 80e-9;   % ← ADD THESE TO STRUCT
-    pulse_config.fall_time = 25e-9;   % ← ADD THESE TO STRUCT
-    
-    %t_start = 149e-9;
-    %t_end = 305e-9;   % Takes more time of flight for 8.3m tube
-    t_start = pulse_config.pulse_starts(1) - 1e-9;
-    
-    fprintf('\n=== SINGLE PULSE MODE ===\n');
-    fprintf('Pulse duration: %.1f ns\n', ...
-            (pulse_config.rise_time + pulse_config.flat_time + pulse_config.fall_time)*1e9);
-    %fprintf('Simulation time: %.1f-%.1f ns\n', t_start*1e9, t_end*1e9);
-    
-    pulse_shape = @(t_curr) pulse_shape_func(t_curr, pulse_config.pulse_starts, ...
-                    pulse_config.rise_time, pulse_config.flat_time, pulse_config.fall_time);
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== SIMULATION TIME WINDOW (PHYSICS-BASED) ====================
-% Calculate proper simulation end time based on beam time-of-flight
+t_start   = pulse_config.pulse_starts - 1e-9;
+pulse_end = pulse_config.pulse_starts  + ...
+            pulse_config.rise_time     + ...
+            pulse_config.flat_time     + ...
+            pulse_config.fall_time;
 
-% Beam parameters at full energy
-E_beam = 1.70e6;  % eV (from 1.7 MV gap voltage)
-gamma_beam = 1 + E_beam / (m_e * c^2 / e_charge);  % γ ≈ 4.33
-beta_beam = sqrt(1 - 1/gamma_beam^2);  % β ≈ 0.974
-v_beam = beta_beam * c;  % m/s
+%% ==================== SIMULATION TIME WINDOW ====================
+E_beam_ref    = 1.70e6;
+gamma_ref     = 1 + E_beam_ref / (m_e*c^2/e_charge);
+beta_ref      = sqrt(1 - 1/gamma_ref^2);
+v_ref         = beta_ref * c;
+t_flight      = 8.305 / v_ref;
+margin_time   = 40e-9;
+t_end         = pulse_end + t_flight + margin_time;
 
-% Time of flight from cathode to final exit
-beamline_length = 8.305;  % meters
-t_flight = beamline_length / v_beam;  % seconds
+fprintf('\n=== Timing ===\n');
+fprintf('  Pulse ends:          %.1f ns\n', pulse_end*1e9);
+fprintf('  Flight time (8.3m):  %.1f ns  (β=%.4f)\n', t_flight*1e9, beta_ref);
+fprintf('  Simulation end:      %.1f ns\n', t_end*1e9);
 
-fprintf('\n=== Beam Time-of-Flight Calculation ===\n');
-fprintf('  Beam energy: %.2f MeV\n', E_beam/1e6);
-fprintf('  Lorentz factor: γ = %.3f\n', gamma_beam);
-fprintf('  Velocity: β = %.4f (v = %.3e m/s)\n', beta_beam, v_beam);
-fprintf('  Flight time to z=%.2fm: %.1f ns\n', beamline_length, t_flight*1e9);
+t      = t_start : dt : t_end;
+nt     = length(t);
+fprintf('  Time steps: %d  (dt=%.0f ps)\n', nt, dt*1e12);
 
-if ENABLE_MULTIPULSE == true
-    % Multi-pulse mode
-    last_pulse_end = pulse_config.pulse_starts(end) + ...
-                     pulse_config.rise_time + ...
-                     pulse_config.flat_time + ...
-                     pulse_config.fall_time;
-    
-    % Add flight time PLUS margin for diagnostics
-    margin_time = 40e-9;  % 40ns margin for clear tail observation
-    t_end = last_pulse_end + t_flight + margin_time;
-    
-    fprintf('\n=== Multi-Pulse Timing (n=%d) ===\n', pulse_config.n_pulses);
-    fprintf('  Last pulse ends: %.1f ns\n', last_pulse_end*1e9);
-    fprintf('  Latest exit arrival: %.1f ns\n', (last_pulse_end + t_flight)*1e9);
-    fprintf('  Simulation end: %.1f ns (includes %.0f ns margin)\n', ...
-            t_end*1e9, margin_time*1e9);
-    
-    total_sim_time = t_end - t_start;
-    fprintf('  Total simulation window: %.1f ns\n', total_sim_time*1e9);
-    
-else
-    % Single pulse mode  
-    pulse_end = pulse_config.pulse_starts + pulse_config.rise_time + ...
-                pulse_config.flat_time + pulse_config.fall_time;
-    
-    margin_time = 40e-9;  % 40ns margin
-    t_end = pulse_end + t_flight + margin_time;
-    
-    fprintf('\n=== Single Pulse Timing ===\n');
-    fprintf('  Pulse ends: %.1f ns\n', pulse_end*1e9);
-    fprintf('  Latest exit arrival: %.1f ns\n', (pulse_end + t_flight)*1e9);
-    fprintf('  Simulation end: %.1f ns\n', t_end*1e9);
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== PLOTTING HELPER FUNCTIONS ====================
-% Calculate appropriate time axis limits based on simulation mode
-if ENABLE_MULTIPULSE == true
-    t_plot_min = 145;  % ns - just before first pulse
-    t_plot_max = t_end * 1e9;  % ns - full simulation window
-else
-    t_plot_min = 149;
-    t_plot_max = t_end * 1e9;  % Typically (295+28+40)ns for single pulse
-end
+t_plot_min = 149;
+t_plot_max = t_end * 1e9;
 
-fprintf('\n=== Plot Time Axis Configuration ===\n');
-fprintf('  Time range for plots: %.0f to %.0f ns\n', t_plot_min, t_plot_max);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Time array (common to both single and mulxtipulse modes)
-t = t_start:dt:t_end;
-nt = length(t);
-fprintf('Time steps: %d (dt=%.2f ps)\n', nt, dt*1e12);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%% Updated Space Charge Domain 02.12.2026 %%%%%%%%%%%%%%%%%%%%%
-%% ==================== SPACE CHARGE SETUP (EXTENDED DOMAIN) ====================
-if ENABLE_SPACE_CHARGE == true
-    fprintf('\nSpace charge configuration:\n');
-    
-    % Fine mesh for accuracy
-    sc_nz = 500;  % Axial cells (maintained for performance)
-    sc_nr = 100;  % Radial cells (unchanged)
+%% ==================== SPACE CHARGE SETUP ====================
+if ENABLE_SPACE_CHARGE
+    sc_nz    = 1500;
+    sc_nr    = 100;
     sc_z_min = -0.05;
-    sc_z_max = 8.31;  % ← CHANGED from 8.31 to 8.31 for extended domain
-    sc_r_max = 0.15;
-    
-    sc_z = linspace(sc_z_min, sc_z_max, sc_nz);
-    sc_r = linspace(0, sc_r_max, sc_nr);
-    sc_dz = sc_z(2) - sc_z(1);  % Now ≈ 16.7mm (was 5.6mm)
-    sc_dr = sc_r(2) - sc_r(1);  % Unchanged ≈ 1.5mm
-    
-    % Pre-allocate arrays
-    rho_grid = zeros(sc_nr, sc_nz);
-    phi_grid = zeros(sc_nr, sc_nz);
-    Ez_sc = zeros(sc_nr, sc_nz);
-    Er_sc = zeros(sc_nr, sc_nz);
-    
-    % Solver parameters (unchanged)
-    sc_omega = 1.4;
-    sc_iterations = 100;
-    
-    fprintf('  Grid: %dx%d (dz=%.1fmm, dr=%.2fmm)\n', ...
-            sc_nz, sc_nr, sc_dz*1000, sc_dr*1000);
-    fprintf('  Solver: %d iterations, ω=%.2f\n', sc_iterations, sc_omega);
-    fprintf('  Domain extended: -50mm to +8310mm\n');
-else
-    fprintf('\n  Space charge DISABLED\n');
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== GAS SCATTERING MODULE INITIALIZATION ====================
-ENABLE_GAS_SCATTERING = true;   % Master toggle
-SCATTERING_METHOD = 'HYBRID';    % Options: 'MONTE_CARLO', 'CONTINUOUS', 'HYBRID'
+    sc_z_max =  8.31;
+    sc_r_max =  0.080;
 
-if ENABLE_GAS_SCATTERING == true
-    fprintf('\n=== GAS SCATTERING MODULE ===\n');
-    fprintf('Method: %s\n', SCATTERING_METHOD);
-    
-    % Gas properties (air at room temperature)
+    sc_z  = linspace(sc_z_min, sc_z_max, sc_nz);
+    sc_r  = linspace(0,        sc_r_max, sc_nr);
+    sc_dz = sc_z(2) - sc_z(1);
+    sc_dr = sc_r(2) - sc_r(1);
+
+    rho_grid       = zeros(sc_nr, sc_nz);
+    phi_grid       = zeros(sc_nr, sc_nz);
+    Ez_sc          = zeros(sc_nr, sc_nz);
+    Er_sc          = zeros(sc_nr, sc_nz);
+    phi_grid_prev  = zeros(sc_nr, sc_nz, 'double');  %% WS: warm start storage
+    n_dep_prev_sc  = 0;                               %% WS: particle count tracker
+    ws_engaged      = false;                          %% WS: first engagement flag
+    ws_valid_count  = 0;                              %% WS: accepted solutions
+    ws_reject_count = 0;                              %% WS: rejected zero-field solutions
+    ws_phi_seeded   = false;                          %% WS: phi_grid_prev has valid seed
+
+    sc_omega      = 1.0;   %% PATCH 10: stable Gauss-Seidel (was 1.2 — caused divergence)
+    sc_iterations = 200;   %% PATCH 10: more iters for cold-start convergence (was 100)
+
+    fprintf('\nSC grid: %dx%d  dz=%.1f mm  dr=%.2f mm\n', ...
+            sc_nz, sc_nr, sc_dz*1000, sc_dr*1000);
+
+    %% Meshgrids for applied-field interpolation
+    [Z_grid, R_grid] = meshgrid(z, r);
+    fprintf('Applied-field meshgrid: %dx%d\n', size(Z_grid,1), size(Z_grid,2));
+else
+    fprintf('\nSpace charge DISABLED\n');
+    %% Still need Z_grid / R_grid for applied-field interpolation
+    [Z_grid, R_grid] = meshgrid(z, r);
+end
+%%%%%%%%%%%%%%%%%%%%%%%% Added 03.30.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% ==================== FIELD INTERPOLATION PRE-COMPUTATION ====================
+%% Step 1 — Add to Block 1 (once, after [Z_grid, R_grid] = meshgrid(z, r))
+%% Replaces interp2 with direct index arithmetic — computed once at startup
+app_nz = length(z);
+app_nr = length(r);
+app_dz = z(2) - z(1);
+app_dr = r(2) - r(1);
+app_z0 = z(1);
+app_r0 = r(1);
+fprintf('Field interp pre-computed: nz=%d  nr=%d  dz=%.4f mm  dr=%.4f mm\n', ...
+        app_nz, app_nr, app_dz*1000, app_dr*1000);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% ==================== GAS SCATTERING ====================
+if ENABLE_GAS_SCATTERING
     gas_params = struct();
-    gas_params.P = 1e-7 * 133.322;      % 1e-9 mbar → Pa increased to 1e-8, 1e-7 mbar
-    gas_params.T = 300;                  % Temperature in K 
-    gas_params.composition = struct('N2', 0.78, 'O2', 0.21, 'Ar', 0.01);
-    
-    % Calculate gas density (ideal gas law)
-    gas_params.n_gas = gas_params.P / (k_B * gas_params.T);
-    
-    % Scattering cross-sections (literature values for 1.7 MeV e⁻)
-    sigma_N2 = 2.0e-20;  % m² (total elastic)
-    sigma_O2 = 2.2e-20;  % m²
-    gas_params.sigma_elastic = gas_params.composition.N2 * sigma_N2 + ...
-                               gas_params.composition.O2 * sigma_O2;
-    
-    % Mean free path
+    gas_params.P          = 1e-7 * 133.322;
+    gas_params.T          = 300;
+    gas_params.n_gas      = gas_params.P / (k_B * gas_params.T);
+    sigma_N2              = 2.0e-20;
+    sigma_O2              = 2.2e-20;
+    gas_params.sigma_elastic = 0.78*sigma_N2 + 0.21*sigma_O2;
     gas_params.lambda_mfp = 1 / (gas_params.n_gas * gas_params.sigma_elastic);
-    
-    % Radiation length for multiple scattering (at STP)
-    X0_air_STP = 300;  % m (standard tables)
-    gas_params.X0_effective = X0_air_STP / (gas_params.P / 1.013e5);
-    
-    % Calibration parameters (tune these to match experiment)
+
     scatter_cal = struct();
-    scatter_cal.strength_factor = 1.0;      % Multiply cross-section
-    scatter_cal.rare_fraction = 0.01;       % For hybrid mode: fraction of large-angle events
-    scatter_cal.theta_rare_max = 10e-3;     % Maximum rare scatter angle (rad)
-    scatter_cal.check_interval = 10;        % Check every N timesteps
-    
-    % Diagnostics
+    scatter_cal.strength_factor = 1.0;
+    scatter_cal.rare_fraction   = 0.01;
+    scatter_cal.theta_rare_max  = 10e-3;
+    scatter_cal.check_interval  = 10;
+
     scatter_diag = struct();
     scatter_diag.event_count = 0;
-    scatter_diag.rare_count = 0;
-    scatter_diag.theta_history = [];
-    scatter_diag.z_scatter_positions = [];
-    
-    % Print configuration
-    fprintf('  Pressure: %.2e mbar\n', gas_params.P/133.322);
-    fprintf('  Gas density: %.2e molecules/m³\n', gas_params.n_gas);
-    fprintf('  Elastic σ: %.2e m²\n', gas_params.sigma_elastic);
-    fprintf('  Mean free path: %.1f km\n', gas_params.lambda_mfp/1000);
-    fprintf('  Effective X₀: %.2e m\n', gas_params.X0_effective);
-    fprintf('  Check interval: %d timesteps (%.1f ps)\n', ...
-            scatter_cal.check_interval, scatter_cal.check_interval*dt*1e12);
-    fprintf('  Method: %s\n', SCATTERING_METHOD);
-    
-else
-    fprintf('\n  Gas scattering DISABLED\n');
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== ION ACCUMULATION MODULE ====================
-ENABLE_ION_ACCUMULATION = true;  % Turn on for testing
-%ENABLE_ION_ACCUMULATION = false;  % Turn off for testing
+    scatter_diag.rare_count  = 0;
+    scatter_diag.theta_history        = [];
+    scatter_diag.z_scatter_positions  = [];
 
-if ENABLE_ION_ACCUMULATION == true
-    fprintf('\n=== ION ACCUMULATION MODULE ===\n');
-    
-    % Use the ion_physics struct from your module
+    SCATTERING_METHOD = 'HYBRID';
+    fprintf('\nGas scattering: %s  P=%.1e mbar  λ=%.1f km\n', ...
+            SCATTERING_METHOD, gas_params.P/133.322, gas_params.lambda_mfp/1000);
+end
+
+%% ==================== ION ACCUMULATION ====================
+if ENABLE_ION_ACCUMULATION && ENABLE_SPACE_CHARGE
     ion_physics = struct();
-    ion_physics.sigma_ionization = 3.5e-21;  % Weighted for air
-    ion_physics.mass_ion_avg = 29 * 1.66054e-27;
-    ion_physics.charge_ion = e_charge;
-    ion_physics.mobility = 2.5e-4;  % m²/(V·s)
-    ion_physics.t_recomb_effective = 10e-6;  % 10 µs
- %%%%%%%%%%%%%%%%%%%%%%%%%% added 11.25.2025 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                % ===== ADD THIS NEW PARAMETER =====
-    ion_physics.superparticle_weight = 1000;  % Each ion super-particle represents 1000 or set 500 real ions for 1e-9 mbar
-    % Typical values: 100-10000 depending on performance needs
-    % Start with 1000, increase if still too slow
-    
-    fprintf('  Ion super-particle weight: %.0f ions/super-particle\n', ...
-            ion_physics.superparticle_weight);
- %%%%%%%%%%%%%%%%%%%%%%%%%% added 11.25.2025 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-   if ENABLE_SPACE_CHARGE == true 
-    % Ion grids (same as SC)
-    ion_density_grid = zeros(sc_nr, sc_nz);
+    ion_physics.sigma_ionization    = 3.5e-21;
+    ion_physics.mass_ion_avg        = 29 * 1.66054e-27;
+    ion_physics.charge_ion          = e_charge;
+    ion_physics.mobility            = 2.5e-4;
+    ion_physics.t_recomb_effective  = 10e-6;
+    ion_physics.superparticle_weight = 1000;
+
+    ion_density_grid     = zeros(sc_nr, sc_nz);
     ion_density_by_pulse = zeros(sc_nr, sc_nz, pulse_config.n_pulses);
-    ion_vz_grid = zeros(sc_nr, sc_nz);
-    
-    % Diagnostics
+    ion_vz_grid          = zeros(sc_nr, sc_nz);
+
     ion_diag = struct();
-    ion_diag.creation_history = zeros(nt, 1);
-    ion_diag.total_ions_vs_time = zeros(nt, 1);
-    ion_diag.peak_density_vs_time = zeros(nt, 1);
-    ion_diag.ions_per_pulse = zeros(pulse_config.n_pulses, 1);
-    
-    fprintf('  Ionization σ: %.2e m²\n', ion_physics.sigma_ionization);
-    fprintf('  Recombination time: %.1f µs\n', ion_physics.t_recomb_effective*1e6);
-   end
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== PARTICLE POOL INITIALIZATION ====================
-%%%%%%%%%%%%%% Updated Particle Pool Initialization 02.13.2026 %%%%%%%%%%%%%%%%%%%
-%% ==================== PARTICLE POOL INITIALIZATION (ADAPTIVE) ====================
-% Adaptive sizing based on beamline length and pulse count
-% Empirical scaling: 1.002M particles for 2.76m single pulse
+    ion_diag.creation_history      = zeros(nt, 1);
+    ion_diag.total_ions_vs_time    = zeros(nt, 1);
+    ion_diag.peak_density_vs_time  = zeros(nt, 1);
+    ion_diag.ions_per_pulse        = zeros(pulse_config.n_pulses, 1);
 
-% Base scaling for length (linear with beamline)
-length_factor = 8.305 / 2.760;  % 3.01× scaling
-
-% Calculate expected particles in flight
-if strcmp(simulation_mode, 'PRODUCTION')
-    base_single_pulse = 1.05e6;  % Slightly above your observed 1.002M
-    
-    if ENABLE_MULTIPULSE == true
-        % Multi-pulse: particles from all pulses can overlap in beamline
-        expected_particles = base_single_pulse * length_factor * pulse_config.n_pulses;
-        safety_factor = 1.25;  % 25% margin for pulse overlap
-        max_particles = ceil(expected_particles * safety_factor);
-    else
-        % Single pulse
-        expected_particles = base_single_pulse * length_factor;
-        safety_factor = 1.15;  % 15% margin
-        max_particles = ceil(expected_particles * safety_factor);
-    end
-    
-    %max_particles = ceil(expected_particles * safety_factor);
-    
-    %else  % QUICK_TEST mode
-    %   max_particles = 3.1e6;  % Fixed for testing
+    fprintf('Ion accumulation enabled  (weight=%d ions/super-particle)\n', ...
+            ion_physics.superparticle_weight);
 end
 
-fprintf('\nInitializing particle pool...\n');
-fprintf('  Beamline length: %.2f m (%.2fx scaling)\n', 8.305, length_factor);
-fprintf('  Number of pulses: %d\n', pulse_config.n_pulses);
-fprintf('  Expected particles: %.2e\n', expected_particles);
-fprintf('  Max particles allocated: %.2e (safety factor: %.2f)\n', ...
-        max_particles, safety_factor);
-fprintf('  Memory allocated: %.1f MB\n', max_particles*8*10/1024^2);
+%% ==================== PARTICLE POOL ====================
+length_factor   = 8.305 / 2.760;
+base_single     = 1.05e6;
+expected_parts  = base_single * length_factor;
+safety_factor   = 1.25;
+max_particles   = ceil(expected_parts * safety_factor);
 
-% Verify memory is reasonable (<2 GB)
-if max_particles > 20e6
-    fprintf('  WARNING: Very large particle pool! Consider reducing base_particles\n');
-end
+fprintf('\nParticle pool: %.2e  (%.1f MB)\n', ...
+        max_particles, max_particles*8*10/1024^2);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%% Added 02.06.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Initialize storage (around line 220):
-interpulse_clouds = cell(n_interpulse_snapshots, 1);  % Array of structures
-interpulse_capture_count = 0;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+z_particles       = NaN(max_particles, 1);
+r_particles       = NaN(max_particles, 1);
+pz_particles      = zeros(max_particles, 1);
+pr_particles      = zeros(max_particles, 1);
+ptheta_particles  = zeros(max_particles, 1);
+weight_particles  = zeros(max_particles, 1);
+gamma_particles   = ones(max_particles,  1);
+active_particles  = false(max_particles, 1);
 
-% Pre-allocate arrays
-z_particles = ones(max_particles, 1) * NaN;
-r_particles = ones(max_particles, 1) * NaN;
-pz_particles = zeros(max_particles, 1);
-pr_particles = zeros(max_particles, 1);
-ptheta_particles = zeros(max_particles, 1);
-weight_particles = zeros(max_particles, 1);
-gamma_particles = ones(max_particles, 1);
-active_particles = false(max_particles, 1);
-
-% Counters
-n_active = 0;
-n_created = 0;
-particles_at_anode = 0;
-particles_transmitted = 0;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%  SNAPSHOT STORAGE INITIATION %%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 01.26.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== SNAPSHOT STORAGE INITIALIZATION ====================
-if ENABLE_MULTIPULSE == true
-    % Multi-pulse: P1 and P2 snapshots
-    snapshot_p1 = cell(N_SNAPSHOTS, 1);
-    snapshot_p2 = cell(N_SNAPSHOTS, 1);
-    % Pulse 3 diagnostics (NEW - add after P2)
-    snapshot_p3 = cell(N_SNAPSHOTS, 1);
-    %ADD THESE LINES after snapshot_p3 initialization:
-    snapshot_p4 = cell(N_SNAPSHOTS, 1);
-    snapshot_p1_count = 0;
-    snapshot_p2_count = 0;
-    snapshot_p3_count = 0;
-    snapshot_p4_count = 0;
-    fprintf('Snapshot storage initialized: %d per pulse\n', N_SNAPSHOTS);
-else
-    % Single-pulse: early vs late
-    snapshot_early = cell(N_SNAPSHOTS_EARLY, 1);
-    snapshot_late = cell(N_SNAPSHOTS_LATE, 1);
-    snapshot_p1 = cell(N_SNAPSHOTS, 1);
-
-    snapshot_early_count = 0;
-    snapshot_late_count = 0;
-    snapshot_p1_count = 0;
-    fprintf('Snapshot storage initialized: %d early, %d late, %d per pulse\n', ...
-            N_SNAPSHOTS_EARLY, N_SNAPSHOTS_LATE, N_SNAPSHOTS);
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% added 11.11.2025 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-%% ==================== MULTI-PULSE DIAGNOSTICS INITIALIZATION ====================
-if ENABLE_MULTIPULSE == true
-    % Track which pulse created each particle
-    particle_source_pulse = zeros(max_particles, 1);
-    
-    % Per-pulse statistics
-    pulse_diagnostics = struct();
-    for ip = 1:pulse_config.n_pulses
-        pulse_diagnostics(ip).particles_emitted = 0;
-        pulse_diagnostics(ip).particles_at_anode = 0;
-        pulse_diagnostics(ip).particles_transmitted = 0;
-        pulse_diagnostics(ip).charge_emitted = 0;
-        pulse_diagnostics(ip).charge_transmitted = 0;
-        pulse_diagnostics(ip).I_peak = 0;
-    end
-    
-    fprintf('Multi-pulse diagnostics initialized\n');
-end
-% ===== END OF ADDITION =====
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% added 10.08.2025 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Add tracking arrays that are missing
-%particle_crossed_anode = false(max_particles, 1); % Exist at 379
-particle_r_at_anode = ones(max_particles, 1) * NaN;
-particle_E_at_anode = zeros(max_particles, 1);
-%particle_t_at_anode = ones(max_particles, 1) * NaN;% Exist at 376
-% Tracking flags to prevent double-counting
-particle_counted_as_return = false(max_particles, 1);
-particle_counted_as_violation = false(max_particles, 1);
-
-%%%%%%%%%%%%%%%%%%%%%% Monitors Positions Updated 02.12.2026 %%%%%%%%%%%%%%%%%%%
-%% ==================== MONITOR POSITIONS (WITH EXPERIMENTAL BPMs) ====================
-% Includes all legacy diagnostics PLUS 5 real BPM locations
-monitor_positions = [0.001;    % Cathode (legacy diagnostic)
-                     0.254;    % Anode entrance
-                     0.600;    % Transition 1 (legacy)
-                     1.000;    % Transition 2 (legacy)
-                     1.700;    % Transition 3 (legacy)
-                     2.760;    % BPM1 (first experimental monitor) ← FIXED from 8.310
-                     3.964;    % BPM2 (experimental)
-                     6.4018;   % BPM3 (experimental)
-                     6.8276;   % BPM4 (experimental)
-                     8.305];   % BPM5 (final exit, experimental)
-
-monitor_names = ["Cathode", "Anode", "Trans1", "Trans2", "Trans3", ...
-                 "BPM1", "BPM2", "BPM3", "BPM4", "BPM5"];
-
-n_monitors = length(monitor_positions);
-I_monitor = zeros(nt, n_monitors);
-particles_through = zeros(n_monitors, 1);
-%particle_counted_at_monitor = false(max_particles, n_monitors); See line 693
-
-fprintf('\n=== Monitor Configuration (Extended) ===\n');
-fprintf('Total monitors: %d\n', n_monitors);
-fprintf('  Legacy diagnostics: 5 (0-1700mm)\n');
-fprintf('  Experimental BPMs: 5 (2760-8305mm)\n');
-for i = 1:n_monitors
-    fprintf('  %s at z=%.1f mm\n', monitor_names(i), monitor_positions(i)*1000);
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% added 02.25.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================================================================================
-%% FIX 1: UNIFIED 15-PLANE ANALYSIS LOCATIONS (SINGLE SOURCE OF TRUTH)
-%% ==================================================================================
-%% Place this ONCE before any analysis sections (after main loop, before post-processing)
-%% Remove all duplicate definitions of twiss_locations/analysis_locations elsewhere
-%% ==================================================================================
-
-%% ==================== STANDARD ANALYSIS LOCATIONS (15 PLANES) ====================
-% This is the SINGLE definition used by ALL analysis modules
-% Do NOT redefine these variables elsewhere in the code
-
-ANALYSIS_LOCATIONS = [254;    % Anode (after gap acceleration)
-                      600;    % Early drift (near Sol 3-4)
-                      1000;   % Mid drift region 1 (near Sol 7-8)
-                      1500;   % Between Sol 9-10
-                      1700;   % Legacy diagnostic
-                      2200;   % Near Sol 14-15
-                      2700;   % BPM1 region (near Sol 19-20)
-                      3400;   % Mid-extension (near Sol 25)
-                      3964;   % BPM2 (experimental)
-                      4600;   % Mid-extension 2 (near Sol 35)
-                      5400;   % Near Sol 45
-                      6402;   % BPM3 (experimental)
-                      6828;   % BPM4 (experimental)
-                      7450;   % Near final solenoid (Sol 49)
-                      8305];  % BPM5 / Final exit
-
-ANALYSIS_LOCATION_NAMES = {'Anode', 'Early_Drift', 'Mid_Drift1', 'Trans1', 'Trans2', ...
-                           'Mid_Drift2', 'BPM1', 'Extension1', 'BPM2', 'Extension2', ...
-                           'Late_Drift', 'BPM3', 'BPM4', 'Sol49', 'Exit'};
-
-N_ANALYSIS_PLANES = length(ANALYSIS_LOCATIONS);
-
-% Backward compatibility aliases (used by betatron averaging, Twiss modules, etc.)
-twiss_locations = ANALYSIS_LOCATIONS;
-analysis_locations = ANALYSIS_LOCATIONS;
-location_names = ANALYSIS_LOCATION_NAMES;
-n_locations = N_ANALYSIS_PLANES;
-n_twiss_planes = N_ANALYSIS_PLANES;
-
-fprintf('\n=== Standard Analysis Configuration ===\n');
-fprintf('  Analysis planes: %d (full 8.3m beamline)\n', N_ANALYSIS_PLANES);
-fprintf('  Coverage: %d mm to %d mm\n', ANALYSIS_LOCATIONS(1), ANALYSIS_LOCATIONS(end));
-fprintf('  BPM locations included: BPM1(2700), BPM2(3964), BPM3(6402), BPM4(6828), BPM5(8305)\n');
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% added 10.07.2025 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Add with other counter initializations
+%% ==================== COUNTERS ====================
+n_active                  = 0;
+n_created                 = 0;
+particles_at_anode        = 0;
+particles_transmitted     = 0;
 particles_lost_to_cathode = 0;
-particles_lost_to_walls = 0; 
-particles_out_of_bounds = 0;
-max_sc_field_recorded = 0;  % Track peak space charge field
-%%%%%%%%%%%%%%%%%%%%%%% added 10.08.2025 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Add to initialization (around line 150):
-particle_counted_at_monitor = false(max_particles, n_monitors);
-%%%%%%%%%%%%%%%%%%%%%%% added 10.15.2025 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+particles_lost_to_walls   = 0;
+particles_out_of_bounds   = 0;
+
 %% ==================== PARTICLE TRACKING ARRAYS ====================
-% Add these right after your existing initialization
-particle_crossed_anode = false(max_particles, 1);
-particle_crossed_exit = false(max_particles, 1);
-particle_t_at_anode = ones(max_particles, 1) * NaN;
-particle_t_at_exit = ones(max_particles, 1) * NaN;
+particle_crossed_anode   = false(max_particles, 1);
+particle_crossed_exit    = false(max_particles, 1);
+particle_t_at_anode      = NaN(max_particles, 1);
+particle_t_at_exit       = NaN(max_particles, 1);
+particle_KE_at_anode     = zeros(max_particles, 1);   % eV
+particle_KE_at_exit      = zeros(max_particles, 1);   % eV
+particle_r_at_anode      = NaN(max_particles, 1);
+particle_counted_as_return     = false(max_particles, 1);
+particle_counted_as_violation  = false(max_particles, 1);
 
-% Current accumulator arrays
+%% ==================== CURRENT ACCUMULATORS ====================
 I_anode_accumulator = 0;
-I_exit_accumulator = 0;
-% Add a counter for actual contributions
-I_anode_count = 0;  % Add with other initializations
-I_exit_count = 0;
+I_exit_accumulator  = 0;
+I_anode_count       = 0;
+I_exit_count        = 0;
 
-%% ==================== EMISSION DIAGNOSTICS INITIALIZATION ====================
-% Time-resolved current diagnostics
-I_cathode = zeros(nt, 1);  % Emission current at cathode
-I_drift_exit = zeros(nt, 1);  % Current at drift exit (1700mm)
-collection_efficiency = zeros(nt, 1);  % I_anode/I_cathode ratio
+%% ==================== MONITOR POSITIONS ====================
+monitor_positions = [0.001; 0.254; 0.600; 1.000; 1.700; ...
+                     2.760; 3.964; 6.4018; 6.8276; 8.305];
+monitor_names     = ["Cathode","Anode","Trans1","Trans2","Trans3", ...
+                     "BPM1","BPM2","BPM3","BPM4","BPM5"];
+n_monitors        = length(monitor_positions);
+I_monitor         = zeros(nt, n_monitors);
+particles_through = zeros(n_monitors, 1);
+particle_counted_at_monitor = false(max_particles, n_monitors);
 
-% Current density components for emission
-J_thermionic = zeros(nt, 1);  % Pure Richardson-Dushman current
-J_space_charge = zeros(nt, 1);  % Space-charge limited current  
-J_actual = zeros(nt, 1);  % Actual emission (minimum of above)
+fprintf('\nMonitors: %d positions (%.0f mm to %.0f mm)\n', ...
+        n_monitors, monitor_positions(1)*1000, monitor_positions(end)*1000);
 
-% Space charge field diagnostics
-sc_field_cathode = zeros(nt, 1);  % SC field at cathode surface
-sc_field_max = zeros(nt, 1);  % Maximum SC field in domain
-sc_field_distribution = zeros(nt, 1);  % RMS of SC field
-
-% Particle weight tracking
-particle_weight_history = zeros(nt, 1);  % Track adaptive weighting
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%% Magnetic Fields Setup  02.12.2026 %%%%%%%%%%%%%%%%%%%%%%%
-% ==================== EXTENDED SOLENOID STRUCTURES 1-19_20-49 ====================
-%% ==================== MAGNETIC FIELD SETUP ====================
-fprintf('\nMagnetic field configuration:\n');
-%NOTE Solenoids #6 and #13 are steering dipole magnets, not used currently
-solenoid1 = struct('B', solenoid1_field, 'z_c', -0.279, 'L', 0.106, 'R', 0.451);
-solenoid2 = struct('B', solenoid2_field, 'z_c', 0.372, 'L', 0.195, 'R', 0.245);
-solenoid3 = struct('B', solenoid3_field, 'z_c', 1.14461, 'L', 0.120, 'R', 0.245);
-solenoid4 = struct('B', solenoid4_field, 'z_c', 1.26757, 'L', 0.120, 'R', 0.245);
-solenoid5 = struct('B', solenoid5_field, 'z_c', 1.36927, 'L', 0.120, 'R', 0.245);
-solenoid7 = struct('B', solenoid7_field, 'z_c', 1.49223, 'L', 0.100, 'R', 0.245);
-solenoid8 = struct('B', solenoid8_field, 'z_c', 1.59393, 'L', 0.100, 'R', 0.245);
-solenoid9 = struct('B', solenoid9_field, 'z_c', 1.71689, 'L', 0.100, 'R', 0.245);
-solenoid10 = struct('B', solenoid10_field, 'z_c', 1.81860, 'L', 0.090, 'R', 0.245);
-solenoid11 = struct('B', solenoid11_field, 'z_c', 1.94156, 'L', 0.110, 'R', 0.245);
-solenoid12 = struct('B', solenoid12_field, 'z_c', 2.04326, 'L', 0.110, 'R', 0.245);
-solenoid14 = struct('B', solenoid14_field, 'z_c', 2.16622, 'L', 0.090, 'R', 0.245);
-solenoid15 = struct('B', solenoid15_field, 'z_c', 2.26793, 'L', 0.100, 'R', 0.245);
-solenoid16 = struct('B', solenoid16_field, 'z_c', 2.39089, 'L', 0.110, 'R', 0.245);
-solenoid17 = struct('B', solenoid17_field, 'z_c', 2.49259, 'L', 0.110, 'R', 0.245);
-solenoid18 = struct('B', solenoid18_field, 'z_c', 2.61555, 'L', 0.090, 'R', 0.245);
-solenoid19 = struct('B', solenoid19_field, 'z_c', 2.71726, 'L', 0.090, 'R', 0.245);
-solenoid20 = struct('B', solenoid20_field, 'z_c', 2.84022, 'L', 0.100, 'R', 0.245);
-solenoid21 = struct('B', solenoid21_field, 'z_c', 2.94192, 'L', 0.100, 'R', 0.245);
-solenoid22 = struct('B', solenoid22_field, 'z_c', 3.06488, 'L', 0.100, 'R', 0.245);
-solenoid23 = struct('B', solenoid23_field, 'z_c', 3.16658, 'L', 0.100, 'R', 0.245);
-solenoid24 = struct('B', solenoid24_field, 'z_c', 3.28954, 'L', 0.100, 'R', 0.245);
-solenoid25 = struct('B', solenoid25_field, 'z_c', 3.39125, 'L', 0.100, 'R', 0.245);
-solenoid26 = struct('B', solenoid26_field, 'z_c', 3.51421, 'L', 0.100, 'R', 0.245);
-solenoid27 = struct('B', solenoid27_field, 'z_c', 3.61591, 'L', 0.100, 'R', 0.245);
-solenoid28 = struct('B', solenoid28_field, 'z_c', 3.73887, 'L', 0.100, 'R', 0.245);
-solenoid29 = struct('B', solenoid29_field, 'z_c', 3.84058, 'L', 0.100, 'R', 0.245);
-solenoid30 = struct('B', solenoid30_field, 'z_c', 3.96354, 'L', 0.100, 'R', 0.245);
-solenoid31 = struct('B', solenoid31_field, 'z_c', 4.06524, 'L', 0.100, 'R', 0.245);
-solenoid32 = struct('B', solenoid32_field, 'z_c', 4.18820, 'L', 0.100, 'R', 0.245);
-solenoid33 = struct('B', solenoid33_field, 'z_c', 4.28993, 'L', 0.100, 'R', 0.245);
-solenoid34 = struct('B', solenoid34_field, 'z_c', 4.41289, 'L', 0.100, 'R', 0.245);
-solenoid35 = struct('B', solenoid35_field, 'z_c', 4.51459, 'L', 0.100, 'R', 0.245);
-solenoid36 = struct('B', solenoid36_field, 'z_c', 4.63755, 'L', 0.100, 'R', 0.245);
-% solenoid37 = Steering magnet 3 (NOT USED)
-solenoid38 = struct('B', solenoid38_field, 'z_c', 4.73925, 'L', 0.100, 'R', 0.245);
-solenoid39 = struct('B', solenoid39_field, 'z_c', 4.86221, 'L', 0.100, 'R', 0.245);
-solenoid40 = struct('B', solenoid40_field, 'z_c', 4.96392, 'L', 0.100, 'R', 0.245);
-solenoid41 = struct('B', solenoid41_field, 'z_c', 5.08688, 'L', 0.100, 'R', 0.245);
-solenoid42 = struct('B', solenoid42_field, 'z_c', 5.18858, 'L', 0.100, 'R', 0.245);
-solenoid43 = struct('B', solenoid43_field, 'z_c', 5.31154, 'L', 0.100, 'R', 0.245);
-% solenoid44 = Steering magnet 4 (NOT USED)
-solenoid45 = struct('B', solenoid45_field, 'z_c', 5.41324, 'L', 0.100, 'R', 0.245);
-solenoid46 = struct('B', solenoid46_field, 'z_c', 5.53620, 'L', 0.100, 'R', 0.245);
-solenoid47 = struct('B', solenoid47_field, 'z_c', 5.63791, 'L', 0.100, 'R', 0.245);
-solenoid48 = struct('B', solenoid48_field, 'z_c', 5.76087, 'L', 0.100, 'R', 0.245);
-solenoid49 = struct('B', solenoid49_field, 'z_c', 7.44800, 'L', 0.100, 'R', 0.245);
-
-% Print extended configuration
-fprintf('  Solenoid 1: %.0f G at z=%.0f mm\n', solenoid1.B*1e4, solenoid1.z_c*1000);
-fprintf('  Solenoid 2: %.0f G at z=%.0f mm\n', solenoid2.B*1e4, solenoid2.z_c*1000);
-fprintf('  Solenoid 3: %.0f G at z=%.0f mm\n', solenoid3.B*1e4, solenoid3.z_c*1000);
-fprintf('  Solenoid 4: %.0f G at z=%.0f mm\n', solenoid4.B*1e4, solenoid4.z_c*1000);
-fprintf('  Solenoid 5: %.0f G at z=%.0f mm\n', solenoid5.B*1e4, solenoid5.z_c*1000);
-fprintf('NOTE:  Solenoid 6 is a steering dipole magnet not in use currently ');
-fprintf('  Solenoid 7: %.0f G at z=%.0f mm\n', solenoid7.B*1e4, solenoid7.z_c*1000);
-fprintf('  Solenoid 8: %.0f G at z=%.0f mm\n', solenoid8.B*1e4, solenoid8.z_c*1000);
-fprintf('  Solenoid 9: %.0f G at z=%.0f mm\n', solenoid9.B*1e4, solenoid9.z_c*1000);
-fprintf('  Solenoid 10: %.0f G at z=%.0f mm\n', solenoid10.B*1e4, solenoid10.z_c*1000);
-fprintf('  Solenoid 11: %.0f G at z=%.0f mm\n', solenoid11.B*1e4, solenoid11.z_c*1000);
-fprintf('  Solenoid 12: %.0f G at z=%.0f mm\n', solenoid12.B*1e4, solenoid12.z_c*1000);
-fprintf('NOTE:  Solenoid 13 is a steering dipole magnet not in use currently ');
-fprintf('  Solenoid 14: %.0f G at z=%.0f mm\n', solenoid14.B*1e4, solenoid14.z_c*1000);
-fprintf('  Solenoid 15: %.0f G at z=%.0f mm\n', solenoid15.B*1e4, solenoid15.z_c*1000);
-fprintf('  Solenoid 16: %.0f G at z=%.0f mm\n', solenoid16.B*1e4, solenoid16.z_c*1000);
-fprintf('  Solenoid 17: %.0f G at z=%.0f mm\n', solenoid17.B*1e4, solenoid17.z_c*1000);
-fprintf('  Solenoid 18: %.0f G at z=%.0f mm\n', solenoid18.B*1e4, solenoid18.z_c*1000);
-fprintf('  Solenoid 19: %.0f G at z=%.0f mm\n', solenoid19.B*1e4, solenoid19.z_c*1000);
-fprintf('  Solenoid 20: %.0f G at z=%.0f mm\n', solenoid20.B*1e4, solenoid20.z_c*1000);
-fprintf('  Solenoid 21: %.0f G at z=%.0f mm\n', solenoid21.B*1e4, solenoid21.z_c*1000);
-fprintf('  Solenoid 22: %.0f G at z=%.0f mm\n', solenoid22.B*1e4, solenoid22.z_c*1000);
-fprintf('  Solenoid 23: %.0f G at z=%.0f mm\n', solenoid23.B*1e4, solenoid23.z_c*1000);
-fprintf('  Solenoid 24: %.0f G at z=%.0f mm\n', solenoid24.B*1e4, solenoid24.z_c*1000);
-fprintf('  Solenoid 25: %.0f G at z=%.0f mm\n', solenoid25.B*1e4, solenoid25.z_c*1000);
-fprintf('  Solenoid 26: %.0f G at z=%.0f mm\n', solenoid26.B*1e4, solenoid26.z_c*1000);
-fprintf('  Solenoid 27: %.0f G at z=%.0f mm\n', solenoid27.B*1e4, solenoid27.z_c*1000);
-fprintf('  Solenoid 28: %.0f G at z=%.0f mm\n', solenoid28.B*1e4, solenoid28.z_c*1000);
-fprintf('  Solenoid 29: %.0f G at z=%.0f mm\n', solenoid29.B*1e4, solenoid29.z_c*1000);
-fprintf('  Solenoid 30: %.0f G at z=%.0f mm\n', solenoid30.B*1e4, solenoid30.z_c*1000);
-fprintf('  Solenoid 31: %.0f G at z=%.0f mm\n', solenoid31.B*1e4, solenoid31.z_c*1000);
-fprintf('  Solenoid 32: %.0f G at z=%.0f mm\n', solenoid32.B*1e4, solenoid32.z_c*1000);
-fprintf('  Solenoid 33: %.0f G at z=%.0f mm\n', solenoid33.B*1e4, solenoid33.z_c*1000);
-fprintf('  Solenoid 34: %.0f G at z=%.0f mm\n', solenoid34.B*1e4, solenoid34.z_c*1000);
-fprintf('  Solenoid 35: %.0f G at z=%.0f mm\n', solenoid35.B*1e4, solenoid35.z_c*1000);
-fprintf('  Solenoid 36: %.0f G at z=%.0f mm\n', solenoid36.B*1e4, solenoid36.z_c*1000);
-fprintf('NOTE:  Solenoid 37 is a steering dipole magnet not in use currently ');
-fprintf('  Solenoid 38: %.0f G at z=%.0f mm\n', solenoid38.B*1e4, solenoid38.z_c*1000);
-fprintf('  Solenoid 39: %.0f G at z=%.0f mm\n', solenoid39.B*1e4, solenoid39.z_c*1000);
-fprintf('  Solenoid 40: %.0f G at z=%.0f mm\n', solenoid40.B*1e4, solenoid40.z_c*1000);
-fprintf('  Solenoid 41: %.0f G at z=%.0f mm\n', solenoid41.B*1e4, solenoid41.z_c*1000);
-fprintf('  Solenoid 42: %.0f G at z=%.0f mm\n', solenoid42.B*1e4, solenoid42.z_c*1000);
-fprintf('  Solenoid 43: %.0f G at z=%.0f mm\n', solenoid43.B*1e4, solenoid43.z_c*1000);
-fprintf('NOTE:  Solenoid 44 is a steering dipole magnet not in use currently ');
-fprintf('  Solenoid 45: %.0f G at z=%.0f mm\n', solenoid45.B*1e4, solenoid45.z_c*1000);
-fprintf('  Solenoid 46: %.0f G at z=%.0f mm\n', solenoid46.B*1e4, solenoid46.z_c*1000);
-fprintf('  Solenoid 47: %.0f G at z=%.0f mm\n', solenoid47.B*1e4, solenoid47.z_c*1000);
-fprintf('  Solenoid 48: %.0f G at z=%.0f mm\n', solenoid48.B*1e4, solenoid48.z_c*1000);
-fprintf('  Solenoid 49: %.0f G at z=%.0f mm\n', solenoid49.B*1e4, solenoid49.z_c*1000);
-
-%%%%%%%%%%%%%%%%%%%%%%% Extended Bz_func, Br_func 02.12.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== MAGNETIC FIELD FUNCTIONS (EXTENDED TO 49 SOLENOIDS) ====================
-Bz_func = @(z_pos, r_pos, t_curr) calculate_Bz(z_pos, r_pos, t_curr, ...
-    solenoid1, solenoid2, solenoid3, solenoid4, solenoid5, ...
-    solenoid7, solenoid8, solenoid9, solenoid10, solenoid11, solenoid12, ...
-    solenoid14, solenoid15, solenoid16, solenoid17, solenoid18, solenoid19, ...
-    solenoid20, solenoid21, solenoid22, solenoid23, solenoid24, solenoid25, ...
-    solenoid26, solenoid27, solenoid28, solenoid29, solenoid30, solenoid31, ...
-    solenoid32, solenoid33, solenoid34, solenoid35, solenoid36, ...
-    solenoid38, solenoid39, solenoid40, solenoid41, solenoid42, solenoid43, ...
-    solenoid45, solenoid46, solenoid47, solenoid48, solenoid49, ...
-    pulse_shape);
-
-Br_func = @(z_pos, r_pos, t_curr) calculate_Br(z_pos, r_pos, t_curr, ...
-    solenoid1, solenoid2, solenoid3, solenoid4, solenoid5, ...
-    solenoid7, solenoid8, solenoid9, solenoid10, solenoid11, solenoid12, ...
-    solenoid14, solenoid15, solenoid16, solenoid17, solenoid18, solenoid19, ...
-    solenoid20, solenoid21, solenoid22, solenoid23, solenoid24, solenoid25, ...
-    solenoid26, solenoid27, solenoid28, solenoid29, solenoid30, solenoid31, ...
-    solenoid32, solenoid33, solenoid34, solenoid35, solenoid36, ...
-    solenoid38, solenoid39, solenoid40, solenoid41, solenoid42, solenoid43, ...
-    solenoid45, solenoid46, solenoid47, solenoid48, solenoid49, ...
-    pulse_shape);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+%% ==================== ANALYSIS PLANES ====================
+ANALYSIS_LOCATIONS = [254;600;1000;1500;1700;2200;2700; ...
+                      3400;3964;4600;5400;6402;6828;7450;8305];
+ANALYSIS_LOCATION_NAMES = {'Anode','Early_Drift','Mid_Drift1','Trans1','Trans2', ...
+    'Mid_Drift2','BPM1','Extension1','BPM2','Extension2', ...
+    'Late_Drift','BPM3','BPM4','Sol49','Exit'};
+N_ANALYSIS_PLANES = length(ANALYSIS_LOCATIONS);
+twiss_locations   = ANALYSIS_LOCATIONS;
+location_names    = ANALYSIS_LOCATION_NAMES;
+n_locations       = N_ANALYSIS_PLANES;
+n_twiss_planes    = N_ANALYSIS_PLANES;
 
 %% ==================== DIAGNOSTIC ARRAYS ====================
-I_emit = zeros(nt, 1);
-I_anode = zeros(nt, 1);
-n_active_history = zeros(nt, 1);
+I_emit                = zeros(nt, 1);
+I_anode               = zeros(nt, 1);
+I_exit                = zeros(nt, 1);
+I_cathode             = zeros(nt, 1);
+I_drift_exit          = zeros(nt, 1);
+collection_efficiency = zeros(nt, 1);
+n_active_history      = zeros(nt, 1);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% added 10.08.2025 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% ADD THESE LINES:
-% Monitor positions - track through entire beamline
-%monitor_positions = [0.001, 0.254, 0.350, 0.450, 0.500, 0.600];
-%monitor_names = ["Cathode", "Anode entrance", "Mid-drift", "Pre-exit", "Exit", "Extended"];
-%n_monitors = length(monitor_positions);
-%I_monitor = zeros(nt, n_monitors);
-%particles_through = zeros(n_monitors, 1);
-%particle_counted_at_monitor = false(max_particles, n_monitors);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+J_thermionic  = zeros(nt, 1);
+J_space_charge = zeros(nt, 1);
+J_actual      = zeros(nt, 1);
 
-% Snapshot configuration
-ENABLE_SNAPSHOTS = true;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ENABLE_MULTIPULSE == true
-    snapshot_times = [165e-9, TWISS_PULSE1_TIME, 365e-9, TWISS_PULSE2_TIME];  
-    % Early P1, mid-P1, early P2, mid-P2
-else
-    snapshot_times = [165e-9, 185e-9, 205e-9, 225e-9];
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-snapshot_data = struct();
+sc_field_cathode      = zeros(nt, 1);
+sc_field_max          = zeros(nt, 1);
+sc_field_distribution = zeros(nt, 1);
+particle_weight_history = zeros(nt, 1);
+max_sc_field_recorded = 0;
+
+n_z_diagnostic   = 480;
+z_diagnostic     = linspace(0, 8.31, n_z_diagnostic);
+r_rms_history    = zeros(nt, n_z_diagnostic);
+n_particles_vs_z = zeros(nt, n_z_diagnostic);
+r_wall           = 0.075;
+
+snapshot_times = [165e-9, 185e-9, 205e-9, 225e-9];
+snapshot_data  = struct();
 snapshot_count = 0;
 
-%%%%%%%%%%%%%%%%%% Updated Diagnostic Arrays 02.12.2026 %%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== DIAGNOSTIC ARRAYS (EXTENDED DOMAIN) ====================
-% Beam envelope tracking over full 8.3m length
-n_z_diagnostic = 480;  % 3× more positions for 3× longer beamline
-z_diagnostic = linspace(0, 8.31, n_z_diagnostic);  % Now covers -400 to +8305mm region
-r_rms_history = zeros(nt, n_z_diagnostic);  % RMS radius vs z and time
-n_particles_vs_z = zeros(nt, n_z_diagnostic);  % Particle count vs z
+snapshot_early   = cell(N_SNAPSHOTS_EARLY, 1);
+snapshot_late    = cell(N_SNAPSHOTS_LATE,  1);
+snapshot_p1      = cell(N_SNAPSHOTS, 1);
+snapshot_early_count = 0;
+snapshot_late_count  = 0;
+snapshot_p1_count    = 0;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% HANDOFF ARRAYS %%%%%%%%%%%%%%%%%%%%%%%%%%
+%% If the debug line prints length = 1 for particle_t_at_exit then the 
+% Block 1 initialization needs:
+    %% In Block 1 — ensure full pre-allocation (R2025b compatible)
+     particle_t_at_exit  = zeros(1, max_particles, 'double');   %% explicit type
+     particle_KE_at_exit = zeros(1, max_particles, 'double');
+     particle_t_at_anode  = zeros(1, max_particles, 'double');
+     particle_KE_at_anode = zeros(1, max_particles, 'double');
+     particle_crossed_exit  = false(1, max_particles);
+     particle_crossed_anode = false(1, max_particles);
+     n_max = max_particles; %just to make clear
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% End of first section %%%%%%%%%%%%%%%%%%%%%%%%%%
+%% ==================== SOLENOID STRUCTURES ====================
+solenoid1  = struct('B', solenoid1_field,  'z_c', -0.279,  'L', 0.106, 'R', 0.451);
+solenoid2  = struct('B', solenoid2_field,  'z_c',  0.372,  'L', 0.195, 'R', 0.245);
+solenoid3  = struct('B', solenoid3_field,  'z_c',  1.14461,'L', 0.120, 'R', 0.245);
+solenoid4  = struct('B', solenoid4_field,  'z_c',  1.26757,'L', 0.120, 'R', 0.245);
+solenoid5  = struct('B', solenoid5_field,  'z_c',  1.36927,'L', 0.120, 'R', 0.245);
+solenoid7  = struct('B', solenoid7_field,  'z_c',  1.49223,'L', 0.100, 'R', 0.245);
+solenoid8  = struct('B', solenoid8_field,  'z_c',  1.59393,'L', 0.100, 'R', 0.245);
+solenoid9  = struct('B', solenoid9_field,  'z_c',  1.71689,'L', 0.100, 'R', 0.245);
+solenoid10 = struct('B', solenoid10_field, 'z_c',  1.81860,'L', 0.090, 'R', 0.245);
+solenoid11 = struct('B', solenoid11_field, 'z_c',  1.94156,'L', 0.110, 'R', 0.245);
+solenoid12 = struct('B', solenoid12_field, 'z_c',  2.04326,'L', 0.110, 'R', 0.245);
+solenoid14 = struct('B', solenoid14_field, 'z_c',  2.16622,'L', 0.090, 'R', 0.245);
+solenoid15 = struct('B', solenoid15_field, 'z_c',  2.26793,'L', 0.100, 'R', 0.245);
+solenoid16 = struct('B', solenoid16_field, 'z_c',  2.39089,'L', 0.110, 'R', 0.245);
+solenoid17 = struct('B', solenoid17_field, 'z_c',  2.49259,'L', 0.110, 'R', 0.245);
+solenoid18 = struct('B', solenoid18_field, 'z_c',  2.61555,'L', 0.090, 'R', 0.245);
+solenoid19 = struct('B', solenoid19_field, 'z_c',  2.71726,'L', 0.090, 'R', 0.245);
+solenoid20 = struct('B', solenoid20_field, 'z_c',  2.84022,'L', 0.100, 'R', 0.245);
+solenoid21 = struct('B', solenoid21_field, 'z_c',  2.94192,'L', 0.100, 'R', 0.245);
+solenoid22 = struct('B', solenoid22_field, 'z_c',  3.06488,'L', 0.100, 'R', 0.245);
+solenoid23 = struct('B', solenoid23_field, 'z_c',  3.16658,'L', 0.100, 'R', 0.245);
+solenoid24 = struct('B', solenoid24_field, 'z_c',  3.28954,'L', 0.100, 'R', 0.245);
+solenoid25 = struct('B', solenoid25_field, 'z_c',  3.39125,'L', 0.100, 'R', 0.245);
+solenoid26 = struct('B', solenoid26_field, 'z_c',  3.51421,'L', 0.100, 'R', 0.245);
+solenoid27 = struct('B', solenoid27_field, 'z_c',  3.61591,'L', 0.100, 'R', 0.245);
+solenoid28 = struct('B', solenoid28_field, 'z_c',  3.73887,'L', 0.100, 'R', 0.245);
+solenoid29 = struct('B', solenoid29_field, 'z_c',  3.84058,'L', 0.100, 'R', 0.245);
+solenoid30 = struct('B', solenoid30_field, 'z_c',  3.96354,'L', 0.100, 'R', 0.245);
+solenoid31 = struct('B', solenoid31_field, 'z_c',  4.06524,'L', 0.100, 'R', 0.245);
+solenoid32 = struct('B', solenoid32_field, 'z_c',  4.18820,'L', 0.100, 'R', 0.245);
+solenoid33 = struct('B', solenoid33_field, 'z_c',  4.28993,'L', 0.100, 'R', 0.245);
+solenoid34 = struct('B', solenoid34_field, 'z_c',  4.41289,'L', 0.100, 'R', 0.245);
+solenoid35 = struct('B', solenoid35_field, 'z_c',  4.51459,'L', 0.100, 'R', 0.245);
+solenoid36 = struct('B', solenoid36_field, 'z_c',  4.63755,'L', 0.100, 'R', 0.245);
+solenoid38 = struct('B', solenoid38_field, 'z_c',  4.73925,'L', 0.100, 'R', 0.245);
+solenoid39 = struct('B', solenoid39_field, 'z_c',  4.86221,'L', 0.100, 'R', 0.245);
+solenoid40 = struct('B', solenoid40_field, 'z_c',  4.96392,'L', 0.100, 'R', 0.245);
+solenoid41 = struct('B', solenoid41_field, 'z_c',  5.08688,'L', 0.100, 'R', 0.245);
+solenoid42 = struct('B', solenoid42_field, 'z_c',  5.18858,'L', 0.100, 'R', 0.245);
+solenoid43 = struct('B', solenoid43_field, 'z_c',  5.31154,'L', 0.100, 'R', 0.245);
+solenoid45 = struct('B', solenoid45_field, 'z_c',  5.41324,'L', 0.100, 'R', 0.245);
+solenoid46 = struct('B', solenoid46_field, 'z_c',  5.53620,'L', 0.100, 'R', 0.245);
+solenoid47 = struct('B', solenoid47_field, 'z_c',  5.63791,'L', 0.100, 'R', 0.245);
+solenoid48 = struct('B', solenoid48_field, 'z_c',  5.76087,'L', 0.100, 'R', 0.245);
+solenoid49 = struct('B', solenoid49_field, 'z_c',  7.44800,'L', 0.100, 'R', 0.245);
 
-% Wall radius reference (drift tube)
-r_wall = 0.075;  % 75mm drift tube radius (unchanged)
+fprintf('\nSolenoid configuration: 43 active solenoids (6,13,37,44 are steering — OFF)\n');
+fprintf('  Sol1:  %+.0f G at z=%.0f mm  (cathode)\n', solenoid1.B*1e4,  solenoid1.z_c*1000);
+fprintf('  Sol2:  %+.0f G at z=%.0f mm  (anode)\n',   solenoid2.B*1e4,  solenoid2.z_c*1000);
+fprintf('  Sol49: %+.0f G at z=%.0f mm  (last)\n',    solenoid49.B*1e4, solenoid49.z_c*1000);
 
-fprintf('Diagnostic grid: %d positions over %.1f m (dz=%.1f mm)\n', ...
-        n_z_diagnostic, max(z_diagnostic), ...
-        (z_diagnostic(2)-z_diagnostic(1))*1000);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% ==================== MAGNETIC FIELD FUNCTIONS ====================
+SOLENOID_ARGS = {solenoid1,solenoid2,solenoid3,solenoid4,solenoid5, ...
+    solenoid7,solenoid8,solenoid9,solenoid10,solenoid11,solenoid12, ...
+    solenoid14,solenoid15,solenoid16,solenoid17,solenoid18,solenoid19, ...
+    solenoid20,solenoid21,solenoid22,solenoid23,solenoid24,solenoid25, ...
+    solenoid26,solenoid27,solenoid28,solenoid29,solenoid30,solenoid31, ...
+    solenoid32,solenoid33,solenoid34,solenoid35,solenoid36, ...
+    solenoid38,solenoid39,solenoid40,solenoid41,solenoid42,solenoid43, ...
+    solenoid45,solenoid46,solenoid47,solenoid48,solenoid49};
+
+Bz_func = @(z_pos, r_pos, t_curr) ...
+    calculate_Bz_solenoid(z_pos, r_pos, t_curr, SOLENOID_ARGS{:});
+
+Br_func = @(z_pos, r_pos, t_curr) ...
+    calculate_Br_solenoid(z_pos, r_pos, t_curr, SOLENOID_ARGS{:});
+
+%% Quick solenoid function test
+fprintf('\n=== Solenoid Function Test (t=200ns) ===\n');
+for z_test = [0.5, 1.0, 2.0, 4.0, 6.0]
+    Bz_t = Bz_func(z_test, 0.04, 200e-9);
+    fprintf('  z=%.1f m:  Bz=%.2e T  (%.1f G)\n', z_test, Bz_t, Bz_t*1e4);
+end
+
+%% ==================== SCHOTTKY DIAGNOSTICS STRUCT ====================
+schottky_diagnostics = struct();
+schottky_diagnostics.E_cathode  = zeros(nt, 1);
+schottky_diagnostics.delta_phi  = zeros(nt, 1);
+schottky_diagnostics.phi_eff    = zeros(nt, 1);
+schottky_diagnostics.T_cathode  = zeros(nt, 1);
+schottky_diagnostics.T_required = zeros(nt, 1);
+
 %% ==================== MAIN TIME LOOP ====================
 fprintf('\nStarting simulation...\n');
+fprintf('  nt=%d steps  |  dt=%.0f ps  |  t=%.1f→%.1f ns\n', ...
+        nt, dt*1e12, t_start*1e9, t_end*1e9);
 tic_start = tic;
 fprintf('Progress: ');
 
 for it = 1:nt
     current_t = t(it);
-%%%%%%%%%%%%%%%%%%%%%% added 10.15.2025  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
-    % Reset accumulators if starting fresh (ADD THIS BLOCK)
+
+    %% Reset accumulators on first step
     if it == 1
         I_anode_accumulator = 0;
-        I_exit_accumulator = 0;
-        I_anode_count = 0;
-        I_exit_count = 0;
+        I_exit_accumulator  = 0;
+        I_anode_count       = 0;
+        I_exit_count        = 0;
     end
-    
-    % Progress reporting (your existing code continues...)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Progress reporting
+
+    %% Progress reporting
     if mod(it, 1000) == 0
         elapsed = toc(tic_start);
-        rate = it / elapsed;
-        eta = (nt - it) / rate;
-        fprintf('\n  Step %d/%d (%.1f%%) | %.1f steps/s | ETA: %.1f min', ...
+        rate    = it / elapsed;
+        eta     = (nt - it) / rate;
+        fprintf('\n  Step %d/%d (%.1f%%) | %.0f steps/s | ETA %.1f min', ...
                 it, nt, 100*it/nt, rate, eta/60);
-        fprintf('\n  Active: %d | Created: %d | At anode: %d', ...
-                n_active, n_created, particles_at_anode);
+        fprintf('\n  Active:%d  Created:%d  At_anode:%d  Transmitted:%d', ...
+                n_active, n_created, particles_at_anode, particles_transmitted);
         fprintf('\n  ');
     elseif mod(it, round(nt/20)) == 0
         fprintf('.');
     end
-    
-    % V2: Compute active_idx ONCE per timestep (refreshed after emission/loss)
+
+    %% Refresh active index once per timestep
     active_idx = find(active_particles);
-    n_active = length(active_idx);
+    n_active   = length(active_idx);
+
+    %% ==================== PULSE FACTOR ====================
+    pulse_factor  = pulse_shape(current_t);
+    current_pulse = 1;   % single-pulse mode
+
+    %% ==================== EMISSION ====================
+    if pulse_factor > 0.01
+
+        %% --- Dynamic cathode field extraction ---
+        iz_search = find(z >= 0.000 & z <= 0.010);
+        if ~isempty(iz_search)
+            E_cathode_base = max(abs(Ez_capped(1:3, iz_search(:)')), [], 'all');
+        else
+            E_cathode_base = E_CATHODE_BASE_DETECTED;
+        end
+        E_cathode = E_cathode_base * pulse_factor;
+
+        %% Add space-charge contribution at cathode
+        if ENABLE_SPACE_CHARGE && exist('Ez_sc','var') && any(Ez_sc(:) ~= 0)
+            [~, iz_sc_cath] = min(abs(sc_z - 0.001));
+            E_cathode = E_cathode + abs(mean(Ez_sc(:, iz_sc_cath)));
+        end
+
+        %% Schottky barrier reduction
+        schottky_constant = sqrt(e_charge^3 / (4*pi*eps0));
+        delta_phi = schottky_constant * sqrt(E_cathode) / e_charge;  % eV
+        phi_0     = 1.8;    % base work function (eV)
+        phi_eff   = phi_0 - delta_phi;
         
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% added 10.17.2025 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% SCHOTTKY-ENHANCED THERMIONIC EMISSION MODEL FOR PIC v8
-% Replace the existing emission section in your main loop with this enhanced version
-% This properly accounts for field-enhanced emission at the cathode surface
-
-%% ==================== ENHANCED EMISSION WITH SCHOTTKY EFFECT ====================
-% Place this inside your main time loop where emission occurs
-% Around line 430 in your current code, replace:
-% pulse_factor = pulse_shape(current_t);
-% With:
-%if ENABLE_MULTIPULSE == true
-%   pulse_factor = pulse_shape_multipulse(current_t, pulse_config);
-%%%%%%%%%%%%%%%%%%%%%%%%% corrected section 11.25.2025 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ENABLE_MULTIPULSE == true
-    pulse_factor = pulse_shape_multipulse(current_t, pulse_config);
-    
-    % Determine which pulse we're currently in
-    current_pulse = 0;
-    for ip = 1:pulse_config.n_pulses
-        t_pulse = current_t - pulse_config.pulse_starts(ip);
-        pulse_duration = pulse_config.rise_time + pulse_config.flat_time + pulse_config.fall_time;
-        
-        if t_pulse >= 0 && t_pulse <= pulse_duration
-            current_pulse = ip;
-            break;
+        %% Thermionic emission (Richardson-Dushman)
+        A_RD       = 1.20173e6;   % A/m²/K²
+        T_cathode  = 1200;        % K
+        J_thermionic_current = A_RD * T_cathode^2 * ...
+                               exp(-phi_eff * e_charge / (k_B * T_cathode));
+        %%%%%%%%% Add In Block 1 Schottky setup %%%%%%%%%%%% 
+        %% T_required: temperature needed WITHOUT Schottky enhancement
+        %% to achieve the same emission current density J_emit
+        %% Uses approximation T_req ≈ T_actual × (phi_0 / phi_eff)
+        %% Valid for delta_phi << phi_0 (here delta_phi/phi_0 ≈ 5%)
+        if phi_eff > 0.01   % guard against divide-by-zero at pulse edges
+            schottky_diagnostics.T_required(it) = T_cathode * (phi_0 / phi_eff);
+        else
+            schottky_diagnostics.T_required(it) = T_cathode;
         end
-    end  
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-else  % NOW the else can follow
-    % Single pulse mode
-    pulse_starts = 150e-9;
-    pulse_rise = 15e-9;
-    pulse_flat = 80e-9;
-    pulse_fall = 25e-9; % Pulse endded at 270ns 
-    
-    %t_start = 149e-9;   Both t_start and t_end were defined earlier at line 345 
-    %t_end = 305e-9;      % Simulation end 25ns after pulse end
+        schottky_diagnostics.T_cathode(it) = T_cathode;
+        schottky_diagnostics.delta_phi(it) = delta_phi;
+        schottky_diagnostics.phi_eff(it)   = phi_eff;
+        schottky_diagnostics.E_cathode(it) = E_cathode;
 
-    pulse_factor = pulse_shape_func(current_t, pulse_starts, pulse_rise, pulse_flat, pulse_fall);
-    current_pulse = 1;
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%&%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if pulse_factor > 0.01
-    % Physical constants
-    J_SPECIFICATION = 11e4;  % 11 A/cm² - operational limit
-    A_emit = pi * 0.065^2;   % Cathode area (m²)
-    
-    % Richardson-Dushman constants
-    A_RD = 1.20173e6;  % A/m²/K²
-    phi_0 = 1.8;       % Base work function in eV (scandium-doped cathode)
-    
-    % CRITICAL: Extract local electric field at cathode surface
-    % This is the field that causes Schottky barrier reduction
-   % if exist('Ez_sc', 'var') && ENABLE_SPACE_CHARGE
-        % Total field = applied + space charge
-        %E_cathode = abs(Ez_capped(1,1)) * pulse_factor + abs(Ez_sc(1,1));
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Better field extraction at z=0, r=0:
-%[~, iz_cath] = min(abs(z - 0.001));  % Find z index closest to cathode
-%[~, ir_cath] = min(abs(r));          % Find r=0 index
-%E_cathode = abs(Ez_capped(ir_cath, iz_cath)) * pulse_factor;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Option 2: Search for the maximum field magnitude near cathode
-%field_search_range = 1:20;  % Check first 20 z-indices
-%Ez_near_cathode = Ez_capped(1, field_search_range);
-%E_cathode = max(abs(Ez_near_cathode)) * pulse_factor;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Option 1: Use the known field value from your geometry
-%E_cathode_base = 5.37e6;  % V/m - from your field diagnostic
-%E_cathode = E_cathode_base * pulse_factor;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% CORRECTED CATHODE FIELD EXTRACTION
-% Replace the existing E_cathode calculation in your emission section with:
-% Option 1: Use the known field value from your geometry
-%E_cathode_base = 5.37e6;  % V/m - from your field diagnostic output
-%E_cathode = E_cathode_base * pulse_factor;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% added 02.25.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== DYNAMIC CATHODE FIELD EXTRACTION ====================
-% Automatically extracts cathode surface field from loaded field solution
-% Adapts to ANY Pierce angle geometry (68°, 80°, 89°, etc.)
-% No manual calibration needed when changing cathode geometry
+        %% Child-Langmuir space-charge limit (relativistic)
+        V_gap    = 1.70e6 * pulse_factor;
+        d_gap    = 0.254;
+        gamma_exit = 1 + V_gap * e_charge / (m_e * c^2);
+        beta_exit  = sqrt(1 - 1/gamma_exit^2);
+        rel_factor = gamma_exit^(3/2) * (1 + 2*log(gamma_exit));
+        emp_factor = 1.75;
+        J_CL = emp_factor * (4/9) * eps0 * sqrt(2*e_charge/m_e) * ...
+               V_gap^(3/2) / d_gap^2 * sqrt(rel_factor);
 
-% METHOD: Sample Ez along axis near cathode surface (z = 0 to ~5mm)
-% The field peaks just ahead of the cathode and represents the
-% accelerating field that drives Schottky-enhanced emission
+        %% Operational limit
+        J_SPECIFICATION = 11e4;   % A/m²
+        A_emit          = pi * 0.065^2;
 
-% Search region: z = 0 to 10mm, r = 0 (on-axis)
-z_search_min = 0.000;    % Cathode surface
-z_search_max = 0.010;    % 10mm ahead of cathode
-iz_search = find(z >= z_search_min & z <= z_search_max);
+        %% Three-way minimum
+        J_emit         = min([J_SPECIFICATION, J_thermionic_current, J_CL]);
+        I_emit_current = J_emit * A_emit;
 
-if ~isempty(iz_search)
-    % Sample on-axis field (first few radial indices for robustness)
-    Ez_near_cathode = abs(Ez_capped(1:3, iz_search));
-    
-    % Take the maximum field in this region (peak accelerating field)
-    E_cathode_base = max(Ez_near_cathode(:));
-    
-    % Sanity check: field should be between 3 and 8 MV/m for our geometry
-    if E_cathode_base < 3e6 || E_cathode_base > 8e6
-        fprintf('  WARNING: Unusual cathode field %.2f MV/m (expected 3-8 MV/m)\n', ...
-                E_cathode_base/1e6);
-        fprintf('  Check geometry/field solution consistency\n');
-    end
-else
-    % Fallback: use the field at the first vacuum point ahead of cathode
-    [~, iz_fallback] = min(abs(z - 0.005));
-    E_cathode_base = abs(Ez_capped(1, iz_fallback));
-    fprintf('  WARNING: Using fallback cathode field extraction\n');
-end
+        I_emit(it)    = I_emit_current;
+        I_cathode(it) = I_emit_current;
 
-% Apply pulse modulation (existing logic unchanged)
-E_cathode = E_cathode_base * pulse_factor;
+        J_thermionic(it)   = J_thermionic_current;
+        J_space_charge(it) = J_CL;
+        J_actual(it)       = J_emit;
 
-% Report (first timestep only)
-if it == 1 || (exist('cathode_field_reported', 'var') == 0)
-    fprintf('\n=== Dynamic Cathode Field Extraction ===\n');
-    fprintf('  E_cathode_base = %.2f MV/m (auto-detected from field solution)\n', ...
-            E_cathode_base/1e6);
-    fprintf('  Search region: z = %.0f to %.0f mm\n', z_search_min*1000, z_search_max*1000);
-    
-    % Report field profile near cathode for verification
-    fprintf('  Field profile near cathode (on-axis):\n');
-    z_profile_idx = find(z >= -0.005 & z <= 0.020);
-    for k = 1:min(8, length(z_profile_idx))
-        jj = z_profile_idx(k);
-        fprintf('    z=%6.1f mm: Ez = %.2f MV/m\n', z(jj)*1000, abs(Ez_capped(1,jj))/1e6);
-    end
-    cathode_field_reported = true;
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Add space charge contribution if enabled
-if ENABLE_SPACE_CHARGE == true && exist('Ez_sc', 'var') && any(Ez_sc(:) ~= 0)
-    % Find the closest sc_z index to cathode
-    [~, iz_sc] = min(abs(sc_z - 0.001));
-    % Average the radial field at cathode position
-    sc_contribution = abs(mean(Ez_sc(:, iz_sc)));
-    E_cathode = E_cathode + sc_contribution;
-end
+        schottky_diagnostics.E_cathode(it) = E_cathode;
+        schottky_diagnostics.delta_phi(it) = delta_phi;
+        schottky_diagnostics.phi_eff(it)   = phi_eff;
+        schottky_diagnostics.T_cathode(it) = T_cathode;
 
-% Now calculate Schottky reduction with the correct field
-schottky_constant = sqrt(e_charge^3 / (4*pi*eps0));
-delta_phi = schottky_constant * sqrt(E_cathode)/e_charge; % In units of eV
-phi_eff = phi_0 - delta_phi;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Add space charge if present
-%if ENABLE_SPACE_CHARGE && exist('Ez_sc', 'var')
-    % Sample space charge field near cathode
-%    [~, iz_sc] = min(abs(sc_z - 0.001));
-%    E_cathode = E_cathode + abs(mean(Ez_sc(:, iz_sc)));
-%end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-    
-    % Temperature options for exploration
-    % Option 1: Fixed temperature (current approach)
-    % T_cathode = 1280;  % K - your current setting
-    
-    % Option 2: Temperature control for current limiting
-    % This finds the temperature that gives J_SPECIFICATION
-    J_target = J_SPECIFICATION * pulse_factor;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Replace the Newton-Raphson section with this approach:
-
-% Option 1: Fixed temperature exploration
-T_cathode = 1200;  % K - Set this to explore different temperatures 1150K for 5A/cm2
-% This temperature will naturally limit emission
-
-% Calculate emission at this temperature same as on line 663
-%J_thermionic_current = A_RD * T_cathode^2 * exp(-phi_eff * e_charge / (k_B* T_cathode)); 
-
-% The actual emission is the minimum of thermionic and space-charge limits
-% Don't include J_SPECIFICATION as a limit when exploring temperature effects
-%J_emit = min(J_thermionic_current, J_CL);
-
-% For diagnostic purposes, still track what spec would be
-J_SPECIFICATION_display = 11e4;  % 2 A/cm² for comparison
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Calculate thermionic emission with Schottky-reduced barrier
-    J_thermionic_current = A_RD * T_cathode^2 * exp(-phi_eff * e_charge / (k_B * T_cathode));
-    
-    % Calculate space-charge limited emission (Child-Langmuir)
-    V_gap = 1.70e6 * pulse_factor;  % Gap voltage 1.7MV
-    d_gap = 0.254;  % Gap distance
-    
-    % Modified Child-Langmuir with relativistic correction
-    % For 1.7 MV, particles become relativistic
-    gamma_exit = 1 + V_gap * e_charge / (m_e * c^2);
-    beta_exit = sqrt(1 - 1/gamma_exit^2);
-    relativistic_factor = gamma_exit^(3/2) * (1 + 2*log(gamma_exit));
-    
-    % Empirical enhancement factor (accounts for geometry, non-uniformity)
-    emp_factor = 1.75;
-    
-    J_CL = emp_factor * (4/9) * eps0 * sqrt(2*e_charge/m_e) * ...
-           V_gap^(3/2) / d_gap^2 * sqrt(relativistic_factor);
-    
-    % THREE-WAY MINIMUM: Take lowest of all three
-    J_emit = min([J_SPECIFICATION, J_thermionic_current, J_CL]);
-    
-    % Calculate currents
-    I_emit_current = J_emit * A_emit;
-    I_emit(it) = I_emit_current;
-    I_cathode(it) = I_emit_current;
-    
-    % Store enhanced diagnostics
-    J_thermionic(it) = J_thermionic_current;
-    J_space_charge(it) = J_CL;
-    J_actual(it) = J_emit;
-    
-    % NEW: Store Schottky diagnostics
-    if ~exist('schottky_diagnostics', 'var')
-        schottky_diagnostics = struct();
-        schottky_diagnostics.E_cathode = zeros(nt, 1);
-        schottky_diagnostics.delta_phi = zeros(nt, 1);
-        schottky_diagnostics.phi_eff = zeros(nt, 1);
-        schottky_diagnostics.T_cathode = zeros(nt, 1);
-        schottky_diagnostics.T_required = zeros(nt, 1);
-    end
-    
-    schottky_diagnostics.E_cathode(it) = E_cathode;
-    schottky_diagnostics.delta_phi(it) = delta_phi;
-    schottky_diagnostics.phi_eff(it) = phi_eff;
-    schottky_diagnostics.T_cathode(it) = T_cathode;
-    
-    % Calculate what temperature would be needed WITHOUT Schottky effect
-    T_no_schottky = T_cathode * phi_0 / phi_eff;  % Approximate
-    schottky_diagnostics.T_required(it) = T_no_schottky;
-    
-    % Adaptive particle count (your existing code)
-    if pulse_factor < 0.95
-        n_emit = ceil(base_particles * pulse_factor);
-    else
-        n_emit = base_particles;
-    end
-    
-    % Calculate particle weight
-    charge_to_emit = I_emit_current * dt;
-    particle_weight = charge_to_emit / (n_emit * e_charge);
-    
-    % Track weight for diagnostics
-    if n_emit > 0
-        particle_weight_history(it) = particle_weight;
-    end
-    
-    % Emit particles (your existing particle creation code)
-    for ip = 1:n_emit
-        if n_created < max_particles
-            n_created = n_created + 1;
-            idx = n_created;
-            
-            % Random cathode position
-            r_emit = sqrt(rand()) * 0.065;
-            
-            % Initialize particle
-            z_particles(idx) = 0.001;
-            r_particles(idx) = r_emit;
-            weight_particles(idx) = particle_weight;
-            active_particles(idx) = true;
-            
-            % Thermal velocity based on actual cathode temperature
-            v_thermal = sqrt(2 * k_B * T_cathode / m_e);
-            pz_particles(idx) = m_e * abs(randn()) * v_thermal * 0.1;
-            pr_particles(idx) = m_e * randn() * v_thermal * 0.01;
-            ptheta_particles(idx) = m_e * randn() * v_thermal * 0.01;
-            
-            n_active = n_active + 1;
-        % ===== ADD THIS LINE HERE =====
-        if ENABLE_MULTIPULSE == true
-            particle_source_pulse(idx) = current_pulse;
+        %% Adaptive particle count
+        if pulse_factor < 0.95
+            n_emit = ceil(base_particles * pulse_factor);
+        else
+            n_emit = base_particles;
         end
-        % ===== END OF ADDITION =====
+
+        charge_to_emit  = I_emit_current * dt;
+        particle_weight = charge_to_emit / (n_emit * e_charge);
+
+        if n_emit > 0
+            particle_weight_history(it) = particle_weight;
+        end
+
+        %% Emit particles
+        v_thermal = sqrt(2 * k_B * T_cathode / m_e);
+
+        for ip = 1:n_emit
+            if n_created < max_particles
+                n_created = n_created + 1;
+                idx       = n_created;
+
+                r_emit = sqrt(rand()) * 0.065;
+
+                z_particles(idx)      = 0.001;
+                r_particles(idx)      = r_emit;
+                weight_particles(idx) = particle_weight;
+                active_particles(idx) = true;
+
+                pz_particles(idx)     = m_e * abs(randn()) * v_thermal * 0.1;
+                pr_particles(idx)     = m_e * randn()      * v_thermal * 0.01;
+                ptheta_particles(idx) = m_e * randn()      * v_thermal * 0.01;
+
+                n_active = n_active + 1;
+            end
+        end
+
+        %% Emission diagnostic (every 1000 steps)
+        if mod(it, 1000) == 0
+            fprintf('\n  [EMISSION] t=%.1f ns  E_cath=%.2f MV/m  phi_eff=%.3f eV', ...
+                    current_t*1e9, E_cathode/1e6, phi_eff);
+            fprintf('\n             J=%.1f A/cm²  I=%.1f A  n_emit=%d', ...
+                    J_emit/1e4, I_emit_current, n_emit);
+        end
+
+    end  %% pulse_factor > 0.01
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% End of the section 2 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Start of new third section %%%%%%%%%%%%%%%%%%%%%%%%%
+    %% ==================== SC FIELD MONITOR ====================
+    %% [CHANGED] — correctly zeros between solves and after beam off
+    if ENABLE_SPACE_CHARGE && exist('Ez_sc','var')
+        if mod(it, sc_interval) == 0 && n_active > 100
+            %% SC solve just ran — record fresh values
+            [~, iz_cath_sc] = min(abs(sc_z - 0.001));
+            sc_field_cathode(it)      = mean(abs(Ez_sc(:, iz_cath_sc)));
+            sc_field_max(it)          = max(abs(Ez_sc(:)));
+            sc_field_distribution(it) = sqrt(mean(Ez_sc(:).^2));
+        elseif n_active > 100 && it > 1
+            %% Between SC solves — carry forward previous value
+            sc_field_cathode(it)      = sc_field_cathode(it-1);
+            sc_field_max(it)          = sc_field_max(it-1);
+            sc_field_distribution(it) = sc_field_distribution(it-1);
+        else
+            %% Beam off (n_active <= 100) — zero the monitor
+            sc_field_cathode(it)      = 0;
+            sc_field_max(it)          = 0;
+            sc_field_distribution(it) = 0;
         end
     end
-    
-    % Enhanced emission verification
-    if mod(it, 100) == 0
-        fprintf('\n  [SCHOTTKY EMISSION] t=%.1fns:', current_t*1e9);
-        fprintf('\n    E_cathode=%.2f MV/m, Δφ=%.3f eV', E_cathode/1e6, delta_phi);
-        fprintf('\n    φ_eff=%.3f eV (%.1f%% reduction)', phi_eff, 100*delta_phi/phi_0);
-        fprintf('\n    T_cathode=%.0f K (saves %.0f K vs no Schottky)', ...
-                T_cathode, T_no_schottky - T_cathode);
-        fprintf('\n    J=%.1f A/cm² @ I=%.1f A', J_emit/1e4, I_emit_current);
+    %% ==================== END SC FIELD MONITOR ====================
+
+    %% ==================== ION DRIFT AND RECOMBINATION ====================
+    total_ions_on_grid = 0;
+
+    if ENABLE_ION_ACCUMULATION && ENABLE_SPACE_CHARGE
+        total_ions_on_grid = sum(ion_density_grid(:));
     end
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Monitor cathode field if space charge is enabled
-if ENABLE_SPACE_CHARGE == true && mod(it, sc_interval) == 0 && exist('Ez_sc', 'var')
-    % Sample SC field near cathode (z ≈ 0)
-    [~, iz_cath] = min(abs(sc_z - 0.001));
-    sc_field_cathode(it) = mean(abs(Ez_sc(:, iz_cath)));
-    
-    % Maximum field in domain
-    sc_field_max(it) = max(abs(Ez_sc(:)));
-    
-    % RMS field distribution
-    sc_field_distribution(it) = sqrt(mean(Ez_sc(:).^2));
-end
+ %%%%%%%%%%%%%%%%%%%%%%%%% Replaced section    %%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+       if ENABLE_ION_ACCUMULATION && ENABLE_SPACE_CHARGE && ...
+       mod(it, sc_interval) == 0 && total_ions_on_grid > 0.1
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Update 01.23.2026  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-%% ==================== ION DRIFT AND RECOMBINATION ====================
-%% ==================== ION DIAGNOSTICS UPDATE (EVERY TIMESTEP) ====================
-% Update ion diagnostics EVERY timestep for smooth plotting (moved to 1935)
-%if ENABLE_ION_ACCUMULATION
- %   total_ions_on_grid = sum(ion_density_grid(:));
-%   ion_diag.total_ions_vs_time(it) = total_ions_on_grid * ion_physics.superparticle_weight;
-%    ion_diag.peak_density_vs_time(it) = max(ion_density_grid(:)) * ion_physics.superparticle_weight;
-%end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Ion drift and recombination still only every sc_interval
-% Vectorized ion drift (V2 optimization)
-if ENABLE_ION_ACCUMULATION == true && mod(it, sc_interval) == 0
-    % ===== ONLY DO DRIFT/RECOMBINATION IF IONS EXIST =====
-    if total_ions_on_grid > 0.1
-        % Find cells with significant ion density
         [ir_ion, jz_ion] = find(ion_density_grid > 0.01);
-        
-        % Filter to interior cells
-        valid_ion = ir_ion > 1 & ir_ion < sc_nr & jz_ion > 1 & jz_ion < sc_nz;
+        valid_ion = ir_ion > 1 & ir_ion < sc_nr & ...
+                    jz_ion > 1 & jz_ion < sc_nz;
         ir_ion = ir_ion(valid_ion);
         jz_ion = jz_ion(valid_ion);
-        
+
         if ~isempty(ir_ion)
-            % Vectorized field interpolation (all ion cells at once)
-            z_pts = sc_z(jz_ion)';
-            r_pts = sc_r(ir_ion)';
-            
-            E_z_local = interp2(z, r, Ez_capped, z_pts, r_pts, 'linear', 0);
-            E_r_local = interp2(z, r, Er_capped, z_pts, r_pts, 'linear', 0);
-            
-            if exist('Ez_sc', 'var')
-                lin_idx = sub2ind(size(Ez_sc), ir_ion, jz_ion);
-                E_z_local = E_z_local + Ez_sc(lin_idx)';
-                E_r_local = E_r_local + Er_sc(lin_idx)';
+            z_pts = sc_z(jz_ion(:));   % column vector
+            r_pts = sc_r(ir_ion(:));   % column vector
+
+            E_z_local = interp2(z, r, Ez_capped, ...
+                                z_pts, r_pts, 'linear', 0);
+            E_z_local = E_z_local(:);  % ← force column vector
+
+            if exist('Ez_sc','var')
+                lin_idx   = sub2ind(size(Ez_sc), ir_ion, jz_ion);
+                E_z_local = E_z_local + Ez_sc(lin_idx(:));
             end
-            
-            % Update velocities (vectorized via linear indexing)
+
             lin_idx_vz = sub2ind(size(ion_vz_grid), ir_ion, jz_ion);
             ion_vz_grid(lin_idx_vz) = ion_physics.mobility * E_z_local;
         end
-        
-        % Recombination every 1ns (every 100 timesteps at dt=10ps)
+
         if mod(it, 100) == 0
-            decay_factor = exp(-dt * 100 / ion_physics.t_recomb_effective);
+            decay_factor     = exp(-dt * 100 / ion_physics.t_recomb_effective);
             ion_density_grid = ion_density_grid * decay_factor;
         end
     end
-end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% TEMPORARY DIAGNOSTIC REMOVED FROM HERE %%%%%%%%%%%%%%%% 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 01.26.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% ---------------------- SPACE CHARGE CALCULATION -----------------------_-------%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% ==================== SPACE CHARGE SOLVER ====================
     if ENABLE_SPACE_CHARGE && mod(it, sc_interval) == 0 && n_active > 100
-        active_idx = find(active_particles);
-        z_active = z_particles(active_idx);
-        r_active = r_particles(active_idx);
-        
-        % Reset charge density
+
+        %% Reset SC arrays
         rho_grid(:) = 0;
+        Ez_sc(:)    = 0;
+        Er_sc(:)    = 0;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Vectorized charge deposition (V2 optimization)
-n_dep = length(active_idx);
+        %% WS: warm start — only after beam fill-up phase (it >= 6000)
+        n_dep_active   = sum(active_particles);
+        n_dep_ratio    = n_dep_active / max(1, n_dep_prev_sc);
+        use_warm_start = (it >= 6000) && ...
+                         (n_dep_ratio > 0.95 && n_dep_ratio < 1.05);
+        if use_warm_start
+            phi_grid = phi_grid_prev;   %% reuse converged solution
+            if ~ws_engaged
+                sc_omega      = 1.5;   %% PATCH 10: boost omega once seed is trusted
+                sc_iterations = 200;   %% keep iteration count stable
+                ws_engaged = true;
+                fprintf('  [SC] Warm start ENGAGED (it=%d) — omega boosted to 1.5\n', it);
+            end
+        else
+            %% PATCH 7: smart cold start — use best available seed
+            if ws_phi_seeded
+                phi_grid = phi_grid_prev;  %% seed from last valid solution
+            else
+                phi_grid(:) = 0;           %% true cold start (pre-seed)
+            end
+            if it >= 6000 && n_dep_prev_sc > 0
+                fprintf('  [SC] Cold start: ratio=%.2f (it=%d)\n', n_dep_ratio, it);
+            end
+            if ws_engaged
+                sc_omega      = 1.0;   %% PATCH 10: back to safe omega on disengage
+                sc_iterations = 200;
+                ws_engaged    = false;
+                ws_phi_seeded = true;       %% keep seed after disengage
+            end
+        end
+        n_dep_prev_sc = n_dep_active;   %% update tracker
+
+        active_idx = find(active_particles);
+        n_dep      = length(active_idx);
+
+        z_dep = z_particles(active_idx);
+        r_dep = r_particles(active_idx);
+
+        sc_enhancement_scale = 0.25;
+        enhancement_gap      = 1.050 * sc_enhancement_scale;
+        enhancement_drift    = 0.950 * sc_enhancement_scale;
+
+%%%%%%%%%%%%%%%%%%%%%% Corrected Charge Deposition block %%%%%%%%%%%%%%%%%%%
+%% ==================== SC CHARGE DEPOSITION — BILINEAR ====================
+rho_grid(:) = 0;
+
 if n_dep > 0
-    iz_bin = round((z_active - sc_z(1)) / sc_dz) + 1;
-    ir_bin = round((r_active - sc_r(1)) / sc_dr) + 1;
-    
-    % Clamp to valid range
-    iz_bin = max(1, min(sc_nz, iz_bin));
-    ir_bin = max(1, min(sc_nr, ir_bin));
-    
-    % Pre-compute cell volumes (vectorized)
-    cell_vol = zeros(n_dep, 1);
-    on_axis = ir_bin == 1;
-    cell_vol(on_axis) = pi * (sc_dr/2)^2 * sc_dz;
-    off_axis = ~on_axis;
-    if any(off_axis)
-        r_inner = sc_r(ir_bin(off_axis))' - sc_dr/2;
-        r_outer = sc_r(ir_bin(off_axis))' + sc_dr/2;
-        cell_vol(off_axis) = pi * (r_outer.^2 - r_inner.^2) * sc_dz;
-    end
-    
-    % Region-dependent enhancement (vectorized)
-    enhancement_vec = zeros(n_dep, 1);
-    in_gap = z_active < 0.254;
-    enhancement_vec(in_gap) = 1.050 * 0.25;
-    enhancement_vec(~in_gap) = 0.950 * 0.25;
-    enhancement1 = 1.050 * 0.25;
-    enhancement2 = 0.950 * 0.25;
-    
-    % Compute charge contributions (vectorized)
-    charge_contrib = -enhancement_vec .* e_charge .* weight_particles(active_idx) ./ cell_vol;
-    
-    % Accumulate onto grid using accumarray
-    linear_idx = sub2ind([sc_nr, sc_nz], ir_bin, iz_bin);
-    rho_grid = rho_grid + reshape(accumarray(linear_idx, charge_contrib, [sc_nr * sc_nz, 1], @sum, 0), sc_nr, sc_nz);
-end
-% Don't apply enhancement again after this
+    z_dep = z_dep(:);
+    r_dep = r_dep(:);
+    w_col = weight_particles(active_idx(:));
+    w_col = w_col(:);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% 11.25.2025 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ION CONTRIBUTION TO SPACE CHARGE (positive charge)
-% Vectorized ion-to-space-charge contribution (V2 optimization)
-if ENABLE_ION_ACCUMULATION == true && sum(ion_density_grid(:)) > 0
-    % Pre-compute cell volumes for entire grid
-    ion_cell_vol = zeros(sc_nr, sc_nz);
-    ion_cell_vol(1, :) = pi * (sc_dr/2)^2 * sc_dz;
-    for i = 2:sc_nr
-        r_inner = sc_r(i) - sc_dr/2;
-        r_outer = sc_r(i) + sc_dr/2;
-        ion_cell_vol(i, :) = pi * (r_outer^2 - r_inner^2) * sc_dz;
-    end
-    
-    % Vectorized charge density (all cells at once)
-    significant_ions = ion_density_grid > 0.01;
-    real_ion_density = ion_density_grid .* ion_physics.superparticle_weight;
-    ion_charge_density_grid = e_charge * real_ion_density ./ ion_cell_vol;
-    
-    % Apply only where ions exist (vectorized mask)
-    rho_grid = rho_grid + ion_charge_density_grid .* significant_ions;
+    %% Enhancement vector
+    in_gap  = (z_dep < 0.254);
+    enh_vec = enhancement_drift * ones(n_dep, 1);
+    enh_vec(in_gap) = enhancement_gap;
+
+    %% Charge per super-particle
+    q_vec = -enh_vec .* e_charge .* w_col;   %% (n_dep×1)
+
+    %% Lower-left cell indices
+    iz0 = max(1, min(sc_nz-1, floor((z_dep - sc_z(1)) / sc_dz) + 1));
+    ir0 = max(1, min(sc_nr-1, floor((r_dep - sc_r(1)) / sc_dr) + 1));
+    iz1 = iz0 + 1;
+    ir1 = ir0 + 1;
+
+    %% Force all index arrays to column vectors
+    iz0 = iz0(:);  iz1 = iz1(:);
+    ir0 = ir0(:);  ir1 = ir1(:);
+
+    %% Bilinear weights — all column vectors
+    %% Bilinear weights — sc_z and sc_r must be indexed as column vectors
+    sc_z_col = sc_z(:);   %% force sc_z to column vector once
+    sc_r_col = sc_r(:);   %% force sc_r to column vector once
+
+    dz_frac = (z_dep - (sc_z(1) + (iz0-1).*sc_dz)) ./ sc_dz;
+    dr_frac = (r_dep - (sc_r(1) + (ir0-1).*sc_dr)) ./ sc_dr;
+    dz_frac = max(0, min(1, dz_frac(:)));
+    dr_frac = max(0, min(1, dr_frac(:)));
+
+    w00 = (1 - dz_frac) .* (1 - dr_frac);
+    w01 = (1 - dz_frac) .*      dr_frac;
+    w10 =      dz_frac  .* (1 - dr_frac);
+    w11 =      dz_frac  .*      dr_frac;
+
+    %% Cell volumes — annular rings, all column vectors
+    vol_ir0 = pi .* ((ir0.*sc_dr).^2 - ((ir0-1).*sc_dr).^2) .* sc_dz;
+    vol_ir1 = pi .* ((ir1.*sc_dr).^2 - ((ir1-1).*sc_dr).^2) .* sc_dz;
+    vol_ir0(ir0 == 1) = pi * sc_dr^2 * sc_dz;
+    vol_ir1(ir1 == 1) = pi * sc_dr^2 * sc_dz;
+
+    %% Charge density contributions — all column vectors
+    c00 = q_vec .* w00 ./ vol_ir0;  c00 = c00(:);
+    c01 = q_vec .* w01 ./ vol_ir1;  c01 = c01(:);
+    c10 = q_vec .* w10 ./ vol_ir0;  c10 = c10(:);
+    c11 = q_vec .* w11 ./ vol_ir1;  c11 = c11(:);
+
+    %% Linear indices — all column vectors
+    idx00 = sub2ind([sc_nr, sc_nz], ir0, iz0);
+    idx01 = sub2ind([sc_nr, sc_nz], ir1, iz0);
+    idx10 = sub2ind([sc_nr, sc_nz], ir0, iz1);
+    idx11 = sub2ind([sc_nr, sc_nz], ir1, iz1);
+
+    %% Accumulate — guaranteed column vectors, same length
+    all_idx = [idx00; idx01; idx10; idx11];
+    all_c   = [c00;   c01;   c10;   c11];
+
+    %% Safety check
+    assert(numel(all_idx) == numel(all_c), ...
+           'Size mismatch: idx=%d  c=%d', numel(all_idx), numel(all_c));
+
+    rho_grid = reshape( ...
+        accumarray(all_idx, all_c, [sc_nr*sc_nz, 1], @sum, 0), ...
+        sc_nr, sc_nz);
 end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%                
-        % Solve Poisson equation - VECTORIZED SOR (V2 optimization)
-        phi_grid(:) = 0;
-        dz2 = sc_dz^2;
-        dr2 = sc_dr^2;
-        denom = 2 * (dr2 + dz2);
-        rhs_factor = dr2 * dz2 / (denom * eps0);
-        ir_int = 2:sc_nr-1;
-        jz_int = 2:sc_nz-1;
+%% ======================================================================
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%% Verification script 
+%% Add immediately after rho_grid = reshape(accumarray(...))
+if it <= sc_interval * 2
+    fprintf('  [SC verify] n_dep=%d  rho_max=%.3e  rho_nnz=%d\n', ...
+            n_dep, max(abs(rho_grid(:))), sum(rho_grid(:)~=0));
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %% Ion contribution
+        if ENABLE_ION_ACCUMULATION && total_ions_on_grid > 0
+            ion_cell_vol       = zeros(sc_nr, sc_nz);
+            ion_cell_vol(1, :) = pi * (sc_dr/2)^2 * sc_dz;
+            r_i = sc_r(2:end)';
+            ion_cell_vol(2:end, :) = repmat( ...
+                pi * ((r_i + sc_dr/2).^2 - (r_i - sc_dr/2).^2) * sc_dz, 1, sc_nz);
+
+            in_gap_cells = repmat((sc_z(:)' < 0.254), sc_nr, 1);
+            enh_ion                = zeros(sc_nr, sc_nz);
+            enh_ion( in_gap_cells) = enhancement_gap;
+            enh_ion(~in_gap_cells) = enhancement_drift;
+
+            real_ion_density = ion_density_grid * ion_physics.superparticle_weight;
+            sig_ions         = (ion_density_grid > 0.01);
+            ion_rho          = enh_ion .* e_charge .* real_ion_density ./ ion_cell_vol;
+            rho_grid         = rho_grid + ion_rho .* sig_ions;
+        end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %% Clamp rho before Poisson solve
+        rho_cap  = 3.0 * eps0 * 7.5e6 / sc_dz;
+        rho_grid = max(-rho_cap, min(rho_cap, rho_grid));
+
+        %% SOR Poisson solver
+        dz2    = sc_dz^2;
+        dr2    = sc_dr^2;
+        denom  = 2.0 * (dr2 + dz2);
+        rhs_fac = dr2 * dz2 / (denom * eps0);
+
+        ir_int = 2:(sc_nr - 1);
+        jz_int = 2:(sc_nz - 1);
 
         for iter = 1:sc_iterations
-            % Interior points (r > 0) - vectorized
-            phi_new_interior = ( ...
-                dz2 * (phi_grid(ir_int+1, jz_int) + phi_grid(ir_int-1, jz_int)) + ...
-                dr2 * (phi_grid(ir_int, jz_int+1) + phi_grid(ir_int, jz_int-1)) ...
-            ) / denom - rho_grid(ir_int, jz_int) * rhs_factor;
-            
-            % SOR relaxation (vectorized)
-            phi_grid(ir_int, jz_int) = (1 - sc_omega) * phi_grid(ir_int, jz_int) + ...
-                                       sc_omega * phi_new_interior;
-            
-            % On-axis correction (r = 0, index 1)
-            phi_grid(1, jz_int) = ( ...
-                4 * phi_grid(2, jz_int) + phi_grid(1, jz_int+1) + phi_grid(1, jz_int-1) ...
-            ) / 6 - rho_grid(1, jz_int) * dr2 * dz2 / (6 * eps0);
-        end
-        
-        % Vectorized field calculation (V2 optimization)
-        Ez_sc(ir_int, jz_int) = -(phi_grid(ir_int, jz_int+1) - phi_grid(ir_int, jz_int-1)) / (2 * sc_dz);
-        Er_sc(ir_int, jz_int) = -(phi_grid(ir_int+1, jz_int) - phi_grid(ir_int-1, jz_int)) / (2 * sc_dr);
-        
-        % Limit space charge (30%, 50%, 70% or 100% of max applied field)
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        sc_strength_factor = 3.0;  % Changed from 2.0 / 10.08.2025
-        max_sc = sc_strength_factor * 7.5e6;
-        Ez_mag = max(abs(Ez_sc(:)));   
-        if Ez_mag > max_sc
-           scale_factor = max_sc / Ez_mag;
-           Ez_sc = Ez_sc * scale_factor;
-            Er_sc = Er_sc * scale_factor;
-        end
-    end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
-    %Add this after the space charge calculation to monitor actual field strength:
-    % After line ~280
- %   if ENABLE_SPACE_CHARGE && mod(it, sc_interval) == 0
- %      max_Ez_sc = max(abs(Ez_sc(:)));
- %      if mod(it, 1000) == 0  % Report occasionally
- %       fprintf('  [SC Field: %.2f MV/m]\n', max_Ez_sc/1e6);
- %       end
- %  end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Add this after the space charge calculation to monitor actual field strength:
-% After line ~280
-if ENABLE_SPACE_CHARGE == true && mod(it, sc_interval) == 0
-    % GUARD: Only check if Ez_sc exists
-    if exist('Ez_sc', 'var') && ~isempty(Ez_sc)
-        max_Ez_sc = max(abs(Ez_sc(:)));
-        if mod(it, 1000) == 0  % Report occasionally
-            fprintf('  [SC Field: %.2f MV/m]\n', max_Ez_sc/1e6);
-        end
-    end
-end
-%%%%%%%%%%%%%%%%%%%%%%%% added 10.07.2025 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    if ENABLE_SPACE_CHARGE == true && mod(it, sc_interval) == 0
-    max_sc_field_recorded = max(max_sc_field_recorded, max(abs(Ez_sc(:))));
-    end
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% --- PARTICLE PUSH ---
-    %%%%%%%%%%%%%%%%%%%%%%%% added 10.07.2025 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% --- PARTICLE PUSH AND LOSS ACCOUNTING ---
-   if n_active > 0
-    active_idx = find(active_particles);
-    
-    z_active = z_particles(active_idx);
-    r_active = r_particles(active_idx);
-    
-    % Define actual geometry limits
-    r_cathode_gap = 0.075;  % 75mm radius in cathode-anode gap
-    r_drift_tube = 0.075;    % 75mm drift tube radius
-    r_max_computational = 0.450;  % Maximum computational boundary
-    
-    % Categorize particle losses by region and mechanism
-    % 1. Particles returning to cathode (backstreaming)
-    back_to_cathode = z_active < 0;
-    
-    % 2. Wall losses in different regions
-    % Gap region (0 < z < 254mm)
-    in_gap = z_active >= 0 & z_active < 0.254;
-    gap_wall_loss = in_gap & r_active > r_cathode_gap;
-    
-    % Drift tube region (z > 500mm)
-    in_drift = z_active >= 0.500;
-    drift_wall_loss = in_drift & r_active > r_drift_tube;
-    
-    % Transition region (254mm < z < 500mm) - gradual expansion
-    in_transition = z_active >= 0.254 & z_active < 0.500;
-    r_transition = r_cathode_gap + (r_drift_tube - r_cathode_gap) * ...
-                   (z_active - 0.254) / (0.500 - 0.254);
-    transition_wall_loss = in_transition & r_active > r_transition;
-    
-    % 3. Computational boundary violations
-    out_of_domain = z_active > 8.350 | r_active > r_max_computational | z_active < -0.5;
-    
-    % Combine all loss mechanisms
-    lost_particles = back_to_cathode | gap_wall_loss | drift_wall_loss | ...
-                    transition_wall_loss | out_of_domain;
-    
-    % Count losses by type before removing particles
-    if any(lost_particles)
-        % Detailed accounting
-        n_back_to_cathode = sum(back_to_cathode);
-        n_gap_wall = sum(gap_wall_loss);
-        n_drift_wall = sum(drift_wall_loss);
-        n_transition_wall = sum(transition_wall_loss);
-        n_out_of_bounds = sum(out_of_domain & ~back_to_cathode & ...
-                             ~gap_wall_loss & ~drift_wall_loss & ~transition_wall_loss);
-        
-        % Update global counters (weighted by particle weight)
-        lost_idx = active_idx(lost_particles);
-        weight_lost = sum(weight_particles(lost_idx));
-        
-        particles_lost_to_cathode = particles_lost_to_cathode + n_back_to_cathode;
-        particles_lost_to_walls = particles_lost_to_walls + ...
-                                 n_gap_wall + n_drift_wall + n_transition_wall;
-        particles_out_of_bounds = particles_out_of_bounds + n_out_of_bounds;
-        
-        % Remove lost particles
-        active_particles(lost_idx) = false;
-        n_active = n_active - sum(lost_particles);
-        
-        % Debug output every 1000 steps
-        if mod(it, 1000) == 0 && sum(lost_particles) > 0
-            fprintf('\n  [LOSSES] Cathode:%d, Walls:%d, Bounds:%d\n', ...
-                    n_back_to_cathode, n_gap_wall+n_drift_wall+n_transition_wall, ...
-                    n_out_of_bounds);
-        end
-    end
-    
-    % Continue with valid particles only
-    valid = ~lost_particles;
-    active_idx = active_idx(valid);
-    z_active = z_active(valid);
-    r_active = r_active(valid);
-    
-        if ~isempty(active_idx)
-        % ... rest of particle push code continues here ...
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % Clamp positions to valid field region
-            z_clamped = max(z(1), min(z(end)-1e-6, z_active)); %Added 01.29.2026
-            r_clamped = max(r(1), min(r(end)-1e-6, r_active));
-            % Field interpolation
-            %Ez_local = interp2(z, r, Ez_capped, z_active, r_active, 'linear', 0);
-            %Er_local = interp2(z, r, Er_capped, z_active, r_active, 'linear', 0);
 
-            Ez_local = interp2(z, r, Ez_capped, z_clamped, r_clamped, 'linear', 0);
-            Er_local = interp2(z, r, Er_capped, z_clamped, r_clamped, 'linear', 0);
-            
-            Ez_local = Ez_local * pulse_factor;
-            Er_local = Er_local * pulse_factor;
-            
-            % Add space charge
-            if ENABLE_SPACE_CHARGE && exist('Ez_sc', 'var') && any(Ez_sc(:) ~= 0)
-                Ez_sc_local = interp2(sc_z, sc_r, Ez_sc, z_active, r_active, 'linear', 0);
-                Er_sc_local = interp2(sc_z, sc_r, Er_sc, z_active, r_active, 'linear', 0);
-                
+            phi_new = (dr2 * (phi_grid(ir_int+1, jz_int) + ...
+                               phi_grid(ir_int-1, jz_int)) + ...
+                       dz2 * (phi_grid(ir_int, jz_int+1) + ...
+                               phi_grid(ir_int, jz_int-1))) / denom ...
+                      - rho_grid(ir_int, jz_int) * rhs_fac;
+
+            phi_grid(ir_int, jz_int) = (1 - sc_omega) * phi_grid(ir_int, jz_int) + ...
+                                        sc_omega * phi_new;
+
+            axis_denom   = 4*dz2 + 2*dr2;
+            phi_axis_new = ((4*dz2) * phi_grid(2, jz_int) + ...
+                             dr2    * (phi_grid(1, jz_int+1) + ...
+                                       phi_grid(1, jz_int-1))) / axis_denom ...
+                           - rho_grid(1, jz_int) * (dr2*dz2) / (axis_denom * eps0);
+
+            phi_grid(1, jz_int) = (1 - sc_omega) * phi_grid(1, jz_int) + ...
+                                   sc_omega * phi_axis_new;
+
+            phi_grid(sc_nr, :) = phi_grid(sc_nr-1, :);
+            phi_grid(:,    1)  = 0;
+            phi_grid(:, sc_nz) = 0;
+        end
+
+        %% PATCH 9: SOR divergence guard — check before saving seed
+        phi_max_check = max(abs(phi_grid(:)));
+        if ~isfinite(phi_max_check) || phi_max_check > 1e8
+            %% SOR diverged — reset phi, invalidate seed
+            phi_grid(:)   = 0;
+            ws_phi_seeded = false;   %% force true cold start next step
+            if mod(it, 500) == 0 || it < 500
+                fprintf('  [SC] SOR DIVERGED phi=%.2e (it=%d) — reset\n', ...
+                        phi_max_check, it);
+            end
+        end
+
+        %% WS: save converged phi for next warm start
+        %% PATCH 8: range-gated seed — only accept during steady beam fill
+        Ez_ws_check   = max(abs(phi_grid(:)));
+        Ez_ws_lo      = 1e-6;      %% min threshold — reject near-zero
+        Ez_ws_hi      = 0.5e6;     %% max threshold — reject startup spike
+        ws_seed_min_it = 4000;     %% only seed after beam fill-up
+        ws_in_range   = (Ez_ws_check > Ez_ws_lo) && ...
+                        (Ez_ws_check < Ez_ws_hi) && ...
+                        (it >= ws_seed_min_it);
+        if ws_in_range
+            phi_grid_prev = phi_grid;   %% valid in-range solution — save
+            ws_valid_count  = ws_valid_count + 1;
+            ws_phi_seeded   = true;      %% PATCH 8: mark seed as valid
+        else
+            %% Solution out of range — keep previous valid seed, reset phi
+            phi_grid(:) = 0;             %% use zero for this step only
+            ws_reject_count = ws_reject_count + 1;
+            if mod(it, 1000) == 0 || ws_reject_count <= 5
+                fprintf('  [SC] WS REJECTED: Ez=%.3e (it=%d) lo=%.1e hi=%.1e\n', ...
+                        Ez_ws_check, it, Ez_ws_lo, Ez_ws_hi);
+            end
+        end
+
+        %% Electric field from potential
+        Ez_sc(ir_int, jz_int) = -(phi_grid(ir_int, jz_int+1) - ...
+                                   phi_grid(ir_int, jz_int-1)) / (2*sc_dz);
+        Er_sc(ir_int, jz_int) = -(phi_grid(ir_int+1, jz_int) - ...
+                                   phi_grid(ir_int-1, jz_int)) / (2*sc_dr);
+
+        Ez_sc(1, jz_int) = -(phi_grid(1, jz_int+1) - ...
+                              phi_grid(1, jz_int-1)) / (2*sc_dz);
+        Er_sc(1, :)      = 0;
+
+        %% Inf/NaN guard
+        if any(~isfinite(Ez_sc(:))) || any(~isfinite(Er_sc(:)))
+            Ez_sc(~isfinite(Ez_sc)) = 0;
+            Er_sc(~isfinite(Er_sc)) = 0;
+        end
+
+        %% SC field cap
+        max_sc   = 3.0 * 7.5e6;
+        E_sc_mag = max(max(abs(Ez_sc(:))), max(abs(Er_sc(:))));
+        if E_sc_mag > max_sc
+            scale = max_sc / E_sc_mag;
+            Ez_sc = Ez_sc * scale;
+            Er_sc = Er_sc * scale;
+        end
+
+        max_sc_field_recorded = max(max_sc_field_recorded, max(abs(Ez_sc(:))));
+
+        if mod(it, 1000) == 0
+            fprintf('\n  [SC] rho_max=%.2e C/m³ | Ez_max=%.3f MV/m | Er_max=%.3f MV/m', ...
+                    max(abs(rho_grid(:))), max(abs(Ez_sc(:)))/1e6, max(abs(Er_sc(:)))/1e6);
+        end
+
+    end  %% SC solver
+
+    %% ==================== ION CREATION ====================
+    if ENABLE_ION_ACCUMULATION && ENABLE_SPACE_CHARGE && ...
+       mod(it, scatter_cal.check_interval) == 0
+
+        active_idx = find(active_particles);
+        n_check    = length(active_idx);
+
+        if n_check > 0
+            p_total_ion  = sqrt(pz_particles(active_idx).^2 + ...
+                                pr_particles(active_idx).^2 + ...
+                                ptheta_particles(active_idx).^2);
+            gamma_ion    = gamma_particles(active_idx);
+            beta_ion     = sqrt(1 - 1./gamma_ion.^2);
+            ds_ion       = c * beta_ion * dt * scatter_cal.check_interval;
+
+            p_ionize     = 1 - exp(-ion_physics.sigma_ionization * ...
+                                    gas_params.n_gas .* ds_ion);
+
+            real_ions_pp   = weight_particles(active_idx) .* p_ionize;
+            superions_pp   = real_ions_pp / ion_physics.superparticle_weight;
+            total_superions = sum(superions_pp);
+
+            if total_superions > 0.01
+                for i = 1:n_check
+                    if superions_pp(i) > 0.01
+                        idx_g = active_idx(i);
+                        [~, iz_ion] = min(abs(sc_z - z_particles(idx_g)));
+                        [~, ir_ion] = min(abs(sc_r - r_particles(idx_g)));
+                        if iz_ion >= 1 && iz_ion <= sc_nz && ...
+                           ir_ion >= 1 && ir_ion <= sc_nr
+                            ion_density_grid(ir_ion, iz_ion) = ...
+                                ion_density_grid(ir_ion, iz_ion) + superions_pp(i);
+                            ion_density_by_pulse(ir_ion, iz_ion, current_pulse) = ...
+                                ion_density_by_pulse(ir_ion, iz_ion, current_pulse) + ...
+                                superions_pp(i);
+                        end
+                    end
+                end
+
+                real_ions_created = total_superions * ion_physics.superparticle_weight;
+                ion_diag.creation_history(it)       = real_ions_created;
+                ion_diag.ions_per_pulse(current_pulse) = ...
+                    ion_diag.ions_per_pulse(current_pulse) + real_ions_created;
+            end
+        end
+    end
+
+    %% ==================== ION DIAGNOSTICS ====================
+    if ENABLE_ION_ACCUMULATION && ENABLE_SPACE_CHARGE
+        ion_diag.total_ions_vs_time(it)   = total_ions_on_grid * ...
+                                             ion_physics.superparticle_weight;
+        ion_diag.peak_density_vs_time(it) = max(ion_density_grid(:)) * ...
+                                             ion_physics.superparticle_weight;
+    end
+
+    %% ==================== GAS SCATTERING ====================
+    if ENABLE_GAS_SCATTERING && mod(it, scatter_cal.check_interval) == 0
+
+        active_idx      = find(active_particles);
+        n_scatter_check = length(active_idx);
+
+        if n_scatter_check > 0
+            p_total_sc = sqrt(pz_particles(active_idx).^2 + ...
+                              pr_particles(active_idx).^2 + ...
+                              ptheta_particles(active_idx).^2);
+            gamma_sc   = gamma_particles(active_idx);
+            beta_sc    = sqrt(1 - 1./gamma_sc.^2);
+            ds_sc      = c * beta_sc * dt * scatter_cal.check_interval;
+
+            sigma_tuned = gas_params.sigma_elastic * scatter_cal.strength_factor;
+            p_scatter   = 1 - exp(-sigma_tuned * gas_params.n_gas .* ds_sc);
+            scatter_mask = rand(n_scatter_check, 1) < p_scatter;
+
+            if any(scatter_mask)
+                scatter_idx = active_idx(scatter_mask);
+                n_scattered = length(scatter_idx);
+                p_sc        = p_total_sc(scatter_mask);
+                ds_s        = ds_sc(scatter_mask);
+
+                Z_eff = 7.4;
+                b_min = 1e-10;
+                is_rare = rand(n_scattered, 1) < scatter_cal.rare_fraction;
+
+                %% Typical small-angle scatters
+                typical_idx = scatter_idx(~is_rare);
+                if ~isempty(typical_idx)
+                    p_typ  = p_sc(~is_rare);
+                    ds_typ = ds_s(~is_rare);
+                    theta_char = Z_eff * e_charge^2 ./ ...
+                                 (4*pi*eps0 * p_typ * c * b_min);
+                    n_scat_avg = gas_params.n_gas * sigma_tuned * ds_typ;
+                    theta_0    = theta_char .* sqrt(n_scat_avg);
+                    theta_typ  = randn(length(typical_idx), 1) .* theta_0;
+                    phi_typ    = 2*pi * rand(length(typical_idx), 1);
+                    pr_particles(typical_idx) = pr_particles(typical_idx) + ...
+                                                p_typ .* theta_typ .* cos(phi_typ);
+                    ptheta_particles(typical_idx) = ptheta_particles(typical_idx) + ...
+                                                    p_typ .* theta_typ .* sin(phi_typ);
+                end
+
+                %% Rare large-angle scatters
+                rare_idx = scatter_idx(is_rare);
+                if ~isempty(rare_idx)
+                    n_rare     = length(rare_idx);
+                    p_rare     = p_sc(is_rare);
+                    theta_min  = 0.1e-3;
+                    theta_max  = scatter_cal.theta_rare_max;
+                    u          = rand(n_rare, 1);
+                    theta_rare = theta_min * (theta_max/theta_min).^u;
+                    phi_rare   = 2*pi * rand(n_rare, 1);
+                    pr_particles(rare_idx) = pr_particles(rare_idx) + ...
+                                             p_rare .* theta_rare .* cos(phi_rare);
+                    ptheta_particles(rare_idx) = ptheta_particles(rare_idx) + ...
+                                                 p_rare .* theta_rare .* sin(phi_rare);
+
+                    %% Store rare angles for diagnostics
+                    scatter_diag.theta_history = [scatter_diag.theta_history; ...
+                                                  theta_rare];
+                    scatter_diag.rare_count = scatter_diag.rare_count + n_rare;
+                end
+
+                %% Store typical angles for diagnostics
+                if ~isempty(typical_idx)
+                    scatter_diag.theta_history = [scatter_diag.theta_history; ...
+                                                  theta_typ];
+                end
+
+                %% Store scatter positions (z coordinates of scattered particles)
+                scatter_diag.z_scatter_positions = [ ...
+                    scatter_diag.z_scatter_positions; ...
+                    z_active(scatter_mask)];
+
+                scatter_diag.event_count = scatter_diag.event_count + n_scattered;
+            end
+        end
+    end  %% gas scattering
+
+    %% ==================== PARTICLE PUSH ====================
+    %%  Single position update — no second update anywhere in the loop.
+    %%  All crossing detection runs here, immediately after z_particles
+    %%  is written, using z_active (pre-step) and z_new (post-step).
+
+    if n_active > 0
+
+        active_idx = find(active_particles);
+        z_active   = z_particles(active_idx);
+        r_active   = r_particles(active_idx);
+
+        %% --- Geometry loss classification ---
+        r_cathode_gap       = 0.075;
+        r_drift_tube        = 0.075;
+        r_max_computational = 0.450;
+
+        back_to_cathode      = (z_active < 0);
+        in_gap               = (z_active >= 0)     & (z_active < 0.254);
+        gap_wall_loss        = in_gap  & (r_active > r_cathode_gap);
+        in_drift             = (z_active >= 0.500);
+        drift_wall_loss      = in_drift & (r_active > r_drift_tube);
+        in_transition        = (z_active >= 0.254) & (z_active < 0.500);
+        r_transition         = r_cathode_gap + ...
+                               (r_drift_tube - r_cathode_gap) .* ...
+                               (z_active - 0.254) / (0.500 - 0.254);
+        transition_wall_loss = in_transition & (r_active > r_transition);
+        out_of_domain        = (z_active > 8.350) | ...
+                               (r_active > r_max_computational) | ...
+                               (z_active < -0.5);
+
+        lost_mask = back_to_cathode | gap_wall_loss | drift_wall_loss | ...
+                    transition_wall_loss | out_of_domain;
+
+        %% --- Loss accounting ---
+        if any(lost_mask)
+            n_back   = sum(back_to_cathode);
+            n_gwall  = sum(gap_wall_loss);
+            n_dwall  = sum(drift_wall_loss);
+            n_twall  = sum(transition_wall_loss);
+            n_oob    = sum(out_of_domain & ~back_to_cathode & ...
+                           ~gap_wall_loss & ~drift_wall_loss & ...
+                           ~transition_wall_loss);
+
+            lost_idx = active_idx(lost_mask);
+            particles_lost_to_cathode = particles_lost_to_cathode + n_back;
+            particles_lost_to_walls   = particles_lost_to_walls   + ...
+                                        n_gwall + n_dwall + n_twall;
+            particles_out_of_bounds   = particles_out_of_bounds   + n_oob;
+
+            active_particles(lost_idx) = false;
+            n_active = n_active - sum(lost_mask);
+
+            if mod(it, 1000) == 0 && sum(lost_mask) > 0
+                fprintf('\n  [LOSS] Cathode:%d  Walls:%d  OOB:%d', ...
+                        n_back, n_gwall+n_dwall+n_twall, n_oob);
+            end
+        end
+
+        %% --- Surviving particles ---
+        valid      = ~lost_mask;
+        active_idx = active_idx(valid);
+        z_active   = z_active(valid);
+        r_active   = r_active(valid);
+
+        if ~isempty(active_idx)
+
+            %% --- Grid clamps ---
+            z_clamp_app = max(z(1),    min(z(end)    - 1e-6, z_active));
+            r_clamp_app = max(r(1),    min(r(end)    - 1e-6, r_active));
+            z_clamp_sc  = max(sc_z(1), min(sc_z(end) - 1e-6, z_active));
+            r_clamp_sc  = max(sc_r(1), min(sc_r(end) - 1e-6, r_active));
+
+            %% --- Applied field ---
+            %Ez_local = interp2(Z_grid, R_grid, Ez_capped, ...
+            %                    z_clamp_app, r_clamp_app, 'linear', 0) * pulse_factor;
+            % Er_local = interp2(Z_grid, R_grid, Er_capped, ...
+            %                   z_clamp_app, r_clamp_app, 'linear', 0) * pulse_factor;
+%%%%%%%%%%%%%%%%%%%%%%%%%% Replacement for Ez Er interp2() %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% --- Applied field --- FAST BILINEAR (replaces interp2)
+%% Step 2 — Replace in Main Loop (find the interp2 block and swap it out)
+%% z_clamp_app and r_clamp_app already clamped — use directly
+
+%% Cell indices (1-based)
+iz_a = floor((z_clamp_app - app_z0) / app_dz) + 1;
+ir_a = floor((r_clamp_app - app_r0) / app_dr) + 1;
+
+%% Clamp to valid range
+iz_a = max(1, min(app_nz-1, iz_a));
+ir_a = max(1, min(app_nr-1, ir_a));
+
+%% Fractional weights
+wz_a = (z_clamp_app - (app_z0 + (iz_a-1)*app_dz)) / app_dz;
+wr_a = (r_clamp_app - (app_r0 + (ir_a-1)*app_dr)) / app_dr;
+
+%% Linear indices — Ez_capped is 500 rows (r) × 11000 cols (z)
+idx_a   = ir_a   + (iz_a-1) * app_nr;
+idx_az  = ir_a   + (iz_a  ) * app_nr;
+idx_ar  = ir_a+1 + (iz_a-1) * app_nr;
+idx_azr = ir_a+1 + (iz_a  ) * app_nr;
+
+%% Bilinear interpolation — Ez
+Ez_local = ( (1-wz_a).*(1-wr_a) .* Ez_capped(idx_a  ) + ...
+                wz_a .*(1-wr_a) .* Ez_capped(idx_az ) + ...
+             (1-wz_a).*   wr_a  .* Ez_capped(idx_ar  ) + ...
+                wz_a .*   wr_a  .* Ez_capped(idx_azr ) ) * pulse_factor;
+
+%% Bilinear interpolation — Er
+Er_local = ( (1-wz_a).*(1-wr_a) .* Er_capped(idx_a  ) + ...
+                wz_a .*(1-wr_a) .* Er_capped(idx_az ) + ...
+             (1-wz_a).*   wr_a  .* Er_capped(idx_ar  ) + ...
+                wz_a .*   wr_a  .* Er_capped(idx_azr ) ) * pulse_factor;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Add this one-time check immediately after the replacement block, 
+% inside the loop but only at step == 1:
+%% ONE-TIME VERIFICATION — remove after Test 30 confirms correctness
+if it == 1
+    Ez_ref = interp2(Z_grid, R_grid, Ez_capped, ...
+                     z_clamp_app, r_clamp_app, 'linear', 0) * pulse_factor;
+    Er_ref = interp2(Z_grid, R_grid, Er_capped, ...
+                     z_clamp_app, r_clamp_app, 'linear', 0) * pulse_factor;
+    ez_err = max(abs(Ez_local - Ez_ref));
+    er_err = max(abs(Er_local - Er_ref));
+    fprintf('INTERP CHECK step 1: Ez_max_err=%.2e  Er_max_err=%.2e\n', ...
+            ez_err, er_err);
+    %% Both should be < 1e-6 V/m — essentially machine precision
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %% --- Space charge field ---
+            if ENABLE_SPACE_CHARGE && exist('Ez_sc','var') && any(Ez_sc(:) ~= 0)
+                Ez_sc_local = interp2(sc_z, sc_r, Ez_sc, ...
+                                      z_clamp_sc, r_clamp_sc, 'linear', 0);
+                Er_sc_local = interp2(sc_z, sc_r, Er_sc, ...
+                                      z_clamp_sc, r_clamp_sc, 'linear', 0);
                 Ez_local = Ez_local + Ez_sc_local;
                 Er_local = Er_local + Er_sc_local;
             end
-            
-            % Boris push
-            pz_minus = pz_particles(active_idx) - 0.5*e_charge*Ez_local*dt;
-            pr_minus = pr_particles(active_idx) - 0.5*e_charge*Er_local*dt;
+
+            %% --- Boris push: first half electric kick ---
+            pz_minus     = pz_particles(active_idx)    - 0.5*e_charge*Ez_local*dt;
+            pr_minus     = pr_particles(active_idx)    - 0.5*e_charge*Er_local*dt;
             ptheta_minus = ptheta_particles(active_idx);
-            
-            % Magnetic field
-            Bz_local = Bz_func(z_active, r_active, current_t);
-            Br_local = Br_func(z_active, r_active, current_t);
-            
-            p_mag = sqrt(pz_minus.^2 + pr_minus.^2 + ptheta_minus.^2);
-            gamma_minus = sqrt(1 + (p_mag/(m_e*c)).^2);
-            
-            t_factor = -e_charge*dt./(2*gamma_minus*m_e);
+
+            %% --- Magnetic field ---
+            Bz_local = calculate_Bz_solenoid(z_active, r_active, current_t, ...
+                SOLENOID_ARGS{:});
+            Br_local = calculate_Br_solenoid(z_active, r_active, current_t, ...
+                SOLENOID_ARGS{:});
+
+            %% --- Boris magnetic rotation ---
+            p_mag_minus = sqrt(pz_minus.^2 + pr_minus.^2 + ptheta_minus.^2);
+            gamma_minus = sqrt(1 + (p_mag_minus / (m_e*c)).^2);
+
+            t_factor = -e_charge * dt ./ (2 * gamma_minus * m_e);
             tz = t_factor .* Bz_local;
             tr = t_factor .* Br_local;
-            
-            s_factor = 2./(1 + tz.^2 + tr.^2);
-            pz_plus = pz_minus + s_factor.*(pr_minus.*tr);
-            pr_plus = pr_minus + s_factor.*(ptheta_minus.*tz);
-            ptheta_plus = ptheta_minus + s_factor.*(pz_minus.*tr - pr_minus.*tz);
-            
-            % Second half push
-            pz_particles(active_idx) = pz_plus - 0.5*e_charge*Ez_local*dt;
-            pr_particles(active_idx) = pr_plus - 0.5*e_charge*Er_local*dt;
+
+            pr_prime     = pr_minus     + ptheta_minus .* tz;
+            ptheta_prime = ptheta_minus + (pz_minus .* tr - pr_minus .* tz);
+            pz_prime     = pz_minus     - ptheta_minus .* tr;
+
+            s_denom = 1 + tz.^2 + tr.^2;
+            sz = 2*tz ./ s_denom;
+            sr = 2*tr ./ s_denom;
+
+            pz_plus     = pz_minus     - ptheta_prime .* sr;
+            pr_plus     = pr_minus     + ptheta_prime .* sz;
+            ptheta_plus = ptheta_minus + pz_prime .* sr - pr_prime .* sz;
+
+            %% --- Second half electric kick ---
+            pz_particles(active_idx)     = pz_plus     - 0.5*e_charge*Ez_local*dt;
+            pr_particles(active_idx)     = pr_plus     - 0.5*e_charge*Er_local*dt;
             ptheta_particles(active_idx) = ptheta_plus;
-       
-       
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% ==================== GAS SCATTERING MODULE (CORRECTED) ====================
-% Apply after Boris pusher, before position update
 
-if ENABLE_GAS_SCATTERING == true  && mod(it, scatter_cal.check_interval) == 0
-    % Work with already-found active_idx
-    n_scatter_check = length(active_idx);
+            %% --- Position update (THE ONLY position update in the loop) ---
+            p_mag_new = sqrt(pz_particles(active_idx).^2 + ...
+                             pr_particles(active_idx).^2 + ...
+                             ptheta_particles(active_idx).^2);
+            gamma_new = sqrt(1 + (p_mag_new / (m_e*c)).^2);
 
-    if n_scatter_check > 0
-        % Calculate velocities and momenta
-        p_total_sc = sqrt(pz_particles(active_idx).^2 + ...
-                         pr_particles(active_idx).^2 + ...
-                         ptheta_particles(active_idx).^2);
-        gamma_sc = gamma_particles(active_idx);
-        beta_sc = sqrt(1 - 1./gamma_sc.^2);
-        v_electron = c * beta_sc;
-        
-        % Path length over this interval
-        ds = v_electron * dt * scatter_cal.check_interval;
-        
-        % Scattering probability (apply calibration factor)
-        sigma_tuned = gas_params.sigma_elastic * scatter_cal.strength_factor;
-        p_scatter = 1 - exp(-sigma_tuned * gas_params.n_gas .* ds);
-        
-        % Monte Carlo: which particles scatter?
-        scatter_mask = rand(n_scatter_check, 1) < p_scatter;
-        
-        if any(scatter_mask)
-            scatter_idx = active_idx(scatter_mask);
-            n_scattered = length(scatter_idx);
-            
-            % Extract scattered particle properties
-            p_sc = p_total_sc(scatter_mask);
-            beta_sc_scattered = beta_sc(scatter_mask);
-            ds_sc = ds(scatter_mask);
-            
-            % ===== METHOD SELECTION =====
-            switch SCATTERING_METHOD
- 
-%% ==================== CORRECTED SCATTERING ANGLES FOR THIN TARGET ====================
-case 'MONTE_CARLO'
-    % For thin targets, use Rutherford scattering directly
-    % Not Highland formula (which assumes thick targets)
-    
-    % Physical parameters
-    Z_eff = 7.4;  % Weighted average for air
-    b_min = 1e-10;  % Minimum impact parameter (atomic radius)
-    
-    % Calculate characteristic scattering angle
-    % θ_typ = Z×e²/(4πε₀×p×c×b)
-    theta_char = Z_eff * e_charge^2 ./ (4*pi*eps0 * p_sc * c * b_min);
-    
-    % RMS angle for multiple scatters over path ds
-    % Number of scatters = n_gas × σ × ds
-    n_scatters_avg = gas_params.n_gas * sigma_tuned * mean(ds_sc);
-    
-    % Multiple scattering: θ_rms = √N × θ_single
-    theta_0 = theta_char * sqrt(n_scatters_avg);
-    
-    % Generate deflections
-    theta_deflect = randn(n_scattered, 1) * mean(theta_0);
-    phi_deflect = 2*pi*rand(n_scattered, 1);
-    
-    % Apply kicks
-    delta_pr = p_sc .* theta_deflect .* cos(phi_deflect);
-    delta_ptheta = p_sc .* theta_deflect .* sin(phi_deflect);
-    
-    pr_particles(scatter_idx) = pr_particles(scatter_idx) + delta_pr;
-    ptheta_particles(scatter_idx) = ptheta_particles(scatter_idx) + delta_ptheta;
-    
-    scatter_diag.theta_history = [scatter_diag.theta_history; theta_deflect];
+            %% Update gamma_particles here — used by ion creation & scattering
+            gamma_particles(active_idx) = gamma_new;
 
-case 'CONTINUOUS'
-    % Same thin-target approach for continuous
-    Z_eff = 7.4;
-    b_min = 1e-10;
-    
-    p_mean = mean(p_total_sc);
-    theta_char = Z_eff * e_charge^2 / (4*pi*eps0 * p_mean * c * b_min);
-    
-    n_scatters_avg = gas_params.n_gas * sigma_tuned * mean(ds);
-    theta_rms = theta_char * sqrt(n_scatters_avg);
-    
-    theta_all = randn(n_scatter_check, 1) * theta_rms;
-    phi_all = 2*pi*rand(n_scatter_check, 1);
-    
-    delta_pr = p_total_sc .* theta_all .* cos(phi_all);
-    delta_ptheta = p_total_sc .* theta_all .* sin(phi_all);
-    
-    pr_particles(active_idx) = pr_particles(active_idx) + delta_pr;
-    ptheta_particles(active_idx) = ptheta_particles(active_idx) + delta_ptheta;
-    
-    if n_scatter_check > 100
-        sample_idx = randperm(n_scatter_check, 100);
-        scatter_diag.theta_history = [scatter_diag.theta_history; theta_all(sample_idx)];
+            vz_new = pz_particles(active_idx) ./ (gamma_new * m_e);
+            vr_new = pr_particles(active_idx) ./ (gamma_new * m_e);
+
+            z_particles(active_idx) = z_active + vz_new * dt;
+            r_particles(active_idx) = r_active + vr_new * dt;
+
+            %% Enforce r >= 0
+            neg_r = r_particles(active_idx) < 0;
+            if any(neg_r)
+                neg_g = active_idx(neg_r);
+                r_particles(neg_g)      = abs(r_particles(neg_g));
+                pr_particles(neg_g)     = -pr_particles(neg_g);
+                ptheta_particles(neg_g) = -ptheta_particles(neg_g);
+            end
+
+            %% ============================================================
+            %% [FIX-11] CROSSING DETECTION
+            %%   z_active = pre-push positions  (assigned above, before losses)
+            %%   z_new    = post-push positions  (just written to z_particles)
+            %%   This block is the ONLY place crossings are detected.
+            %% ============================================================
+            z_new = z_particles(active_idx);
+
+            %% --- Monitor crossings ---
+            for mon = 1:n_monitors
+                z_mon    = monitor_positions(mon);
+                crossing = (z_active < z_mon) & (z_new >= z_mon);
+                if any(crossing)
+                    for ci = find(crossing)'
+                        idx_g = active_idx(ci);
+                        if ~particle_counted_at_monitor(idx_g, mon)
+                            I_monitor(it, mon) = I_monitor(it, mon) + ...
+                                weight_particles(idx_g) * e_charge / dt;
+                            particles_through(mon) = particles_through(mon) + 1;
+                            particle_counted_at_monitor(idx_g, mon) = true;
+                        end
+                    end
+                end
+            end
+
+            %% --- Anode crossing (z = 0.254 m) ---
+            at_anode = (z_active < 0.254) & (z_new >= 0.254);
+            if any(at_anode)
+                for ii = find(at_anode)'
+                    g = active_idx(ii);
+                    if ~particle_crossed_anode(g)
+                        particle_crossed_anode(g) = true;
+                        particle_t_at_anode(g)    = current_t;
+                        particle_r_at_anode(g)    = r_particles(g);
+                        particles_at_anode        = particles_at_anode + 1;
+                        I_anode_accumulator       = I_anode_accumulator + ...
+                                                    weight_particles(g) * e_charge;
+                        pm_c  = sqrt(pz_particles(g)^2 + ...
+                                     pr_particles(g)^2 + ...
+                                     ptheta_particles(g)^2);
+                        gam_c = sqrt(1 + (pm_c/(m_e*c))^2);
+                        particle_KE_at_anode(g) = (gam_c - 1) * m_e * c^2 / e_charge;
+                    end
+                end
+            end
+
+            %% --- Exit crossing (z = 8.305 m) ---
+            at_exit = (z_active < 8.305) & (z_new >= 8.305);
+            if any(at_exit)
+                for ii = find(at_exit)'
+                    g = active_idx(ii);
+                    if ~particle_crossed_exit(g)
+                        particle_crossed_exit(g) = true;
+                        particle_t_at_exit(g)    = current_t;
+                        particles_transmitted    = particles_transmitted + 1;
+                        I_exit_accumulator       = I_exit_accumulator + ...
+                                                   weight_particles(g) * e_charge;
+                        pm_e  = sqrt(pz_particles(g)^2 + ...
+                                     pr_particles(g)^2 + ...
+                                     ptheta_particles(g)^2);
+                        gam_e = sqrt(1 + (pm_e/(m_e*c))^2);
+                        particle_KE_at_exit(g) = (gam_e - 1) * m_e * c^2 / e_charge;
+                        %% Remove immediately — prevents out-of-domain trap
+                        active_particles(g) = false;
+                        n_active = n_active - 1;
+                    end
+                end
+            end
+            %% ============================================================
+            %% END [FIX-11] CROSSING DETECTION
+            %% ============================================================
+
+        end  %% ~isempty(active_idx)
+    end  %% n_active > 0
+    %% ==================== END PARTICLE PUSH ====================
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% End of new third section %%%%%%%%%%%%%%%%%%%%%
+    %% ==================== CURRENT CONVERSION ====================
+    %%  Runs every timestep. Accumulator → current array every 10 steps.
+
+    if mod(it, 10) == 0
+        I_anode(it)         = I_anode_accumulator / (10 * dt);
+        I_anode_accumulator = 0;
     else
-        scatter_diag.theta_history = [scatter_diag.theta_history; theta_all];
+        if it > 1, I_anode(it) = I_anode(it-1); end
     end
 
-    %case 'HYBRID'
-    % === TYPICAL EVENTS: Use Rutherford ===
-    %typical_idx = scatter_idx(~is_rare);
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
-    case 'HYBRID'
-    % Separate into typical vs rare events
-    is_rare = rand(n_scattered, 1) < scatter_cal.rare_fraction;
-    
-    % === TYPICAL SMALL-ANGLE SCATTERS (99%) ===
-    typical_idx = scatter_idx(~is_rare);
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    if ~isempty(typical_idx)
-        p_typ = p_sc(~is_rare);
-        ds_typ = ds_sc(~is_rare);
-        
-        Z_eff = 7.4;
-        b_min = 1e-10;
-        
-        theta_char = Z_eff * e_charge^2 ./ (4*pi*eps0 * p_typ * c * b_min);
-        n_scatters = gas_params.n_gas * sigma_tuned * ds_typ;
-        theta_0_typ = theta_char .* sqrt(n_scatters);
-        
-        theta_typ = randn(length(typical_idx), 1) .* theta_0_typ;
-        phi_typ = 2*pi*rand(length(typical_idx), 1);
-        
-        delta_pr_typ = p_typ .* theta_typ .* cos(phi_typ);
-        delta_ptheta_typ = p_typ .* theta_typ .* sin(phi_typ);
-        
-        pr_particles(typical_idx) = pr_particles(typical_idx) + delta_pr_typ;
-        ptheta_particles(typical_idx) = ptheta_particles(typical_idx) + delta_ptheta_typ;
-        
-        scatter_diag.theta_history = [scatter_diag.theta_history; theta_typ];
+    if mod(it, 10) == 0
+        I_exit(it)         = I_exit_accumulator / (10 * dt);
+        I_exit_accumulator = 0;
+    else
+        if it > 1, I_exit(it) = I_exit(it-1); end
     end
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    % === RARE LARGE-ANGLE SCATTERS (1%) ===
-                    rare_idx = scatter_idx(is_rare);
-                    if ~isempty(rare_idx)
-                        n_rare = length(rare_idx);
-                        
-                        % Power-law distribution for large angles
-                        theta_min = 0.1e-3;  % 0.1 mrad
-                        theta_max = scatter_cal.theta_rare_max;  % 10 mrad
-                        
-                        u = rand(n_rare, 1);
-                        theta_rare = theta_min * (theta_max/theta_min).^u;
-                        phi_rare = 2*pi*rand(n_rare, 1);
-                        
-                        p_rare = p_sc(is_rare);
-                        
-                        delta_pr_rare = p_rare .* theta_rare .* cos(phi_rare);
-                        delta_ptheta_rare = p_rare .* theta_rare .* sin(phi_rare);
-                        
-                        pr_particles(rare_idx) = pr_particles(rare_idx) + delta_pr_rare;
-                        ptheta_particles(rare_idx) = ptheta_particles(rare_idx) + delta_ptheta_rare;
-                        
-                        % Store rare angles separately
-                        scatter_diag.theta_history = [scatter_diag.theta_history; theta_rare];
-                        scatter_diag.rare_count = scatter_diag.rare_count + n_rare;
-                    end
-            end
-            
-            % Update diagnostics
-            scatter_diag.event_count = scatter_diag.event_count + n_scattered;
-            scatter_diag.z_scatter_positions = [scatter_diag.z_scatter_positions; ...
-                                               z_particles(scatter_idx)];
-            
-            % Periodic reporting (CORRECTED units)
-            if mod(it, 5000) == 0
-                fprintf('\n  [SCATTER] %d events', n_scattered);
-                if strcmp(SCATTERING_METHOD, 'HYBRID')
-                    fprintf(' (%d rare)', sum(is_rare));
-                end
-                % Show mean angle in µrad (correct units)
-                if ~isempty(scatter_diag.theta_history)
-                    fprintf(', <θ>=%.3f µrad', mean(abs(scatter_diag.theta_history(end-n_scattered+1:end)))*1e6);
-                end
-            end
-        end
+
+    %% Collection efficiency
+    if I_cathode(it) > 0
+        collection_efficiency(it) = 100 * I_anode(it) / I_cathode(it);
     end
-end
-   
-  %% ==================== end of updated scattering module ========================
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% corrected ions creation 11.25.2025 %%%%%%%%%%%%%%%%%%%
-%% ==================== CORRECTED ION CREATION WITH SUPER-PARTICLES ====================
-% This replaces lines ~755-832 in your current code
-% COMPLETE with all necessary closing end statements
 
-if ENABLE_ION_ACCUMULATION == true && mod(it, scatter_cal.check_interval) == 0
-    active_idx = find(active_particles);
-    n_check = length(active_idx);
-    
-    if n_check > 0
-        % Calculate path length and ionization probability
-        p_total = sqrt(pz_particles(active_idx).^2 + ...
-                      pr_particles(active_idx).^2 + ...
-                      ptheta_particles(active_idx).^2);
-        gamma_local = gamma_particles(active_idx);
-        beta_local = sqrt(1 - 1./gamma_local.^2);
-        v_electron = c * beta_local;
-        ds = v_electron * dt * scatter_cal.check_interval;
-        
-        p_ionize = 1 - exp(-ion_physics.sigma_ionization * gas_params.n_gas .* ds);
-        
-        % ===== Create super-ions instead of individual ions =====
-        real_ions_per_particle = weight_particles(active_idx) .* p_ionize;
-        superions_per_particle = real_ions_per_particle / ion_physics.superparticle_weight;
-        total_superions_this_step = sum(superions_per_particle);
-        
-        if total_superions_this_step > 0.01  % Threshold for numerical noise
-            
-            % Deposit super-ions on grid
-            for i = 1:n_check
-                idx = active_idx(i);
-                superions_from_this = superions_per_particle(i);
-                
-                if superions_from_this > 0.01
-                    z_ion = z_particles(idx);
-                    r_ion = r_particles(idx);
-                    
-                    [~, iz] = min(abs(sc_z - z_ion));
-                    [~, ir] = min(abs(sc_r - r_ion));
-                    
-                    if iz >= 1 && iz <= sc_nz && ir >= 1 && ir <= sc_nr
-                        % Store super-ions on grid
-                        ion_density_grid(ir, iz) = ion_density_grid(ir, iz) + superions_from_this;
-                        
-                        if current_pulse > 0
-                            ion_density_by_pulse(ir, iz, current_pulse) = ...
-                                ion_density_by_pulse(ir, iz, current_pulse) + superions_from_this;
-                        end  % Closes: if current_pulse > 0
-                    end  % Closes: if iz >= 1 && iz <= sc_nz...
-                end  % Closes: if superions_from_this > 0.01
-            end  % Closes: for i = 1:n_check
-            
-            % ===== Define real_ions_created for diagnostics =====
-            real_ions_created = total_superions_this_step * ion_physics.superparticle_weight;
-            
-            % Update diagnostics (using REAL ion count)
-            ion_diag.creation_history(it) = real_ions_created;
-            
-            if current_pulse > 0
-                ion_diag.ions_per_pulse(current_pulse) = ...
-                    ion_diag.ions_per_pulse(current_pulse) + real_ions_created;
-            end  % Closes: if current_pulse > 0 (diagnostics)
+    %% ==================== OUT-OF-BOUNDS SAFETY NET ====================
+    %%  Catches any particle that slipped past the exit trap
+    %%  (e.g. emitted at z>8.305 in a single step at very high energy).
+    %%  Does NOT count as transmitted — these are numerical artefacts.
 
-            % ===== First-time diagnostic =====
-            if ~exist('first_ion_report', 'var') && real_ions_created > 10
-                fprintf('\n*** FIRST ION CREATION at t=%.1f ns ***\n', current_t*1e9);
-                fprintf('  Particles checked: %d\n', n_check);
-                fprintf('  Average electron weight: %.2e\n', mean(weight_particles(active_idx)));
-                fprintf('  Average p_ionize: %.2e\n', mean(p_ionize));
-                fprintf('  Total REAL ions created: %.0f\n', real_ions_created);
-                fprintf('  Super-ions created: %.1f\n', total_superions_this_step);
-                fprintf('  Super-ion weight: %.0f ions/super-ion\n', ion_physics.superparticle_weight);
-                first_ion_report = true;
-            end  % Closes: if ~exist('first_ion_report'...)
-            
-            % ===== Progress reporting =====
-            if mod(it, 5000) == 0 && real_ions_created > 0
-                fprintf(' | [ION] %.0f real ions (%.1f super-ions)', ...
-                        real_ions_created, total_superions_this_step);
-            end  % Closes: if mod(it, 5000)
-            
-        end  % Closes: if total_superions_this_step > 0.01
-    end  % Closes: if n_check > 0
-end  % Closes: if ENABLE_ION_ACCUMULATION && mod(it, scatter_cal.check_interval)
-%% ==================== END OF CORRECTED ION CREATION ====================
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%&%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-      %% ==================== UPDATE POSITIONS ====================
-     % Re-establish active particles list (some may have been lost)
     if n_active > 0
-            active_idx = find(active_particles);
-            z_active = z_particles(active_idx);
-            r_active = r_particles(active_idx);
-
-            % Update positions
-            p_total = sqrt(pz_particles(active_idx).^2 + pr_particles(active_idx).^2 + ...
-                          ptheta_particles(active_idx).^2);
-            gamma_particles(active_idx) = sqrt(1 + (p_total/(m_e*c)).^2);
-            
-            vz = pz_particles(active_idx) ./ (gamma_particles(active_idx) * m_e);
-            vr = pr_particles(active_idx) ./ (gamma_particles(active_idx) * m_e);
-            
-            z_new = z_active + vz * dt;
-            r_new = r_active + vr * dt;
-            
-            z_particles(active_idx) = z_new;
-            r_particles(active_idx) = r_new;
-            
-            % Radial reflection
-            at_axis = r_new < 0;
-            r_particles(active_idx(at_axis)) = -r_particles(active_idx(at_axis));
-            pr_particles(active_idx(at_axis)) = -pr_particles(active_idx(at_axis));
-    end
-    %%%%%%%%%%%%%%%%%%%%%%%% added 10.08.2025 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Monitor crossings with double-counting prevention
-for mon = 1:n_monitors
-    z_mon = monitor_positions(mon);
-    % Check which particles cross this monitor plane
-    crossing = z_active < z_mon & z_new >= z_mon;
-    
-    if any(crossing)
-        % Find indices of crossing particles
-        crossing_idx = find(crossing);
-        
-        for ci = 1:length(crossing_idx)
-            idx_local = crossing_idx(ci);
-            idx_global = active_idx(idx_local);
-            
-            % Only count if not already counted at this monitor
-            if ~particle_counted_at_monitor(idx_global, mon)
-                I_monitor(it, mon) = I_monitor(it, mon) + ...
-                    weight_particles(idx_global) * e_charge / dt;
-                particles_through(mon) = particles_through(mon) + 1;
-                particle_counted_at_monitor(idx_global, mon) = true;
-            end
-         end
-    end
-end
- 
-
-%%%%%%%%%%%%%%%%%%%%%%%% added 10.08.2025 - FIXED v3 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Monitor crossings with proper double-counting prevention and accurate counting
-% Anode crossing detection (z = 254mm)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 11.19.2025 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% CORRECTED ANODE & EXIT TRACKING %%%%%%%%%%%%%%%%%%%%
-%% ==================== ANODE CROSSING DETECTION ====================
-at_anode = z_active < 0.254 & z_new >= 0.254;
-
-if any(at_anode)
-    crossing_local_idx = find(at_anode);
-    
-    for i = 1:length(crossing_local_idx)
-        local_idx = crossing_local_idx(i);
-        global_idx = active_idx(local_idx);
-        
-        if ~particle_crossed_anode(global_idx)
-            particle_crossed_anode(global_idx) = true;
-            particle_t_at_anode(global_idx) = current_t;
-            particles_at_anode = particles_at_anode + 1;
-            
-            % Accumulate charge
-            charge_contrib = weight_particles(global_idx) * e_charge;
-            I_anode_accumulator = I_anode_accumulator + charge_contrib;
+        active_idx_chk = find(active_particles);
+        z_chk = z_particles(active_idx_chk);
+        r_chk = r_particles(active_idx_chk);
+        oob   = (z_chk > 8.31) | (r_chk > 0.5) | (z_chk < -0.5);
+        if any(oob)
+            active_particles(active_idx_chk(oob)) = false;
+            n_active = n_active - sum(oob);
+            particles_out_of_bounds = particles_out_of_bounds + sum(oob);
         end
     end
-end
 
-% Convert to Anode current ONLY at regular intervals
-if mod(it, 10) == 0
-    I_anode(it) = I_anode_accumulator / (10 * dt);
-    I_anode_accumulator = 0;  % Reset
-else
-    if it > 1
-        I_anode(it) = I_anode(it-1);  % Carry forward
-    end
-end
-
-%% ==================== DRIFT EXIT CROSSING DETECTION ====================
-drift_exit_crossings = z_active < 8.305 & z_new >= 8.305;
-
-if any(drift_exit_crossings)
-    crossing_local_idx = find(drift_exit_crossings);
-    
-    for i = 1:length(crossing_local_idx)
-        local_idx = crossing_local_idx(i);
-        global_idx = active_idx(local_idx);
-        
-        if ~particle_crossed_exit(global_idx)
-            particle_crossed_exit(global_idx) = true;
-            particle_t_at_exit(global_idx) = current_t;
-            particles_transmitted = particles_transmitted + 1;
-            
-            % Accumulate charge
-            I_exit_accumulator = I_exit_accumulator + ...
-                weight_particles(global_idx) * e_charge;
-        end
-    end
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Convert to current at regular intervals
-%if mod(it, 10) == 0
-%    I_drift_exit(it) = I_exit_accumulator / (10 * dt);
-%    I_exit_accumulator = 0;  % Reset
-%else
-%    if it > 1
-%        I_drift_exit(it) = I_drift_exit(it-1);  % Carry forward
-%    end
-%end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Drift Current %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Convert accumulated charge to current over the averaging interval
-if mod(it, 10) == 0
-    if I_exit_accumulator > 0
-        % Divide by the time interval, not particle count
-        I_drift_exit(it) = I_exit_accumulator / (10 * dt);
-        I_exit_accumulator = 0;  % Reset accumulator
-    elseif it > 1
-        I_drift_exit(it) = I_drift_exit(it-1);  %// Carry forward
-    end
-elseif it > 1
-    I_drift_exit(it) = I_drift_exit(it-1);  %// Carry forward between updates
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-            % Calculate collection efficiency
-            if I_cathode(it) > 0
-            collection_efficiency(it) = 100 * I_anode(it) / I_cathode(it);
-
-            end
-            
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % Remove out-of-bounds
-            out_bounds = z_new > 8.31 | r_new > 0.5 | z_new < -0.5;
-            active_particles(active_idx(out_bounds)) = false;
-            n_active = n_active - sum(out_bounds);
-    end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SNAPSHOT P1 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== ENHANCED SNAPSHOT ANALYSIS AT MID-PULSE ====================
-% Add this inside the main loop, around timestep 5000 (mid-pulse)
-if it == 5500  % Mid-pulse, steady state, 15ns + 40ns from the start
-    fprintf('\n=== Capturing Full Beam Snapshot at t=%.1f ns ===\n', current_t*1e9);
-    
-    % Save complete beam state
-    active_idx = find(active_particles);
-    beam_snapshot = struct();
-    beam_snapshot.z = z_particles(active_idx);
-    beam_snapshot.r = r_particles(active_idx);
-    beam_snapshot.pr = pr_particles(active_idx);
-    beam_snapshot.pz = pz_particles(active_idx);
-    beam_snapshot.ptheta = ptheta_particles(active_idx);
-    beam_snapshot.gamma = gamma_particles(active_idx);
-    beam_snapshot.weight = weight_particles(active_idx);
-    beam_snapshot.n_total = length(active_idx);
-    beam_snapshot.time = current_t;
-    
-    % Calculate velocities for dt-based selection
-    vz = pz_particles(active_idx) ./ (gamma_particles(active_idx) * m_e);
-    beam_snapshot.vz = vz;
-    
-    fprintf('  Total active particles: %d\n', beam_snapshot.n_total);
-    fprintf('  Z range: %.1f to %.1f mm\n', min(beam_snapshot.z)*1000, max(beam_snapshot.z)*1000);
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%% Updated 02.06.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-%REPLACE current inter-pulse capture block (around line 1013) with:
-%% ==================== INTER-PULSE ELECTRON CLOUD SNAPSHOTS (MULTI-CAPTURE) ====================
-if ENABLE_INTERPULSE_SNAPSHOT == true && ENABLE_MULTIPULSE == true
-    
-    % Check each inter-pulse time
-     for ipc = 1:n_interpulse_snapshots
-        if abs(current_t - INTERPULSE_SNAPSHOT_TIMES(ipc)) < dt/2
-            
-            % Only capture if not already done
-            if isempty(interpulse_clouds{ipc})
-                
-                fprintf('\n=== CAPTURING INTER-PULSE CLOUD %d/%d at t=%.1f ns ===\n', ...
-                        ipc, n_interpulse_snapshots, current_t*1e9);
-                fprintf('(Before Pulse %d starts)\n', ipc+1);
-                
-                active_idx = find(active_particles);
-                
-                if n_active > 0
-                    cloud = struct();
-                    cloud.z = z_particles(active_idx);
-                    cloud.r = r_particles(active_idx);
-                    cloud.pr = pr_particles(active_idx);
-                    cloud.pz = pz_particles(active_idx);
-                    cloud.ptheta = ptheta_particles(active_idx);
-                    cloud.gamma = gamma_particles(active_idx);
-                    cloud.weight = weight_particles(active_idx);
-                    cloud.n_total = length(active_idx);
-                    cloud.time = current_t;
-                    cloud.before_pulse = ipc + 1;  % This cloud is BEFORE pulse N
-                    
-                    % Calculate velocities and energies
-                    cloud.vz = pz_particles(active_idx) ./ (gamma_particles(active_idx) * m_e);
-                    cloud.vr = pr_particles(active_idx) ./ (gamma_particles(active_idx) * m_e);
-                    cloud.energy_MeV = (gamma_particles(active_idx) - 1) * m_e * c^2 / e_charge / 1e6;
-                    
-                    % Identify source pulses
-                    if exist('particle_source_pulse', 'var')
-                        cloud.source_pulse = particle_source_pulse(active_idx);
-                        n_from_previous = sum(particle_source_pulse(active_idx) <= ipc);
-                    else
-                        n_from_previous = n_active;
-                    end
-                    
-                    % Calculate slow electron centroid (most important for lensing)
-                    slow_electrons = cloud.energy_MeV < 1.0;
-                    n_slow = sum(slow_electrons);
-                    
-                    if n_slow > 0
-                        z_slow = cloud.z(slow_electrons);
-                        r_slow = cloud.r(slow_electrons);
-                        cloud.z_centroid = mean(z_slow);
-                        cloud.r_centroid = sqrt(mean(r_slow.^2));
-                        cloud.n_slow = n_slow;
-                    else
-                        cloud.z_centroid = NaN;
-                        cloud.r_centroid = NaN;
-                        cloud.n_slow = 0;
-                    end
-                    
-                    % Store in array
-                    interpulse_clouds{ipc} = cloud;
-                    interpulse_capture_count = interpulse_capture_count + 1;
-                    
-                    % Get ion count at this moment
-                    current_ions = sum(ion_density_grid(:)) * ion_physics.superparticle_weight;
-                    
-                    fprintf('  Total residual electrons: %d\n', cloud.n_total);
-                    fprintf('  From pulses 1-%d: %d (%.1f%%)\n', ...
-                            ipc, n_from_previous, 100*n_from_previous/n_active);
-                    fprintf('  Slow electrons (<1 MeV): %d\n', n_slow);
-                    if ~isnan(cloud.z_centroid)
-                        fprintf('  Slow electron centroid: z=%.0f mm, r=%.1f mm\n', ...
-                                cloud.z_centroid*1000, cloud.r_centroid*1000);
-                    end
-                    fprintf('  Energy range: %.3f to %.3f MeV\n', ...
-                            min(cloud.energy_MeV), max(cloud.energy_MeV));
-                    fprintf('  Accumulated ions: %.2e (Ion lens for P%d)\n', ...
-                            current_ions, ipc+1);
-                    
-                else
-                    fprintf('  WARNING: No active particles between pulses!\n');
-                end
-            end  % End isempty check
-        end  % End time check
-    end  % End loop over inter-pulse times
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% In your main loop, around line 650, ADD THIS SECTION:
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== CAPTURE PULSE 2 STEADY STATE ====================
-% Use snapshot timing for consistency
-if ENABLE_SNAPSHOTS == true && abs(current_t - 405e-9) < dt/2
-    if ~exist('steady_state_beam_pulse2', 'var')  % Only capture once
-        fprintf('\n=== Capturing Pulse 2 Steady-State Beam at t=%.1f ns ===\n', current_t*1e9);
-        
-        active_idx = find(active_particles);
-        steady_state_beam_pulse2 = struct();
-        steady_state_beam_pulse2.z = z_particles(active_idx);
-        steady_state_beam_pulse2.r = r_particles(active_idx);
-        steady_state_beam_pulse2.pr = pr_particles(active_idx);
-        steady_state_beam_pulse2.pz = pz_particles(active_idx);
-        steady_state_beam_pulse2.ptheta = ptheta_particles(active_idx);
-        steady_state_beam_pulse2.gamma = gamma_particles(active_idx);
-        steady_state_beam_pulse2.weight = weight_particles(active_idx);
-        steady_state_beam_pulse2.n_total = length(active_idx);
-        steady_state_beam_pulse2.time = current_t;
-        steady_state_beam_pulse2.vz = pz_particles(active_idx) ./ (gamma_particles(active_idx) * m_e);
-        
-        fprintf('  Total active particles captured: %d\n', steady_state_beam_pulse2.n_total);
-        fprintf('  Z range: %.1f to %.1f mm\n', min(steady_state_beam_pulse2.z)*1000, max(steady_state_beam_pulse2.z)*1000);
-    end
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Added 02.03.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== CAPTURE PULSE 3 STEADY STATE ====================
-if ENABLE_SNAPSHOTS == true && abs(current_t - 605e-9) < dt/2  % Mid-P3 flat-top
-    if ~exist('steady_state_beam_pulse3', 'var')  % Only capture once
-        fprintf('\n=== Capturing Pulse 3 Steady-State Beam at t=%.1f ns ===\n', current_t*1e9);
-        
-        active_idx = find(active_particles);
-        steady_state_beam_pulse3 = struct();
-        steady_state_beam_pulse3.z = z_particles(active_idx);
-        steady_state_beam_pulse3.r = r_particles(active_idx);
-        steady_state_beam_pulse3.pr = pr_particles(active_idx);
-        steady_state_beam_pulse3.pz = pz_particles(active_idx);
-        steady_state_beam_pulse3.ptheta = ptheta_particles(active_idx);
-        steady_state_beam_pulse3.gamma = gamma_particles(active_idx);
-        steady_state_beam_pulse3.weight = weight_particles(active_idx);
-        steady_state_beam_pulse3.n_total = length(active_idx);
-        steady_state_beam_pulse3.time = current_t;
-        steady_state_beam_pulse3.vz = pz_particles(active_idx) ./ (gamma_particles(active_idx) * m_e);
-        
-        fprintf('  Total active particles captured: %d\n', steady_state_beam_pulse3.n_total);
-        fprintf('  Z range: %.1f to %.1f mm\n', ...
-                min(steady_state_beam_pulse3.z)*1000, max(steady_state_beam_pulse3.z)*1000);
-    end
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Added 02.06.2026  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-%STEP 6: P4 Steady-State Beam Capture
-%Location: Line ~1100 (after P3 steady-state block)
-%Action: Add P4 mid-pulse snapshot at t=805ns
-%% ==================== CAPTURE PULSE 4 STEADY STATE ====================
-if ENABLE_SNAPSHOTS == true && abs(current_t - 805e-9) < dt/2  % Mid-P4 flat-top
-    if ~exist('steady_state_beam_pulse4', 'var')  % Only capture once
-        fprintf('\n=== Capturing Pulse 4 Steady-State Beam at t=%.1f ns ===\n', current_t*1e9);
-        
-        active_idx = find(active_particles);
-        steady_state_beam_pulse4 = struct();
-        steady_state_beam_pulse4.z = z_particles(active_idx);
-        steady_state_beam_pulse4.r = r_particles(active_idx);
-        steady_state_beam_pulse4.pr = pr_particles(active_idx);
-        steady_state_beam_pulse4.pz = pz_particles(active_idx);
-        steady_state_beam_pulse4.ptheta = ptheta_particles(active_idx);
-        steady_state_beam_pulse4.gamma = gamma_particles(active_idx);
-        steady_state_beam_pulse4.weight = weight_particles(active_idx);
-        steady_state_beam_pulse4.n_total = length(active_idx);
-        steady_state_beam_pulse4.time = current_t;
-        steady_state_beam_pulse4.vz = pz_particles(active_idx) ./ (gamma_particles(active_idx) * m_e);
-        
-        fprintf('  Total active particles captured: %d\n', steady_state_beam_pulse4.n_total);
-        fprintf('  Z range: %.1f to %.1f mm\n', ...
-                min(steady_state_beam_pulse4.z)*1000, max(steady_state_beam_pulse4.z)*1000);
-    end
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Added 01.13.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== TWISS ANALYSIS MODULE - PULSE 2 ====================
-% Insert this section in your main loop right after Pulse 2 snapshot capture
-% Currently around line 648 in your code, after the steady_state_beam_pulse2 capture
-
-if ENABLE_SNAPSHOTS == true && abs(current_t - 405e-9) < dt/2  % Adjusted to true pulse midpoint
-    if exist('steady_state_beam_pulse2', 'var') && steady_state_beam_pulse2.n_total > 1000
-        fprintf('\n=== TWISS PARAMETER ANALYSIS - PULSE 2 (t=%.1f ns) ===\n', current_t*1e9);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
-        % Use same analysis planes as Pulse 1 for direct comparison
-        %twiss_locations = [254, 600, 1000, 1700, 2700];  % mm
-        %location_names = {'Anode', 'Transition', 'Transition', 'Transition', 'Drift Exit'};
-%%%%%%%%%%%%%%%%%%  Updated Twiss Locations 02.13.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% ==================== ENHANCED TWISS ANALYSIS LOCATIONS (15 PLANES) ====================
-% Add this in Twiss analysis sections (multiple locations in code)
-% Replaces current: twiss_locations = [254, 600, 1000, 1700, 2700];
-
-% Extended to cover key solenoid centers and BPMs
-twiss_locations = [254;    % Anode (after gap acceleration)
-                   600;    % Early drift (near Sol 3-4)
-                   1000;   % Mid drift region 1 (near Sol 7-8)
-                   1500;   % Between Sol 9-10
-                   1700;   % Legacy diagnostic
-                   2200;   % Near Sol 14-15
-                   2700;   % BPM1 region (near Sol 19-20)
-                   3400;   % Mid-extension (near Sol 25)
-                   3964;   % BPM2 (experimental)
-                   4600;   % Mid-extension 2 (near Sol 35)
-                   5400;   % Near Sol 45
-                   6402;   % BPM3 (experimental)
-                   6828;   % BPM4 (experimental)
-                   7450;   % Near final solenoid (Sol 49)
-                   8305];  % BPM5 / Final exit
-
-location_names = {'Anode', 'Early_Drift', 'Mid_Drift1', 'Trans1', 'Trans2', ...
-                  'Mid_Drift2', 'BPM1', 'Extension1', 'BPM2', 'Extension2', ...
-                  'Late_Drift', 'BPM3', 'BPM4', 'Sol49', 'Exit'};
-
-n_twiss_planes = length(twiss_locations);
-
-fprintf('=== Twiss Analysis Configuration ===\n');
-fprintf('  Number of analysis planes: %d (expanded from 5)\n', n_twiss_planes);
-fprintf('  Axial coverage: %.0f mm to %.0f mm\n', ...
-        twiss_locations(1), twiss_locations(end));
-fprintf('  Average spacing: %.0f mm\n', mean(diff(twiss_locations)));
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
-        % Initialize storage for Pulse 2 Twiss results
-        twiss_results_pulse2 = struct();
-        
-        % Extract snapshot data
-        z_beam = steady_state_beam_pulse2.z;
-        r_beam = steady_state_beam_pulse2.r;
-        pr_beam = steady_state_beam_pulse2.pr;
-        pz_beam = steady_state_beam_pulse2.pz;
-        gamma_beam = steady_state_beam_pulse2.gamma;
-        
-        for ip = 1:length(twiss_locations)
-            z_target = twiss_locations(ip) / 1000;  % Convert to meters
-            plane_name = location_names{ip};
-            
-            % Select particles using spatial window (±15mm)
-            selection_window = 0.015;  % 15mm
-            in_plane = abs(z_beam - z_target) < selection_window;
-            
-            n_selected = sum(in_plane);
-            
-            if n_selected >= 50  % Minimum for statistics
-                % Extract local particle data
-                r_sel = r_beam(in_plane);
-                pr_sel = pr_beam(in_plane);
-                pz_sel = pz_beam(in_plane);
-                gamma_sel = gamma_beam(in_plane);
-                
-                % Calculate normalized transverse momentum
-                pr_norm = pr_sel ./ (gamma_sel * m_e * c);
-                
-                % Center distributions
-                r_mean = mean(r_sel);
-                pr_mean = mean(pr_norm);
-                r_centered = r_sel - r_mean;
-                pr_centered = pr_norm - pr_mean;
-                
-                % Second moments
-                r2_avg = mean(r_centered.^2);
-                pr2_avg = mean(pr_centered.^2);
-                r_pr_avg = mean(r_centered .* pr_centered);
-                
-                % RMS emittance
-                emit_rms = sqrt(r2_avg * pr2_avg - r_pr_avg^2);
-                
-                % Twiss parameters
-                if emit_rms > 1e-10
-                    beta_twiss = r2_avg / emit_rms;
-                    gamma_twiss = pr2_avg / emit_rms;
-                    alpha_twiss = -r_pr_avg / emit_rms;
-                    
-                    % Consistency check
-                    twiss_consistency = beta_twiss * gamma_twiss - alpha_twiss^2;
-                    
-                    % Normalized emittance
-                    gamma_avg = mean(gamma_sel);
-                    beta_rel = sqrt(1 - 1/gamma_avg^2);
-                    emit_norm = emit_rms * gamma_avg * beta_rel;
-                    
-                    % RMS quantities for reporting
-                    r_rms = sqrt(r2_avg);
-                    pr_rms = sqrt(pr2_avg);
-                    
-                    % Determine beam condition
-                    if alpha_twiss > 0.1
-                        beam_condition = 'Converging';
-                    elseif alpha_twiss < -0.1
-                        beam_condition = 'Diverging';
-                    else
-                        beam_condition = 'Nearly collimated';
-                    end
-                    
-                    % Store results
-                    twiss_results_pulse2(ip).location = plane_name;
-                    twiss_results_pulse2(ip).z_mm = twiss_locations(ip);
-                    twiss_results_pulse2(ip).n_particles = n_selected;
-                    twiss_results_pulse2(ip).r_rms = r_rms * 1000;  % mm
-                    twiss_results_pulse2(ip).rp_rms = pr_rms * 1000;  % mrad
-                    twiss_results_pulse2(ip).beta = beta_twiss;  % m
-                    twiss_results_pulse2(ip).alpha = alpha_twiss;
-                    twiss_results_pulse2(ip).gamma = gamma_twiss;  % 1/m
-                    twiss_results_pulse2(ip).emit_geo = emit_rms * 1e6;  % mm-mrad
-                    twiss_results_pulse2(ip).emit_norm = emit_norm * 1e6;  % mm-mrad
-                    twiss_results_pulse2(ip).consistency = twiss_consistency;
-                    twiss_results_pulse2(ip).condition = beam_condition;
-                    
-                    % Print results
-                    fprintf('\n%s (%dmm):\n', plane_name, twiss_locations(ip));
-                    fprintf('  Particles analyzed: %d\n', n_selected);
-                    fprintf('  RMS radius: %.2f mm\n', r_rms*1000);
-                    fprintf('  RMS divergence: %.2f mrad\n', pr_rms*1000);
-                    fprintf('  Geometric emittance: %.2f mm-mrad\n', emit_rms*1e6);
-                    fprintf('  Normalized emittance: %.2f mm-mrad\n', emit_norm*1e6);
-                    fprintf('  Twiss parameters:\n');
-                    fprintf('    β = %.3f m\n', beta_twiss);
-                    fprintf('    α = %.3f (%s)\n', alpha_twiss, beam_condition);
-                    fprintf('    γ = %.3f 1/m\n', gamma_twiss);
-                    fprintf('  Consistency check (βγ-α²): %.4f\n', twiss_consistency);
-                    
-                else
-                    fprintf('\n%s: Emittance too small for Twiss analysis\n', plane_name);
-                end
-            else
-                fprintf('\n%s: Only %d particles - insufficient for analysis\n', ...
-                        plane_name, n_selected);
-            end
-        end
-        
-        % Save Pulse 2 Twiss results
-        if exist('twiss_results_pulse2', 'var')
-            save('twiss_analysis_pulse2_results.mat', 'twiss_results_pulse2');
-            fprintf('\nTwiss analysis (Pulse 2) saved to twiss_analysis_pulse2_results.mat\n');
-        end
-    end
-end
-%%%%%%%%%%%%%%%%%%%%%%%%% Added 02.04.2026 Twiss snapshot P3 %%%%%%%%%%%%%%%%%%%%%% 
-%% ==================== TWISS ANALYSIS MODULE - PULSE 3 ====================
-if ENABLE_SNAPSHOTS == true && abs(current_t - 605e-9) < dt/2
-    if exist('steady_state_beam_pulse3', 'var') && steady_state_beam_pulse3.n_total > 1000
-        fprintf('\n=== TWISS PARAMETER ANALYSIS - PULSE 3 (t=%.1f ns) ===\n', current_t*1e9);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
-        % Use same analysis planes as Pulse 1 and 2 for direct comparison
-        %twiss_locations = [254, 600, 1000, 1700, 2700];  % mm
-        %location_names_p3 = {'Anode', 'Transition1', 'Transition2', 'Transition3', 'Drift Exit'};
-%%%%%%%%%%%%%%%%%%%%%%%%% Updated Twiss Locations 02.13.2026 %%%%%%%%%%%%%%%%%%%%%%%
-        %% ==================== ENHANCED TWISS ANALYSIS LOCATIONS (15 PLANES) ====================
-% Add this in Twiss analysis sections (multiple locations in code)
-% Replaces current: twiss_locations = [254, 600, 1000, 1700, 2700];
-
-% Extended to cover key solenoid centers and BPMs
-twiss_locations = [254;    % Anode (after gap acceleration)
-                   600;    % Early drift (near Sol 3-4)
-                   1000;   % Mid drift region 1 (near Sol 7-8)
-                   1500;   % Between Sol 9-10
-                   1700;   % Legacy diagnostic
-                   2200;   % Near Sol 14-15
-                   2700;   % BPM1 region (near Sol 19-20)
-                   3400;   % Mid-extension (near Sol 25)
-                   3964;   % BPM2 (experimental)
-                   4600;   % Mid-extension 2 (near Sol 35)
-                   5400;   % Near Sol 45
-                   6402;   % BPM3 (experimental)
-                   6828;   % BPM4 (experimental)
-                   7450;   % Near final solenoid (Sol 49)
-                   8305];  % BPM5 / Final exit
-
-location_names = {'Anode', 'Early_Drift', 'Mid_Drift1', 'Trans1', 'Trans2', ...
-                  'Mid_Drift2', 'BPM1', 'Extension1', 'BPM2', 'Extension2', ...
-                  'Late_Drift', 'BPM3', 'BPM4', 'Sol49', 'Exit'};
-
-n_twiss_planes = length(twiss_locations);
-
-fprintf('=== Twiss Analysis Configuration ===\n');
-fprintf('  Number of analysis planes: %d (expanded from 5)\n', n_twiss_planes);
-fprintf('  Axial coverage: %.0f mm to %.0f mm\n', ...
-        twiss_locations(1), twiss_locations(end));
-fprintf('  Average spacing: %.0f mm\n', mean(diff(twiss_locations)));
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % Initialize storage for Pulse 3 Twiss results
-        twiss_results_pulse3 = struct();
-        
-        % Extract snapshot data
-        z_beam = steady_state_beam_pulse3.z;
-        r_beam = steady_state_beam_pulse3.r;
-        pr_beam = steady_state_beam_pulse3.pr;
-        pz_beam = steady_state_beam_pulse3.pz;
-        gamma_beam = steady_state_beam_pulse3.gamma;
-        
-        for ip = 1:length(twiss_locations)
-            z_target = twiss_locations(ip) / 1000;  % Convert to meters
-            plane_name = location_names{ip};
-            
-            % Select particles using spatial window (±15mm)
-            selection_window = 0.015;  % 15mm
-            in_plane = abs(z_beam - z_target) < selection_window;
-            
-            n_selected = sum(in_plane);
-            
-            if n_selected >= 50  % Minimum for statistics
-                % Extract local particle data
-                r_sel = r_beam(in_plane);
-                pr_sel = pr_beam(in_plane);
-                pz_sel = pz_beam(in_plane);
-                gamma_sel = gamma_beam(in_plane);
-                
-                % Calculate normalized transverse momentum
-                pr_norm = pr_sel ./ (gamma_sel * m_e * c);
-                
-                % Center distributions
-                r_mean = mean(r_sel);
-                pr_mean = mean(pr_norm);
-                r_centered = r_sel - r_mean;
-                pr_centered = pr_norm - pr_mean;
-                
-                % Second moments
-                r2_avg = mean(r_centered.^2);
-                pr2_avg = mean(pr_centered.^2);
-                r_pr_avg = mean(r_centered .* pr_centered);
-                
-                % RMS emittance
-                emit_rms = sqrt(r2_avg * pr2_avg - r_pr_avg^2);
-                
-                % Twiss parameters
-                if emit_rms > 1e-10
-                    beta_twiss = r2_avg / emit_rms;
-                    gamma_twiss = pr2_avg / emit_rms;
-                    alpha_twiss = -r_pr_avg / emit_rms;
-                    
-                    % Consistency check
-                    twiss_consistency = beta_twiss * gamma_twiss - alpha_twiss^2;
-                    
-                    % Normalized emittance
-                    gamma_avg = mean(gamma_sel);
-                    beta_rel = sqrt(1 - 1/gamma_avg^2);
-                    emit_norm = emit_rms * gamma_avg * beta_rel;
-                    
-                    % RMS quantities
-                    r_rms = sqrt(r2_avg);
-                    pr_rms = sqrt(pr2_avg);
-                    
-                    % Beam condition
-                    if alpha_twiss > 0.1
-                        beam_condition = 'Converging';
-                    elseif alpha_twiss < -0.1
-                        beam_condition = 'Diverging';
-                    else
-                        beam_condition = 'Nearly collimated';
-                    end
-                    
-                    % Store results
-                    twiss_results_pulse3(ip).location = plane_name;
-                    twiss_results_pulse3(ip).z_mm = twiss_locations(ip);
-                    twiss_results_pulse3(ip).n_particles = n_selected;
-                    twiss_results_pulse3(ip).r_rms = r_rms * 1000;  % mm
-                    twiss_results_pulse3(ip).rp_rms = pr_rms * 1000;  % mrad
-                    twiss_results_pulse3(ip).beta = beta_twiss;  % m
-                    twiss_results_pulse3(ip).alpha = alpha_twiss;
-                    twiss_results_pulse3(ip).gamma = gamma_twiss;  % 1/m
-                    twiss_results_pulse3(ip).emit_geo = emit_rms * 1e6;  % mm-mrad
-                    twiss_results_pulse3(ip).emit_norm = emit_norm * 1e6;  % mm-mrad
-                    twiss_results_pulse3(ip).consistency = twiss_consistency;
-                    twiss_results_pulse3(ip).condition = beam_condition;
-                    
-                    % Print results
-                    fprintf('\n%s (%dmm):\n', plane_name, twiss_locations(ip));
-                    fprintf('  Particles analyzed: %d\n', n_selected);
-                    fprintf('  RMS radius: %.2f mm\n', r_rms*1000);
-                    fprintf('  RMS divergence: %.2f mrad\n', pr_rms*1000);
-                    fprintf('  Geometric emittance: %.2f mm-mrad\n', emit_rms*1e6);
-                    fprintf('  Normalized emittance: %.2f mm-mrad\n', emit_norm*1e6);
-                    fprintf('  Twiss parameters:\n');
-                    fprintf('    β = %.3f m\n', beta_twiss);
-                    fprintf('    α = %.3f (%s)\n', alpha_twiss, beam_condition);
-                    fprintf('    γ = %.3f 1/m\n', gamma_twiss);
-                    fprintf('  Consistency check (βγ-α²): %.4f\n', twiss_consistency);
-                    
-                else
-                    fprintf('\n%s: Emittance too small for Twiss analysis\n', plane_name);
-                end
-            else
-                fprintf('\n%s: Only %d particles - insufficient for analysis\n', ...
-                        plane_name, n_selected);
-            end
-        end
-        
-        % Save Pulse 3 Twiss results
-        if exist('twiss_results_pulse3', 'var')
-            save('twiss_analysis_pulse3_results.mat', 'twiss_results_pulse3');
-            fprintf('\nTwiss analysis (Pulse 3) saved to twiss_analysis_pulse3_results.mat\n');
-        end
-    end
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Added 02.06.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%STEP 7: P4 Twiss Analysis Module
-%Location: Line ~1360 (after P3 Twiss block)
-%Action: Add single-snapshot Twiss analysis for P4
-%% ==================== TWISS ANALYSIS MODULE - PULSE 4 ====================
-if ENABLE_SNAPSHOTS == true && abs(current_t - 805e-9) < dt/2
-    if exist('steady_state_beam_pulse4', 'var') && steady_state_beam_pulse4.n_total > 1000
-        fprintf('\n=== TWISS PARAMETER ANALYSIS - PULSE 4 (t=%.1f ns) ===\n', current_t*1e9);
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%       
-        % Use same analysis planes as P1, P2, P3 for direct comparison
-        %twiss_locations = [254, 600, 1000, 1700, 2700];  % mm
-        %location_names_p4 = {'Anode', 'Transition1', 'Transition2', 'Transition3', 'Drift Exit'};
- %%%%%%%%%%%%%%%%%%% Updated Twiss Locations 02.13.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% ==================== ENHANCED TWISS ANALYSIS LOCATIONS (15 PLANES) ====================
-% Add this in Twiss analysis sections (multiple locations in code)
-% Replaces current: twiss_locations = [254, 600, 1000, 1700, 2700];
-
-% Extended to cover key solenoid centers and BPMs
-twiss_locations = [254;    % Anode (after gap acceleration)
-                   600;    % Early drift (near Sol 3-4)
-                   1000;   % Mid drift region 1 (near Sol 7-8)
-                   1500;   % Between Sol 9-10
-                   1700;   % Legacy diagnostic
-                   2200;   % Near Sol 14-15
-                   2700;   % BPM1 region (near Sol 19-20)
-                   3400;   % Mid-extension (near Sol 25)
-                   3964;   % BPM2 (experimental)
-                   4600;   % Mid-extension 2 (near Sol 35)
-                   5400;   % Near Sol 45
-                   6402;   % BPM3 (experimental)
-                   6828;   % BPM4 (experimental)
-                   7450;   % Near final solenoid (Sol 49)
-                   8305];  % BPM5 / Final exit
-
-location_names = {'Anode', 'Early_Drift', 'Mid_Drift1', 'Trans1', 'Trans2', ...
-                  'Mid_Drift2', 'BPM1', 'Extension1', 'BPM2', 'Extension2', ...
-                  'Late_Drift', 'BPM3', 'BPM4', 'Sol49', 'Exit'};
-
-n_twiss_planes = length(twiss_locations);
-
-fprintf('=== Twiss Analysis Configuration ===\n');
-fprintf('  Number of analysis planes: %d (expanded from 5)\n', n_twiss_planes);
-fprintf('  Axial coverage: %.0f mm to %.0f mm\n', ...
-        twiss_locations(1), twiss_locations(end));
-fprintf('  Average spacing: %.0f mm\n', mean(diff(twiss_locations)));
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % Initialize storage for Pulse 4 Twiss results
-        twiss_results_pulse4 = struct();
-        
-        % Extract snapshot data
-        z_beam = steady_state_beam_pulse4.z;
-        r_beam = steady_state_beam_pulse4.r;
-        pr_beam = steady_state_beam_pulse4.pr;
-        pz_beam = steady_state_beam_pulse4.pz;
-        gamma_beam = steady_state_beam_pulse4.gamma;
-        
-        for ip = 1:length(twiss_locations)
-            z_target = twiss_locations(ip) / 1000;  % Convert to meters
-            plane_name = location_names{ip};
-            
-            % Select particles using spatial window (±15mm)
-            selection_window = 0.015;  % 15mm
-            in_plane = abs(z_beam - z_target) < selection_window;
-            
-            n_selected = sum(in_plane);
-            
-            if n_selected >= 50  % Minimum for statistics
-                % Extract local particle data
-                r_sel = r_beam(in_plane);
-                pr_sel = pr_beam(in_plane);
-                pz_sel = pz_beam(in_plane);
-                gamma_sel = gamma_beam(in_plane);
-                
-                % Calculate normalized transverse momentum
-                pr_norm = pr_sel ./ (gamma_sel * m_e * c);
-                
-                % Center distributions
-                r_mean = mean(r_sel);
-                pr_mean = mean(pr_norm);
-                r_centered = r_sel - r_mean;
-                pr_centered = pr_norm - pr_mean;
-                
-                % Second moments
-                r2_avg = mean(r_centered.^2);
-                pr2_avg = mean(pr_centered.^2);
-                r_pr_avg = mean(r_centered .* pr_centered);
-                
-                % RMS emittance
-                emit_rms = sqrt(r2_avg * pr2_avg - r_pr_avg^2);
-                
-                % Twiss parameters
-                if emit_rms > 1e-10
-                    beta_twiss = r2_avg / emit_rms;
-                    gamma_twiss = pr2_avg / emit_rms;
-                    alpha_twiss = -r_pr_avg / emit_rms;
-                    
-                    % Consistency check
-                    twiss_consistency = beta_twiss * gamma_twiss - alpha_twiss^2;
-                    
-                    % Normalized emittance
-                    gamma_avg = mean(gamma_sel);
-                    beta_rel = sqrt(1 - 1/gamma_avg^2);
-                    emit_norm = emit_rms * gamma_avg * beta_rel;
-                    
-                    % RMS quantities
-                    r_rms = sqrt(r2_avg);
-                    pr_rms = sqrt(pr2_avg);
-                    
-                    % Beam condition
-                    if alpha_twiss > 0.1
-                        beam_condition = 'Converging';
-                    elseif alpha_twiss < -0.1
-                        beam_condition = 'Diverging';
-                    else
-                        beam_condition = 'Nearly collimated';
-                    end
-                    
-                    % Store results
-                    twiss_results_pulse4(ip).location = plane_name;
-                    twiss_results_pulse4(ip).z_mm = twiss_locations(ip);
-                    twiss_results_pulse4(ip).n_particles = n_selected;
-                    twiss_results_pulse4(ip).r_rms = r_rms * 1000;  % mm
-                    twiss_results_pulse4(ip).rp_rms = pr_rms * 1000;  % mrad
-                    twiss_results_pulse4(ip).beta = beta_twiss;  % m
-                    twiss_results_pulse4(ip).alpha = alpha_twiss;
-                    twiss_results_pulse4(ip).gamma = gamma_twiss;  % 1/m
-                    twiss_results_pulse4(ip).emit_geo = emit_rms * 1e6;  % mm-mrad
-                    twiss_results_pulse4(ip).emit_norm = emit_norm * 1e6;  % mm-mrad
-                    twiss_results_pulse4(ip).consistency = twiss_consistency;
-                    twiss_results_pulse4(ip).condition = beam_condition;
-                    
-                    % Print results
-                    fprintf('\n%s (%dmm):\n', plane_name, twiss_locations(ip));
-                    fprintf('  Particles analyzed: %d\n', n_selected);
-                    fprintf('  RMS radius: %.2f mm\n', r_rms*1000);
-                    fprintf('  RMS divergence: %.2f mrad\n', pr_rms*1000);
-                    fprintf('  Geometric emittance: %.2f mm-mrad\n', emit_rms*1e6);
-                    fprintf('  Normalized emittance: %.2f mm-mrad\n', emit_norm*1e6);
-                    fprintf('  Twiss parameters:\n');
-                    fprintf('    β = %.3f m\n', beta_twiss);
-                    fprintf('    α = %.3f (%s)\n', alpha_twiss, beam_condition);
-                    fprintf('    γ = %.3f 1/m\n', gamma_twiss);
-                    fprintf('  Consistency check (βγ-α²): %.4f\n', twiss_consistency);
-                    
-                else
-                    fprintf('\n%s: Emittance too small for Twiss analysis\n', plane_name);
-                end
-            else
-                fprintf('\n%s: Only %d particles - insufficient for analysis\n', ...
-                        plane_name, n_selected);
-            end
-        end
-        
-        % Save Pulse 4 Twiss results
-        if exist('twiss_results_pulse4', 'var')
-            save('twiss_analysis_pulse4_results.mat', 'twiss_results_pulse4');
-            fprintf('\nTwiss analysis (Pulse 4) saved to twiss_analysis_pulse4_results.mat\n');
-        end
-    end
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%  11.20.2025 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Capture ion snapshots (add after line ~710 where particle snapshots are taken)
-if ENABLE_SNAPSHOTS == true && ENABLE_ION_ACCUMULATION == true && ...
-   any(abs(current_t - snapshot_times) < dt/2)
-    
-    % Only proceed if a particle snapshot was just taken (snapshot_count > 0)
-    if snapshot_count > 0
-        
-        if ~exist('ion_snapshot_data', 'var')
-            ion_snapshot_data = struct();
-        end
-        
-        % Use the current snapshot_count value
-        ion_snapshot_data(snapshot_count).time = current_t;
-        ion_snapshot_data(snapshot_count).density_grid = ion_density_grid;
-        ion_snapshot_data(snapshot_count).total_ions = sum(ion_density_grid(:));
-        
-        % Calculate spatial moments
-        ion_z_moment = 0;
-        ion_count = sum(ion_density_grid(:));
-        if ion_count > 0
-            for j = 1:sc_nz
-                ion_z_moment = ion_z_moment + sc_z(j) * sum(ion_density_grid(:, j));
-            end
-            ion_centroid = ion_z_moment / ion_count;
-        else
-            ion_centroid = NaN;
-        end
-        ion_snapshot_data(snapshot_count).centroid_z = ion_centroid;
-        
-        fprintf('  [Ion snapshot %d: %d ions, centroid at z=%.1f mm]\n', ...
-                snapshot_count, round(ion_count), ion_centroid*1000);
-    end
-end
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Debug: Check for particles disappearing
-if mod(it, 100) == 0 && n_active > 0
-    z_check = z_particles(active_idx);
-    lost_zone = z_check > 0.6 & z_check < 0.7;
-    if any(lost_zone)
-        fprintf('  DEBUG: %d particles in danger zone 600-700mm\n', sum(lost_zone));
-        % Check fields at these positions
-        Ez_check = interp2(z, r, Ez_capped, z_check(lost_zone), r_active(lost_zone), 'linear', 0);
-        if any(isnan(Ez_check)) || all(Ez_check == 0)
-            fprintf('  WARNING: Bad field interpolation at z=600-700mm!\n');
-        end
-    end
-end
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    end
-    
-    % Store diagnostics
+    %% ==================== STORE ACTIVE COUNT ====================
     n_active_history(it) = n_active;
-%%%%%%%%%%%%%%%%%%%%%%%% Update 01.23.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== ION DIAGNOSTICS UPDATE (EVERY TIMESTEP) ====================
-% Update ion diagnostics at EVERY timestep for smooth plotting
-% This is computationally cheap (just sum operations) and eliminates plotting issues
-if ENABLE_ION_ACCUMULATION == true
-    total_ions_on_grid = sum(ion_density_grid(:));
-    ion_diag.total_ions_vs_time(it) = total_ions_on_grid * ion_physics.superparticle_weight;
-    ion_diag.peak_density_vs_time(it) = max(ion_density_grid(:)) * ion_physics.superparticle_weight;
-end
-%% ==================== END ION DIAGNOSTICS UPDATE ====================
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% ===== ADD THIS ENTIRE BLOCK HERE =====
-% RMS radius calculation with debug
-if mod(it, diag_interval) == 0 && n_active > 0
-    z_active = z_particles(active_idx);
-    r_active = r_particles(active_idx);
-    
-    % Debug first slice only
-    if it == diag_interval  % First collection
-        fprintf('  First diagnostic collection:\n');
-        fprintf('  Active particles: %d\n', length(active_idx));
-        fprintf('  Z range: %.1f-%.1f mm\n', min(z_active)*1000, max(z_active)*1000);
-    end
-    
-    for iz = 1:n_z_diagnostic
-        z_slice = z_diagnostic(iz);
-        in_slice = abs(z_active - z_slice) < 0.005;
-        if sum(in_slice) > 10
-            r_slice = r_active(in_slice);
-            r_rms_history(it, iz) = sqrt(mean(r_slice.^2));
-            n_particles_vs_z(it, iz) = sum(in_slice);
-            
-            % Debug first successful collection
-            if it == diag_interval && sum(in_slice) > 10
-                fprintf('    Slice at z=%.1fmm: %d particles, RMS=%.1fmm\n', ...
-                        z_slice*1000, sum(in_slice), sqrt(mean(r_slice.^2))*1000);
-                break;  % Just show first successful slice
-            end
-        end
-    end
-end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% BUT ALSO ADD BACK the RMS collection code (uncomment and modify):
-% RMS radius calculation - ADD THIS BACK
-if mod(it, diag_interval) == 0 && n_active > 0
-    % V2: active_idx already computed at top of loop (no redundant find needed)
-    z_active = z_particles(active_idx);
-    r_active = r_particles(active_idx);
-    
-    for iz = 1:n_z_diagnostic
-        z_slice = z_diagnostic(iz);
-        % Find particles within ±5mm of this z position
-        in_slice = abs(z_active - z_slice) < 0.005;
-        if sum(in_slice) > 10  % Need minimum particles for statistics
-            r_slice = r_active(in_slice);
-            r_rms_history(it, iz) = sqrt(mean(r_slice.^2));
-            n_particles_vs_z(it, iz) = sum(in_slice);
-        end
-    end
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Replace your current debug section (around line 432) with this expanded version:
-% Debug: Check for particles disappearing and field continuity
-if mod(it, 100) == 0 && n_active > 0
-    z_check = z_particles(active_idx);
-    r_check = r_particles(active_idx);
-    
-    % Check multiple danger zones
-    danger_zones = [
-        struct('min', 0.3, 'max', 0.4, 'name', 'Gap exit'),...
-        struct('min', 0.6, 'max', 0.7, 'name', 'Injector end'),...
-        struct('min', 1.0, 'max', 1.1, 'name', 'Near Sol3')...
-         ];
-    
-    for dz = 1:length(danger_zones)
-        in_zone = z_check > danger_zones(dz).min & z_check < danger_zones(dz).max;
-        if any(in_zone)
-            fprintf('  DEBUG: %d particles in %s (%.0f-%.0f mm)\n', ...
-                    sum(in_zone), danger_zones(dz).name, ...
-                    danger_zones(dz).min*1000, danger_zones(dz).max*1000);
-            
-            % Check field values
-            Ez_test = interp2(z, r, Ez_capped, z_check(in_zone), r_check(in_zone), 'linear', 0);
-            Er_test = interp2(z, r, Er_capped, z_check(in_zone), r_check(in_zone), 'linear', 0);
-            
-            if any(isnan(Ez_test)) || any(isnan(Er_test))
-                fprintf('    WARNING: NaN fields detected!\n');
-            elseif all(abs(Ez_test) < 1e4) && all(abs(Er_test) < 1e4) % Changed up from 1e3
-                fprintf('    WARNING: Very weak fields (<%d V/m)!\n', 10000); % Changed up from 1000
+    %% ==================== RMS RADIUS VS Z ====================
+    if mod(it, diag_interval) == 0 && n_active > 0
+        active_idx = find(active_particles);
+        z_diag     = z_particles(active_idx);
+        r_diag     = r_particles(active_idx);
+        for iz = 1:n_z_diagnostic
+            in_sl = abs(z_diag - z_diagnostic(iz)) < 0.005;
+            if sum(in_sl) > 10
+                r_rms_history(it, iz)    = sqrt(mean(r_diag(in_sl).^2));
+                n_particles_vs_z(it, iz) = sum(in_sl);
             end
         end
     end
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    % Capture snapshots
-    if ENABLE_SNAPSHOTS == true && any(abs(current_t - snapshot_times) < dt/2)
-        snapshot_count = snapshot_count + 1;
+
+    %% ==================== PER-1000-STEP DIAGNOSTICS ====================
+    if mod(it, 1000) == 0
+
         active_idx = find(active_particles);
-        drift_idx = active_idx(z_particles(active_idx) > 0.254);
-        
-        snapshot_data(snapshot_count).time = current_t;
-        snapshot_data(snapshot_count).z = z_particles(drift_idx);
-        snapshot_data(snapshot_count).r = r_particles(drift_idx);
-        snapshot_data(snapshot_count).pz = pz_particles(drift_idx);
-        snapshot_data(snapshot_count).pr = pr_particles(drift_idx);
-        snapshot_data(snapshot_count).gamma = gamma_particles(drift_idx);
+        n_active   = length(active_idx);
+
+        %% --- Wall loss rate ---
+        step_history(end+1)      = it;
+        wall_loss_history(end+1) = particles_lost_to_walls;
+
+        if length(step_history) >= 2
+            d_steps  = step_history(end)      - step_history(end-1);
+            d_losses = wall_loss_history(end)  - wall_loss_history(end-1);
+            loss_rate = d_losses / max(d_steps, 1);
+            fprintf('\n  [WALL LOSS] total=%d  last_1000=%d  rate=%.2e/step', ...
+                    particles_lost_to_walls, d_losses, loss_rate);
+        end
+
+        %% --- Accounting closure ---
+        active_idx_all = find(active_particles);
+        total_accounted = particles_lost_to_cathode + ...
+                          particles_lost_to_walls   + ...
+                          particles_out_of_bounds   + ...
+                          particles_transmitted     + ...
+                          length(active_idx_all);
+        unaccounted = n_created - total_accounted;
+        if unaccounted ~= 0
+            fprintf('\n  [ACCT WARN] unaccounted=%d  created=%d  accounted=%d', ...
+                    unaccounted, n_created, total_accounted);
+        else
+            fprintf('\n  [ACCT OK]   closure=0  created=%d', n_created);
+        end
+
+        %% --- Transmission projection ---
+        if it > 2000
+            n_crossed_anode = sum(particle_crossed_anode(1:n_created));
+            n1 = sum(active_particles(1:n_created));
+            n2 = sum(particle_crossed_anode(1:n_created));
+            n_in_drift = n1 + n2;
+            %n_in_drift      = sum(active_particles(1:n_created) & ...
+            %                     particle_crossed_anode(1:n_created));
+
+            fprintf('\n  [TRANS] anode=%d  transmitted=%d  in_drift=%d', ...
+                    n_crossed_anode, particles_transmitted, n_in_drift);
+
+            if n_crossed_anode > 0
+                fprintf('  eff=%.1f%%', ...
+                        100*particles_transmitted/n_crossed_anode);
+            end
+
+            if current_t > 270e-9 && length(wall_loss_history) >= 2
+                steps_rem  = nt - it;
+                d_steps    = step_history(end)     - step_history(end-1);
+                d_losses   = wall_loss_history(end) - wall_loss_history(end-1);
+                rate       = d_losses / max(d_steps, 1);
+                proj_exit  = particles_transmitted + ...
+                             max(0, n_in_drift - rate*steps_rem);
+                if n_crossed_anode > 0
+                    fprintf('  proj_final=%.1f%%', ...
+                            100*proj_exit/n_crossed_anode);
+                end
+            end
+        end
+
+        %% --- Energy distribution ---
+        if n_active > 100
+            pz_d  = pz_particles(active_idx);
+            pr_d  = pr_particles(active_idx);
+            pt_d  = ptheta_particles(active_idx);
+            pm_d  = sqrt(pz_d.^2 + pr_d.^2 + pt_d.^2);
+            gam_d = sqrt(1 + (pm_d/(m_e*c)).^2);
+            KE_d  = (gam_d - 1) * 0.511;   % MeV
+
+            %% Drift-tube particles only (z > 0.254 m) for meaningful mean
+            in_dt  = z_particles(active_idx) > 0.254;
+            if sum(in_dt) > 50
+                KE_dt = KE_d(in_dt);
+                fprintf('\n  [KE drift] mean=%.4f MeV  std=%.4f MeV  min=%.4f  max=%.4f', ...
+                        mean(KE_dt), std(KE_dt), min(KE_dt), max(KE_dt));
+            end
+        end
+
+        %% --- Beam radial distribution ---
+        if n_active > 0
+            z_act = z_particles(active_idx);
+            r_act = r_particles(active_idx);
+            in_dr = z_act > 0.500;
+            if any(in_dr)
+                r_dr = r_act(in_dr);
+                fprintf('\n  [BEAM r] drift RMS=%.1fmm  max=%.1fmm  >75mm=%d(%.1f%%)', ...
+                        sqrt(mean(r_dr.^2))*1000, max(r_dr)*1000, ...
+                        sum(r_dr > 0.075), ...
+                        100*sum(r_dr > 0.075)/length(r_dr));
+            end
+        end
+
+        %% --- Current summary ---
+        fprintf('\n  [CURRENT] cathode=%.1fA  anode=%.1fA  exit=%.1fA', ...
+                I_cathode(it), I_anode(it), I_exit(it));
+
+        %% --- SC summary ---
+        %if ENABLE_SPACE_CHARGE && exist('Ez_sc','var')
+        %   fprintf('\n  [SC] Ez_max=%.3f MV/m  Er_max=%.3f MV/m', ...
+        %            max(abs(Ez_sc(:)))/1e6, max(abs(Er_sc(:)))/1e6);
+        % end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% New SC Monitor %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+       %% In Block 3, replace the SC field monitor block with this:
+
+        %% --- KE at crossings (once enough data) ---
+        n_anode_rec = sum(particle_KE_at_anode(1:n_created) > 0);
+        n_exit_rec  = sum(particle_KE_at_exit(1:n_created)  > 0);
+        if n_anode_rec > 100
+            KE_an_MeV = particle_KE_at_anode(1:n_created);
+            KE_an_MeV = KE_an_MeV(KE_an_MeV > 0) / 1e6;
+            fprintf('\n  [KE@anode] mean=%.4f MeV  n=%d', mean(KE_an_MeV), n_anode_rec);
+        end
+        if n_exit_rec > 100
+            KE_ex_MeV = particle_KE_at_exit(1:n_created);
+            KE_ex_MeV = KE_ex_MeV(KE_ex_MeV > 0) / 1e6;
+            fprintf('\n  [KE@exit]  mean=%.4f MeV  n=%d', mean(KE_ex_MeV), n_exit_rec);
+        end
+
+        fprintf('\n');
+
+    end  %% mod(it,1000)==0
+
+    %% ==================== SNAPSHOT CAPTURE ====================
+    %%  Four fixed-time snapshots during pulse flat-top.
+    if ENABLE_SNAPSHOTS && any(abs(current_t - snapshot_times) < dt/2)
+        snapshot_count = snapshot_count + 1;
+        active_idx     = find(active_particles);
+        drift_idx      = active_idx(z_particles(active_idx) > 0.254);
+
+        snapshot_data(snapshot_count).time       = current_t;
+        snapshot_data(snapshot_count).z          = z_particles(drift_idx);
+        snapshot_data(snapshot_count).r          = r_particles(drift_idx);
+        snapshot_data(snapshot_count).pz         = pz_particles(drift_idx);
+        snapshot_data(snapshot_count).pr         = pr_particles(drift_idx);
+        snapshot_data(snapshot_count).ptheta     = ptheta_particles(drift_idx);
+        snapshot_data(snapshot_count).gamma      = gamma_particles(drift_idx);
+        snapshot_data(snapshot_count).weight     = weight_particles(drift_idx);
         snapshot_data(snapshot_count).n_particles = length(drift_idx);
-        
-        fprintf('  [Snapshot %d at %.1f ns: %d particles]\n', ...
+
+        fprintf('\n  [SNAPSHOT %d] t=%.1f ns  %d drift particles\n', ...
                 snapshot_count, current_t*1e9, length(drift_idx));
     end
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Inside main loop, around where snapshots are taken
-if it == 5500  % Save data for Twiss analysis
-    saved_particles = struct();
-    saved_particles.z = z_particles;
-    saved_particles.r = r_particles;
-    saved_particles.pr = pr_particles;
-    saved_particles.pz = pz_particles;
-    saved_particles.gamma = gamma_particles;
-    saved_particles.active = active_particles;
-end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%% Updated STEP 3 MULTI_SNAPSHOT %%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ==================== MULTI-SNAPSHOT CAPTURE IN MAIN LOOP ====================
- if ENABLE_BETATRON_AVERAGING == true
+    %% ==================== BETATRON AVERAGING SNAPSHOTS ====================
+    %%  Early, late, and P1 mid-pulse snapshot arrays.
+    if ENABLE_BETATRON_AVERAGING
 
-        if ENABLE_MULTIPULSE == true
-        %% ===== MULTI-PULSE MODE: Capture P1 and P2 snapshots =====
-    
-        % Capture Pulse 1 snapshots
-        for is = 1:N_SNAPSHOTS
-                 if abs(current_t - SNAPSHOT_P1_TIMES(is)) < dt/2
-                    if isempty(snapshot_p1{is})
-                    fprintf('\n=== Capturing Pulse 1 Snapshot %d/%d at t=%.1f ns ===\n', ...
-                            is, N_SNAPSHOTS, current_t*1e9);
-                    
-                    active_idx = find(active_particles);
-                    snapshot_p1{is} = struct();
-                    snapshot_p1{is}.z = z_particles(active_idx);
-                    snapshot_p1{is}.r = r_particles(active_idx);
-                    snapshot_p1{is}.pr = pr_particles(active_idx);
-                    snapshot_p1{is}.pz = pz_particles(active_idx);
-                    snapshot_p1{is}.ptheta = ptheta_particles(active_idx);
-                    snapshot_p1{is}.gamma = gamma_particles(active_idx);
-                    snapshot_p1{is}.weight = weight_particles(active_idx);
-                    snapshot_p1{is}.time = current_t;
-                    snapshot_p1{is}.n_total = length(active_idx);
-                    
-                    snapshot_p1_count = snapshot_p1_count + 1;
-                    fprintf('  Particles: %d | Progress: %d/%d snapshots\n', ...
-                            length(active_idx), snapshot_p1_count, N_SNAPSHOTS);
-                    end
-                 end
-        end
-
-
-        
-        % Capture Pulse 2 snapshots  
-        for is = 1:N_SNAPSHOTS
-            if abs(current_t - SNAPSHOT_P2_TIMES(is)) < dt/2
-                if isempty(snapshot_p2{is})
-                    fprintf('\n=== Capturing Pulse 2 Snapshot %d/%d at t=%.1f ns ===\n', ...
-                            is, N_SNAPSHOTS, current_t*1e9);
-                    
-                    active_idx = find(active_particles);
-                    snapshot_p2{is} = struct();
-                    snapshot_p2{is}.z = z_particles(active_idx);
-                    snapshot_p2{is}.r = r_particles(active_idx);
-                    snapshot_p2{is}.pr = pr_particles(active_idx);
-                    snapshot_p2{is}.pz = pz_particles(active_idx);
-                    snapshot_p2{is}.ptheta = ptheta_particles(active_idx);
-                    snapshot_p2{is}.gamma = gamma_particles(active_idx);
-                    snapshot_p2{is}.weight = weight_particles(active_idx);
-                    snapshot_p2{is}.time = current_t;
-                    snapshot_p2{is}.n_total = length(active_idx);
-                    
-                    snapshot_p2_count = snapshot_p2_count + 1;
-                    fprintf('  Particles: %d | Progress: %d/%d snapshots\n', ...
-                            length(active_idx), snapshot_p2_count, N_SNAPSHOTS);
-                end
-            end
-        end
-%%%%%%%%%%%%%%%%%%%%%%%%  added Pulse 3 shnapshots %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % Capture Pulse 3 snapshots (NEW - add after P2 block)
-        for is = 1:N_SNAPSHOTS
-           if abs(current_t - SNAPSHOT_P3_TIMES(is)) < dt/2
-              if isempty(snapshot_p3{is})
-            fprintf('\n=== Capturing Pulse 3 Snapshot %d/%d at t=%.1f ns ===\n', ...
-                    is, N_SNAPSHOTS, current_t*1e9);
-            
-            active_idx = find(active_particles);
-            snapshot_p3{is} = struct();
-            snapshot_p3{is}.z = z_particles(active_idx);
-            snapshot_p3{is}.r = r_particles(active_idx);
-            snapshot_p3{is}.pr = pr_particles(active_idx);
-            snapshot_p3{is}.pz = pz_particles(active_idx);
-            snapshot_p3{is}.ptheta = ptheta_particles(active_idx);
-            snapshot_p3{is}.gamma = gamma_particles(active_idx);
-            snapshot_p3{is}.weight = weight_particles(active_idx);
-            snapshot_p3{is}.time = current_t;
-            snapshot_p3{is}.n_total = length(active_idx);
-            
-            snapshot_p3_count = snapshot_p3_count + 1;
-            fprintf('  Particles: %d | Progress: %d/%d snapshots\n', ...
-                    length(active_idx), snapshot_p3_count, N_SNAPSHOTS);
-              end
-           end
-        end
-%%%%%%%%%%%%%%%%%%%%%%%%%%% Added 02.06.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %STEP 5: P4 Snapshot Collection in Main Loop
-        %Location: Line ~1135 (after P3 snapshot block)
-        %Action: Add Pulse 4 snapshot capture
-        % Capture Pulse 4 snapshots (NEW - add after P3 block)
-        for is = 1:N_SNAPSHOTS
-            if abs(current_t - SNAPSHOT_P4_TIMES(is)) < dt/2
-            if isempty(snapshot_p4{is})
-                fprintf('\n=== Capturing Pulse 4 Snapshot %d/%d at t=%.1f ns ===\n', ...
-                     is, N_SNAPSHOTS, current_t*1e9);
-            
-            active_idx = find(active_particles);
-            snapshot_p4{is} = struct();
-            snapshot_p4{is}.z = z_particles(active_idx);
-            snapshot_p4{is}.r = r_particles(active_idx);
-            snapshot_p4{is}.pr = pr_particles(active_idx);
-            snapshot_p4{is}.pz = pz_particles(active_idx);
-            snapshot_p4{is}.ptheta = ptheta_particles(active_idx);
-            snapshot_p4{is}.gamma = gamma_particles(active_idx);
-            snapshot_p4{is}.weight = weight_particles(active_idx);
-            snapshot_p4{is}.time = current_t;
-            snapshot_p4{is}.n_total = length(active_idx);
-            
-            snapshot_p4_count = snapshot_p4_count + 1;
-            fprintf('  Particles: %d | Progress: %d/%d snapshots\n', ...
-                    length(active_idx), snapshot_p4_count, N_SNAPSHOTS);
-                end
-             end
-         end   
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        end   
-  end
-if ENABLE_BETATRON_AVERAGING == true
-       if ENABLE_MULTIPULSE == false
-        %% ===== SINGLE-PULSE MODE: Capture EARLY and LATE beam snapshots =====
-        
-        % Capture EARLY beam snapshots (minimal ion accumulation)
+        %% Early beam snapshots
         for is = 1:N_SNAPSHOTS_EARLY
             if abs(current_t - SNAPSHOT_EARLY_TIMES(is)) < dt/2
                 if isempty(snapshot_early{is})
                     active_idx = find(active_particles);
-                    snapshot_early{is} = struct();
-                    snapshot_early{is}.z = z_particles(active_idx);
-                    snapshot_early{is}.r = r_particles(active_idx);
-                    snapshot_early{is}.pr = pr_particles(active_idx);
-                    snapshot_early{is}.pz = pz_particles(active_idx);
-                    snapshot_early{is}.ptheta = ptheta_particles(active_idx);
-                    snapshot_early{is}.gamma = gamma_particles(active_idx);
-                    snapshot_early{is}.weight = weight_particles(active_idx);
-                    snapshot_early{is}.time = current_t;
-                    snapshot_early{is}.n_total = length(active_idx);
-                    
+                    snapshot_early{is} = struct( ...
+                        'z',       z_particles(active_idx), ...
+                        'r',       r_particles(active_idx), ...
+                        'pr',      pr_particles(active_idx), ...
+                        'pz',      pz_particles(active_idx), ...
+                        'ptheta',  ptheta_particles(active_idx), ...
+                        'gamma',   gamma_particles(active_idx), ...
+                        'weight',  weight_particles(active_idx), ...
+                        'time',    current_t, ...
+                        'n_total', length(active_idx));
                     snapshot_early_count = snapshot_early_count + 1;
-                    
-                    % Get current ion count
-                    current_ions = sum(ion_density_grid(:)) * ion_physics.superparticle_weight;
-                    
-                    fprintf('\n=== Capturing EARLY Beam Snapshot %d/%d at t=%.1f ns ===\n', ...
-                            is, N_SNAPSHOTS_EARLY, current_t*1e9);
-                    fprintf('  Particles: %d | Ions: %.1e | Progress: %d/%d\n', ...
-                            length(active_idx), current_ions, snapshot_early_count, N_SNAPSHOTS_EARLY);
+                    current_ions = 0;
+                    if ENABLE_ION_ACCUMULATION && ENABLE_SPACE_CHARGE
+                        current_ions = sum(ion_density_grid(:)) * ...
+                                       ion_physics.superparticle_weight;
+                    end
+                    fprintf('\n  [EARLY snap %d/%d] t=%.1f ns  n=%d  ions=%.1e\n', ...
+                            snapshot_early_count, N_SNAPSHOTS_EARLY, ...
+                            current_t*1e9, length(active_idx), current_ions);
                 end
             end
         end
-        
-        % Capture LATE beam snapshots (with ion focusing effect)
+
+        %% Late beam snapshots
         for is = 1:N_SNAPSHOTS_LATE
             if abs(current_t - SNAPSHOT_LATE_TIMES(is)) < dt/2
                 if isempty(snapshot_late{is})
                     active_idx = find(active_particles);
-                    snapshot_late{is} = struct();
-                    snapshot_late{is}.z = z_particles(active_idx);
-                    snapshot_late{is}.r = r_particles(active_idx);
-                    snapshot_late{is}.pr = pr_particles(active_idx);
-                    snapshot_late{is}.pz = pz_particles(active_idx);
-                    snapshot_late{is}.ptheta = ptheta_particles(active_idx);
-                    snapshot_late{is}.gamma = gamma_particles(active_idx);
-                    snapshot_late{is}.weight = weight_particles(active_idx);
-                    snapshot_late{is}.time = current_t;
-                    snapshot_late{is}.n_total = length(active_idx);
-                    
+                    snapshot_late{is} = struct( ...
+                        'z',       z_particles(active_idx), ...
+                        'r',       r_particles(active_idx), ...
+                        'pr',      pr_particles(active_idx), ...
+                        'pz',      pz_particles(active_idx), ...
+                        'ptheta',  ptheta_particles(active_idx), ...
+                        'gamma',   gamma_particles(active_idx), ...
+                        'weight',  weight_particles(active_idx), ...
+                        'time',    current_t, ...
+                        'n_total', length(active_idx));
                     snapshot_late_count = snapshot_late_count + 1;
-                    
-                    current_ions = sum(ion_density_grid(:)) * ion_physics.superparticle_weight;
-                    
-                    fprintf('\n=== Capturing LATE Beam Snapshot %d/%d at t=%.1f ns ===\n', ...
-                            is, N_SNAPSHOTS_LATE, current_t*1e9);
-                    fprintf('  Particles: %d | Ions: %.1e (ION FOCUSING!) | Progress: %d/%d\n', ...
-                            length(active_idx), current_ions, snapshot_late_count, N_SNAPSHOTS_LATE);
+                    current_ions = 0;
+                    if ENABLE_ION_ACCUMULATION && ENABLE_SPACE_CHARGE
+                        current_ions = sum(ion_density_grid(:)) * ...
+                                       ion_physics.superparticle_weight;
+                    end
+                    fprintf('\n  [LATE snap %d/%d] t=%.1f ns  n=%d  ions=%.1e\n', ...
+                            snapshot_late_count, N_SNAPSHOTS_LATE, ...
+                            current_t*1e9, length(active_idx), current_ions);
                 end
-               end
-        end
-
-%%%%%%%%%%%%%%%%%%%%%%%%% Added Pulse 1 SNAPSHOTS for Betatron Averaging %%%%%%%%%%%%%%% 
-%% ===== SINGLE-PULSE MODE: Also capture P1 mid-pulse snapshots =====
-if ENABLE_BETATRON_AVERAGING == true && ENABLE_MULTIPULSE == false
-    % Capture P1 snapshots at mid-pulse times (for betatron averaging)
-    % These use SNAPSHOT_P1_TIMES which is already defined in single-pulse mode
-    for is = 1:N_SNAPSHOTS
-        if abs(current_t - SNAPSHOT_P1_TIMES(is)) < dt/2
-            if isempty(snapshot_p1{is})
-                fprintf('\n=== Capturing P1 Snapshot %d/%d at t=%.1f ns (single-pulse) ===\n', ...
-                        is, N_SNAPSHOTS, current_t*1e9);
-                
-                active_idx = find(active_particles);
-                snapshot_p1{is} = struct();
-                snapshot_p1{is}.z = z_particles(active_idx);
-                snapshot_p1{is}.r = r_particles(active_idx);
-                snapshot_p1{is}.pr = pr_particles(active_idx);
-                snapshot_p1{is}.pz = pz_particles(active_idx);
-                snapshot_p1{is}.ptheta = ptheta_particles(active_idx);
-                snapshot_p1{is}.gamma = gamma_particles(active_idx);
-                snapshot_p1{is}.weight = weight_particles(active_idx);
-                snapshot_p1{is}.time = current_t;
-                snapshot_p1{is}.n_total = length(active_idx);
-                
-                snapshot_p1_count = snapshot_p1_count + 1;
-                
-                % Get ion count at this moment
-                current_ions = sum(ion_density_grid(:)) * ion_physics.superparticle_weight;
-                
-                fprintf('  Particles: %d | Ions: %.1e | Progress: %d/%d\n', ...
-                        length(active_idx), current_ions, snapshot_p1_count, N_SNAPSHOTS);
             end
         end
+
+        %% P1 mid-pulse snapshots
+        for is = 1:N_SNAPSHOTS
+            if abs(current_t - SNAPSHOT_P1_TIMES(is)) < dt/2
+                if isempty(snapshot_p1{is})
+                    active_idx = find(active_particles);
+                    snapshot_p1{is} = struct( ...
+                        'z',       z_particles(active_idx), ...
+                        'r',       r_particles(active_idx), ...
+                        'pr',      pr_particles(active_idx), ...
+                        'pz',      pz_particles(active_idx), ...
+                        'ptheta',  ptheta_particles(active_idx), ...
+                        'gamma',   gamma_particles(active_idx), ...
+                        'weight',  weight_particles(active_idx), ...
+                        'time',    current_t, ...
+                        'n_total', length(active_idx));
+                    snapshot_p1_count = snapshot_p1_count + 1;
+                    fprintf('\n  [P1 snap %d/%d] t=%.1f ns  n=%d\n', ...
+                            snapshot_p1_count, N_SNAPSHOTS, ...
+                            current_t*1e9, length(active_idx));
+                end
+            end
+        end
+
+    end  %% ENABLE_BETATRON_AVERAGING
+
+    %% ==================== STEADY-STATE BEAM CAPTURE (it=6000) ====================
+    if it == 6000
+        fprintf('\n=== Steady-state beam capture at t=%.1f ns ===\n', current_t*1e9);
+        active_idx = find(active_particles);
+        steady_state_beam = struct( ...
+            'z',       z_particles(active_idx), ...
+            'r',       r_particles(active_idx), ...
+            'pr',      pr_particles(active_idx), ...
+            'pz',      pz_particles(active_idx), ...
+            'ptheta',  ptheta_particles(active_idx), ...
+            'gamma',   gamma_particles(active_idx), ...
+            'weight',  weight_particles(active_idx), ...
+            'vz',      pz_particles(active_idx) ./ ...
+                       (gamma_particles(active_idx) * m_e), ...
+            'time',    current_t, ...
+            'n_total', length(active_idx));
+        fprintf('  Captured %d particles  z=%.1f–%.1f mm\n', ...
+                steady_state_beam.n_total, ...
+                min(steady_state_beam.z)*1000, ...
+                max(steady_state_beam.z)*1000);
     end
+%%%%%%%%%%%%%%%%%%%%%%%%%% End of the secton four %%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%% Fifth section start %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+end  %% for it = 1:nt
+%% =====================================================================
+%% ==================== END OF MAIN TIME LOOP =========================
+%% =====================================================================
+
+fprintf('  [SC WS] Valid: %d  Rejected: %d  Acceptance: %.1f%%  Seeded: %d\n', ...
+        ws_valid_count, ws_reject_count, ...
+        100*ws_valid_count/max(1,ws_valid_count+ws_reject_count), ws_phi_seeded);
+fprintf('  [SC WS] (Patch 7: smart cold-start seed active)\n');
+fprintf('  [SC WS] Valid solutions: %d  Rejected: %d  Acceptance: %.1f%%\n', ...
+        ws_valid_count, ws_reject_count, ...
+        100*ws_valid_count/max(1,ws_valid_count+ws_reject_count));
+fprintf('\n\nSimulation complete.\n');
+fprintf('Total wall time: %.1f min\n', toc(tic_start)/60);
+
+%% ==================== FINAL ACCOUNTING REPORT ====================
+fprintf('\n');
+fprintf('================================================================\n');
+fprintf('  FINAL PARTICLE ACCOUNTING\n');
+fprintf('================================================================\n');
+fprintf('  Created:              %d\n', n_created);
+fprintf('  Transmitted (exit):   %d\n', particles_transmitted);
+fprintf('  Lost to cathode:      %d\n', particles_lost_to_cathode);
+fprintf('  Lost to walls:        %d\n', particles_lost_to_walls);
+fprintf('  Out of bounds:        %d\n', particles_out_of_bounds);
+fprintf('  Still active:         %d\n', sum(active_particles));
+
+total_accounted = particles_lost_to_cathode + ...
+                  particles_lost_to_walls   + ...
+                  particles_out_of_bounds   + ...
+                  particles_transmitted     + ...
+                  sum(active_particles);
+unaccounted = n_created - total_accounted;
+fprintf('  Total accounted:      %d\n', total_accounted);
+fprintf('  UNACCOUNTED:          %d  ', unaccounted);
+if unaccounted == 0
+    fprintf('<-- CLOSED\n');
+else
+    fprintf('<-- WARNING: non-zero!\n');
+end
+fprintf('================================================================\n');
+
+%% ==================== KE AT CROSSING SUMMARY ====================
+fprintf('\n');
+fprintf('================================================================\n');
+fprintf('  KINETIC ENERGY AT CROSSING PLANES\n');
+fprintf('================================================================\n');
+
+mask_anode = particle_KE_at_anode(1:n_created) > 0;
+mask_exit  = particle_KE_at_exit(1:n_created)  > 0;
+
+if sum(mask_anode) > 10
+    KE_an = particle_KE_at_anode(1:n_created);
+    KE_an = KE_an(mask_anode) / 1e6;   % MeV
+    fprintf('  KE at anode  (z=254mm):\n');
+    fprintf('    n = %d particles\n',   length(KE_an));
+    fprintf('    mean = %.4f MeV\n',    mean(KE_an));
+    fprintf('    std  = %.4f MeV\n',    std(KE_an));
+    fprintf('    min  = %.4f MeV\n',    min(KE_an));
+    fprintf('    max  = %.4f MeV\n',    max(KE_an));
+else
+    fprintf('  KE at anode: insufficient data (%d recorded)\n', sum(mask_anode));
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-          end  % End ENABLE_MULTIPULSE check
-end  % End ENABLE_BETATRON_AVERAGING check
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%% added 10.16.2025 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% CORRECTED SLICE ANALYSIS AT STEADY STATE Pulse 1
-% Replace the existing slice analysis section with this version
-% This captures beam data during the pulse flat-top, not after it ends
+if sum(mask_exit) > 10
+    KE_ex = particle_KE_at_exit(1:n_created);
+    KE_ex = KE_ex(mask_exit) / 1e6;    % MeV
+    fprintf('  KE at exit   (z=8305mm):\n');
+    fprintf('    n = %d particles\n',   length(KE_ex));
+    fprintf('    mean = %.4f MeV\n',    mean(KE_ex));
+    fprintf('    std  = %.4f MeV\n',    std(KE_ex));
+    fprintf('    min  = %.4f MeV\n',    min(KE_ex));
+    fprintf('    max  = %.4f MeV\n',    max(KE_ex));
+    fprintf('  Energy retained anode→exit: %.2f%%\n', ...
+            100 * mean(KE_ex) / max(mean(KE_an), 1e-9));
+else
+    fprintf('  KE at exit: insufficient data (%d recorded)\n', sum(mask_exit));
+end
+fprintf('================================================================\n');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% ==================== STEADY-STATE CURRENT METRICS ====================
+%%  Use flat-top window t = 190–260 ns
 
-%% ==================== CAPTURE BEAM STATE AT STEADY STATE Pulse 1 ====================
-% Add this inside the main loop at timestep 4000 (mid-pulse, t=189ns)
-if it == 5500  % Mid-pulse steady state 15ns + 40ns
-    fprintf('\n=== Capturing Steady-State Beam for Slice Analysis at t=%.1f ns ===\n', current_t*1e9);
-    
-    % Save complete beam state for slice analysis
-    active_idx = find(active_particles);
-    steady_state_beam = struct();
-    steady_state_beam.z = z_particles(active_idx);
-    steady_state_beam.r = r_particles(active_idx);
-    steady_state_beam.pr = pr_particles(active_idx);
-    steady_state_beam.pz = pz_particles(active_idx);
-    steady_state_beam.ptheta = ptheta_particles(active_idx);
-    steady_state_beam.gamma = gamma_particles(active_idx);
-    steady_state_beam.weight = weight_particles(active_idx);
-    steady_state_beam.n_total = length(active_idx);
-    steady_state_beam.time = current_t;
-    
-    % Calculate velocities for current calculations
-    steady_state_beam.vz = pz_particles(active_idx) ./ (gamma_particles(active_idx) * m_e);
-    
-    fprintf('  Total active particles captured: %d\n', steady_state_beam.n_total);
-    fprintf('  Z range: %.1f to %.1f mm\n', min(steady_state_beam.z)*1000, max(steady_state_beam.z)*1000);
+t_ns       = t * 1e9;
+flat_mask  = (t_ns >= 190) & (t_ns <= 245);
+
+I_cath_ss  = mean(I_cathode(flat_mask));
+I_anode_ss = mean(I_anode(flat_mask));
+I_exit_ss  = mean(I_exit(flat_mask));
+
+anode_eff  = 0;
+exit_eff   = 0;
+if I_cath_ss > 1
+    anode_eff = 100 * I_anode_ss / I_cath_ss;
+    exit_eff  = 100 * I_exit_ss  / I_cath_ss;
 end
 
-%%%%%%%%%%%%%%%%%%%%%% added 10.08.2025 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Complete current conservation check
-if mod(it, 1000) == 0 && it > 1000
-    % Total charge in system
-    active_idx = active_particles;
-    charge_in_flight = sum(weight_particles(active_idx)) * e_charge;
-    
-    % Calculate cumulative charge emitted (simple integration)
-    if it > 1
-        total_emitted = trapz(t(1:it), I_emit(1:it));
-    else
-        total_emitted = 0;
-    end
-    
-    % Calculate cumulative charge collected
-    charge_collected_total = particles_transmitted * mean(weight_particles(weight_particles>0)) * e_charge;
-    
-    % Conservation check
-    fprintf('\n  [CHARGE AUDIT] at %.1f ns:', current_t*1e9);
-    fprintf('\n    Emitted: %.3f µC', total_emitted*1e6);
-    fprintf('\n    In flight: %.3f µC', charge_in_flight*1e6);
-    fprintf('\n    Collected: %.3f µC', charge_collected_total*1e6);
-    
-    % Check for leaks
-    charge_lost = total_emitted - charge_in_flight - charge_collected_total;
-    if abs(charge_lost) > 0.01 * total_emitted
-        fprintf('\n    WARNING: %.3f µC unaccounted!', charge_lost*1e6);
-    end
+transmission_pct = 0;
+if particles_at_anode > 0
+    transmission_pct = 100 * particles_transmitted / particles_at_anode;
 end
-end  
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%  END OF THE MAIN LOOP %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+fprintf('\n');
+fprintf('================================================================\n');
+fprintf('  STEADY-STATE METRICS  (t = 190-260 ns)\n');
+fprintf('================================================================\n');
+fprintf('  Emission current:     %.1f A\n',  I_cath_ss);
+fprintf('  Anode current:        %.1f A\n',  I_anode_ss);
+fprintf('  Exit current:         %.1f A\n',  I_exit_ss);
+fprintf('  Anode efficiency:     %.1f %%\n', anode_eff);
+fprintf('  Exit efficiency:      %.1f %%\n', exit_eff);
+fprintf('  Particle transmission:%.1f %%\n', transmission_pct);
+fprintf('  Peak SC field:        %.3f MV/m\n', max_sc_field_recorded/1e6);
+fprintf('================================================================\n');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% ==================== CORRECTED TRANSMISSION REPORT ====================
+fprintf('\n================================================================\n');
+fprintf('  TRANSMISSION ANALYSIS — CORRECT INTERPRETATION\n');
+fprintf('================================================================\n');
+
+%% Flat-top window (190-260 ns)
+t_ns       = t * 1e9;
+flat_mask  = (t_ns >= 190) & (t_ns <= 245); %  flat top overlap for all signals
+I_cath_ss  = mean(I_cathode(flat_mask));
+I_anode_ss = mean(I_anode(flat_mask));
+I_exit_ss  = mean(I_exit(flat_mask));
+
+fprintf('  CURRENT-BASED (flat-top t=190-260ns):\n');
+fprintf('    Cathode:          %.1f A\n', I_cath_ss);
+fprintf('    Anode:            %.1f A\n', I_anode_ss);
+fprintf('    Drift exit:       %.1f A\n', I_exit_ss);
+fprintf('    Anode eff:        %.1f%%\n', 100*I_anode_ss/max(I_cath_ss,1));
+fprintf('    Exit eff:         %.1f%%  <- OPERATIONAL number\n', ...
+        100*I_exit_ss/max(I_cath_ss,1));
+
+fprintf('\n  PARTICLE-BASED (entire run including rise/fall):\n');
+fprintf('    Created:          %d\n', n_created);
+fprintf('    Reached anode:    %d  (%.1f%%)\n', ...
+        particles_at_anode, 100*particles_at_anode/max(n_created,1));
+fprintf('    Transmitted:      %d  (%.1f%% of created)\n', ...
+        particles_transmitted, 100*particles_transmitted/max(n_created,1));
+fprintf('    Wall losses:      %d  (%.1f%%)\n', ...
+        particles_lost_to_walls, 100*particles_lost_to_walls/max(n_created,1));
+
+fprintf('\n  NOTE: Current-based and particle-based differ because:\n');
+fprintf('    - Current metric uses flat-top only (best focus, lowest losses)\n');
+fprintf('    - Particle metric includes rise/fall where halo losses are higher\n');
+fprintf('    - Operational transmission = %.1f%% (current-based flat-top)\n', ...
+        100*I_exit_ss/max(I_cath_ss,1));
+fprintf('================================================================\n');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Correct efficiency: normalize by cathode current at same timestep
+%% Avoids any hardcoded scaling factor
+%collection_efficiency_correct = zeros(nt, 1);
+%for it_eff = 1:nt
+%    if I_cathode(it_eff) > 10   % only when beam is on
+%        collection_efficiency_correct(it_eff) = ...
+%            100 * I_exit(it_eff) / I_cathode(it_eff);
+%    end
+%end
+%% Then plot collection_efficiency_correct instead of collection_efficiency_2
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% ==================== PLOT 1: CURRENT TRANSPORT ====================
+figure('Name','Current Transport and Collection Efficiency', ...
+       'Position',[50 50 1200 600]);
+     
+collection_efficiency_2 = 100*(I_exit./I_cath_ss);
+colororder({'b','m'})
+
+yyaxis left
+plot(t_ns, I_cathode, 'r-',  'LineWidth', 2.0, 'DisplayName', 'Cathode');  hold on;
+plot(t_ns, I_anode,   'b-',  'LineWidth', 1.5, 'DisplayName', 'Anode');
+plot(t_ns, I_exit,    'g-',  'LineWidth', 1.5, 'DisplayName', 'Drift Exit');
+ylabel('Current (A)');
+ylim([0, max(max(I_cathode), 10) * 1.15]);
+
+yyaxis right
+
+plot(t_ns, collection_efficiency_2, 'm-', 'LineWidth', 1.0, ...
+     'DisplayName', 'Efficiency');
+ylabel('Drift Exit Efficiency (%)');
+ylim([0, 120]);
+
+xlabel('Time (ns)');
+xlim([t_plot_min, t_plot_max]);
+title('Current Transport and Collection Efficiency');
+legend('Location','northeast');
+grid on;
+
+% Add text annotation with key metrics
+text(0.30, 0.65, sprintf('Steady-state Metrics:'), ...
+     'Units', 'normalized', 'VerticalAlignment', 'top', 'FontWeight', 'bold');
+text(0.30, 0.60, sprintf('  I Cathode Steady : %.1f A', I_cath_ss), ...
+     'Units', 'normalized', 'VerticalAlignment', 'top');
+text(0.30, 0.55, sprintf('  I Anode Steady  : %.1f A', I_anode_ss), ...
+     'Units', 'normalized', 'VerticalAlignment', 'top');
+text(0.30, 0.50, sprintf('  Anode Efficiency : %.1f%%', anode_eff), ...
+     'Units', 'normalized', 'VerticalAlignment', 'top');
+text(0.30, 0.45, sprintf('  I Exit Steady State: %.1f A', I_exit_ss), ...
+     'Units', 'normalized', 'VerticalAlignment', 'top');
+text(0.30, 0.40, sprintf('  Transmission Steady: %.1f%%', exit_eff), ...
+     'Units', 'normalized', 'VerticalAlignment', 'top');
+
+%% Annotation box
+ann_x = t_plot_min + 0.35*(t_plot_max - t_plot_min);
+ann_y = max(I_cathode) * 0.72;
+text(ann_x, ann_y, ...
+    sprintf('Steady-state Metrics:\nEmission: %.1f A\nAnode Eff: %.1f%%\nDrift Exit Eff: %.1f%%\nTransmission: %.1f%%', ...
+            I_cath_ss, I_anode_ss, I_exit_ss, transmission_pct), ...
+    'FontSize', 10, 'BackgroundColor', 'white', 'EdgeColor', 'black');
+
+%% ==================== PLOT 2: BEAM DIAGNOSTICS AT SNAPSHOT ====================
+%%  Uses the last available steady-state beam snapshot.
+
+if exist('steady_state_beam','var') && steady_state_beam.n_total > 100
+
+    z_ss  = steady_state_beam.z;
+    r_ss  = steady_state_beam.r;
+    pz_ss = steady_state_beam.pz;
+    pr_ss = steady_state_beam.pr;
+    pt_ss = steady_state_beam.ptheta;
+    gm_ss = steady_state_beam.gamma;
+    t_ss  = steady_state_beam.time;
+
+    pm_ss  = sqrt(pz_ss.^2 + pr_ss.^2 + pt_ss.^2);
+    KE_ss  = (gm_ss - 1) * 0.511;   % MeV
+
+    figure('Name','Beam Diagnostics', ...
+           'Position',[100 100 1400 800]);
+
+    %% --- Beam envelope (RMS radius vs z) ---
+    subplot(2,3,1);
+    n_env_bins = 90;
+    z_edges    = linspace(0, 8.31, n_env_bins+1);
+    z_centers  = 0.5*(z_edges(1:end-1) + z_edges(2:end));
+    r_rms_env  = zeros(n_env_bins, 1);
+    for ib = 1:n_env_bins
+        in_b = z_ss >= z_edges(ib) & z_ss < z_edges(ib+1);
+        if sum(in_b) > 5
+            r_rms_env(ib) = sqrt(mean(r_ss(in_b).^2)) * 1000;  % mm
+        end
+    end
+    r_rms_env(r_rms_env == 0) = NaN;
+    plot(z_centers*1000, r_rms_env, 'bo-', 'MarkerSize', 3, 'LineWidth', 1);
+    hold on;
+    yline(75,  'k--', 'Wall',   'LabelHorizontalAlignment','left');
+    yline(50,  'r--', 'Target 50mm', 'LabelHorizontalAlignment','left');
+    xlabel('z position (mm)');  ylabel('RMS radius (mm)');
+    title(sprintf('Beam Envelope at t=%.1f ns', t_ss*1e9));
+    xlim([0, 8310]);  ylim([0, 80]);  grid on;
+    
+    %% --- Longitudinal particle distribution ---
+    subplot(2,3,2);
+    histogram(z_ss*1000, 90, 'FaceColor', [0.2 0.4 0.8]);
+    xlabel('z position (mm)');
+    ylabel('Particles per 90mm slice');
+    title('Longitudinal Particle Distribution');
+    xlim([0, 8310]);  grid on;
+
+    %% --- Beam current along z ---
+    subplot(2,3,3);
+    vz_ss      = pz_ss ./ (gm_ss * m_e);
+    dz_bin     = (8.310 - 0) / 90;
+    [n_z, ~]   = histcounts(z_ss, linspace(0, 8.31, 91));
+    I_along_z  = n_z * mean(weight_particles(weight_particles>0)) * ...
+                  e_charge .* (vz_ss(1) / dz_bin);  % approximate
+    %% More accurate: weight-sum per bin
+    I_z_wt = zeros(90,1);
+    z_bin_edges = linspace(0, 8.31, 91);
+    for ib = 1:90
+        in_b = z_ss >= z_bin_edges(ib) & z_ss < z_bin_edges(ib+1);
+        if any(in_b)
+            vz_b     = abs(pz_ss(in_b) ./ (gm_ss(in_b) * m_e));
+            I_z_wt(ib) = sum(weight_particles( ...
+                find(active_particles,1):end) * 0 ) ;
+            %% Use direct weight sum
+            w_b = weight_particles(1:n_created);
+            w_b = w_b(w_b > 0);
+            w_mean = mean(w_b);
+            I_z_wt(ib) = sum(in_b) * w_mean * e_charge .* ...
+                          mean(vz_b) / (z_bin_edges(ib+1) - z_bin_edges(ib));
+        end
+    end
+    z_bin_centers = 0.5*(z_bin_edges(1:end-1) + z_bin_edges(2:end));
+    plot(z_bin_centers*1000, I_z_wt, 'gs-', 'MarkerSize', 3, 'LineWidth', 1);
+    xlabel('z position (mm)');  ylabel('Current (A)');
+    title('Beam Current Along z');
+    xlim([0 8310]);  grid on;
+
+    %% --- Energy vs position ---
+    subplot(2,3,4);
+    n_e_bins   = 90;
+    KE_vs_z    = zeros(n_e_bins, 1);
+    for ib = 1:n_e_bins
+        in_b = z_ss >= z_edges(ib) & z_ss < z_edges(ib+1);
+        if sum(in_b) > 5
+            KE_vs_z(ib) = mean(KE_ss(in_b));
+        end
+    end
+    KE_vs_z(KE_vs_z == 0) = NaN;
+    plot(z_centers*1000, KE_vs_z, 'r^-', 'MarkerSize', 3, 'LineWidth', 1);
+    hold on;
+    yline(1.70, 'k--', 'Expected 1.7 MeV', 'LabelHorizontalAlignment','left');
+    xlabel('z position (mm)');  ylabel('Mean Energy (MeV)');
+    title('Energy vs Position');
+    xlim([0 8310]);  ylim([0 2.0]);  grid on;
+
+    %% --- Slice emittance ---
+    subplot(2,3,5);
+    emit_vs_z  = zeros(n_env_bins, 1);
+    for ib = 1:n_env_bins
+        in_b = z_ss >= z_edges(ib) & z_ss < z_edges(ib+1);
+        if sum(in_b) > 20
+            r_b  = r_ss(in_b);
+            pr_b = pr_ss(in_b) ./ (gm_ss(in_b) * m_e * c);
+            r_b  = r_b  - mean(r_b);
+            pr_b = pr_b - mean(pr_b);
+            emit_vs_z(ib) = sqrt(max(0, mean(r_b.^2)*mean(pr_b.^2) - ...
+                                        mean(r_b.*pr_b)^2)) * 1e6;  % mm-mrad
+        end
+    end
+    emit_vs_z(emit_vs_z == 0) = NaN;
+    plot(z_centers*1000, emit_vs_z, 'm^-', 'MarkerSize', 3, 'LineWidth', 1);
+    xlabel('z position (mm)');
+    ylabel('Geometric Emittance (mm-mrad)');
+    title('Slice Emittance');
+    xlim([0 8310]);  grid on;
+
+    %% --- 2D particle density ---
+    subplot(2,3,6);
+    z_edges_2d = linspace(0, 8.31, 100);
+    r_edges_2d = linspace(0, 0.080, 50);
+    density_2d = histcounts2(z_ss, r_ss, z_edges_2d, r_edges_2d);
+    z_c2d = 0.5*(z_edges_2d(1:end-1) + z_edges_2d(2:end)) * 1000;
+    r_c2d = 0.5*(r_edges_2d(1:end-1) + r_edges_2d(2:end)) * 1000;
+    imagesc(z_c2d, r_c2d, log10(density_2d' + 1));
+    set(gca,'YDir','normal');
+    colorbar;  colormap(gca, 'jet');
+    hold on;
+    yline(75, 'w--', 'Wall',  'LineWidth', 1.5);
+    xline(254, 'w:', 'Anode', 'LineWidth', 1.0);
+    xlabel('z (mm)');  ylabel('r (mm)');
+    title('2D Particle Density (Log Scale)', 'FontSize', 14, 'FontWeight', 'bold');
+    clabel_str = 'log_{10}(Particle Count +1)';
+    cb = colorbar;  cb.Label.String = clabel_str;
+
+    sgtitle(sprintf('Pierce Gun PIC V3 — t = %.1f ns', t_ss*1e9), ...
+            'FontSize', 14, 'FontWeight', 'bold');
+
+end  %% steady_state_beam exists
+%%%%%%%%%%%%%%%%%%%%%%%% Stand alone plot 2,3,6 %%%%%%%%%%%%%%%%%%%%%%
+    figure('Name','Beam Diagnostics', ...
+           'Position',[100 100 1800 400]);
+        z_edges_2d = linspace(0, 8.31, 100);
+    r_edges_2d = linspace(0, 0.080, 50);
+    density_2d = histcounts2(z_ss, r_ss, z_edges_2d, r_edges_2d);
+    z_c2d = 0.5*(z_edges_2d(1:end-1) + z_edges_2d(2:end)) * 1000;
+    r_c2d = 0.5*(r_edges_2d(1:end-1) + r_edges_2d(2:end)) * 1000;
+    imagesc(z_c2d, r_c2d, log10(density_2d' + 1));
+    set(gca,'YDir','normal');
+    colorbar;  colormap(gca, 'jet');
+    hold on;
+    yline(75, 'w--', 'Wall',  'LineWidth', 1.5);
+    xline(254, 'w--', 'Anode', 'LineWidth', 1.5);
+    xlabel('z (mm)');  ylabel('r (mm)');
+    title('2D Particle Density (Log Scale)','FontSize', 14, 'FontWeight', 'bold');
+    clabel_str = 'log_{10}(Particle Count +1)';
+    cb = colorbar;  cb.Label.String = clabel_str;
+
+    %sgtitle(sprintf('Pierce Gun PIC V3 — t = %.1f ns', t_ss*1e9), ...
+    %        'FontSize', 14, 'FontWeight', 'bold');
+%%%%%%%%%%%%%%%%%%%%%%%% ^ Stand alone plot 2,3,6 ^ %%%%%%%%%%%%%%%%%%%%%%
+
+%% ==================== PLOT 3: KE HISTOGRAMS AT CROSSINGS ====================
+if sum(mask_anode) > 10 || sum(mask_exit) > 10
+    figure('Name','KE at Crossing Planes','Position',[150 150 900 400]);
+
+    subplot(1,2,1);
+    if sum(mask_anode) > 10
+        histogram(KE_an, 50, 'FaceColor', [0.2 0.5 0.9]);
+        xline(mean(KE_an), 'r--', sprintf('mean=%.3f MeV', mean(KE_an)), ...
+              'LineWidth', 1.5);
+        xline(1.694, 'k--', 'Expected 1.694 MeV', 'LineWidth', 1.0);
+    end
+    %% Add spread annotation
+    sigma_an = std(KE_an);
+    FWHM_an  = 2.355 * sigma_an;
+    text(0.05, 0.90, ...
+         sprintf('σ = %.4f MeV\nFWHM = %.4f MeV\nΔE/E = %.2f%%', ...
+                 sigma_an, FWHM_an, 100*sigma_an/mean(KE_an)), ...
+         'Units','normalized', 'FontSize', 10, ...
+         'BackgroundColor','white', 'EdgeColor','black');
+    xlabel('KE (MeV)');  ylabel('Count');
+    title('KE at Anode (z=254mm)');  grid on;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% NEW_SUBPLOT (1,2,2) %%%%%%%%%%%%%%%%%%%%%%%%%
+    %% Enhanced KE at exit annotation
+  subplot(1,2,2);
+  if sum(mask_exit) > 10
+    histogram(KE_ex, 50, 'FaceColor', [0.2 0.8 0.4]);
+    xline(mean(KE_ex), 'r--', ...
+          sprintf('mean=%.4f MeV', mean(KE_ex)), 'LineWidth', 1.5);
+    xline(1.694, 'k--', 'Expected 1.694 MeV', 'LineWidth', 1.0);
+
+    %% Add spread annotation
+    sigma_ex = std(KE_ex);
+    FWHM_ex  = 2.355 * sigma_ex;
+    text(0.05, 0.90, ...
+         sprintf('σ = %.4f MeV\nFWHM = %.4f MeV\nΔE/E = %.2f%%', ...
+                 sigma_ex, FWHM_ex, 100*sigma_ex/mean(KE_ex)), ...
+         'Units','normalized', 'FontSize', 10, ...
+         'BackgroundColor','white', 'EdgeColor','black');
+   end
+   xlabel('KE (MeV)');  ylabel('Count');
+   title('KE at Exit (z=8305mm)');  grid on;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% NEW SAVE WORKSPACE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% ==================== SAVE WORKSPACE ====================
+fprintf('\nSaving results...\n');
+save_fname = sprintf('Pierce_Gun_V3_results_%s.mat', ...
+                     datestr(now,'yyyymmdd_HHMMSS'));
+save(save_fname, ...
+    'I_cathode', 'I_anode', 'I_exit', 'I_monitor', ...
+    'collection_efficiency', 'n_active_history', ...
+    'particle_crossed_anode', 'particle_crossed_exit', ...
+    'particle_t_at_anode',    'particle_t_at_exit', ...
+    'particle_KE_at_anode',   'particle_KE_at_exit', ...
+    'particle_r_at_anode', ...
+    'particles_at_anode', 'particles_transmitted', ...
+    'particles_lost_to_cathode', 'particles_lost_to_walls', ...
+    'particles_out_of_bounds',   'n_created', ...
+    'r_rms_history', 'n_particles_vs_z', 'z_diagnostic', ...
+    'snapshot_data', 'snapshot_early', 'snapshot_late', 'snapshot_p1', ...
+    'schottky_diagnostics', 'ion_diag', 'ion_density_grid', ...
+    'ANALYSIS_LOCATIONS', 'ANALYSIS_LOCATION_NAMES', ...
+    't', 'dt', 'nt', 't_start', 't_end', ...
+    'max_sc_field_recorded', '-v7.3');
+
+%% Save steady_state_beam separately if it exists
+if exist('steady_state_beam','var')
+    save(save_fname, 'steady_state_beam', '-append');
+end
+
+fprintf('Saved to: %s\n', save_fname);
+%%%%%%%%%%%%%%%%%%%%%%%%%% Fifth section end %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%% Updated Validation Block 01.28.2026 %%%%%%%%%%%%%%%%%
 %% ==================== POST-PROCESSING VALIDATION ====================
@@ -3401,20 +2301,35 @@ if ENABLE_GAS_SCATTERING && scatter_diag.event_count > 0
     xlim([0 8310]);
     
     % Cumulative scattering probability
-    subplot(1,3,3);
+
+    %%%%%%%%%%%%%%%%%%%%% Fixed Summary for the plot 1 %%%%%%%%%%%%%%%%%%%%%%%%
+    %% Fix the Summary in the plot
+     subplot(1,3,3);
     axis off;
-    text(0.1, 0.9, 'SCATTERING SUMMARY', 'FontWeight', 'bold', 'FontSize', 14);
-    text(0.1, 0.75, sprintf('Method: %s', SCATTERING_METHOD));
-    text(0.1, 0.65, sprintf('Total events: %d', scatter_diag.event_count));
-    text(0.1, 0.55, sprintf('Events/electron: %.4f', scatter_diag.event_count/n_created));
-    text(0.1, 0.45, sprintf('Mean angle: %.2f µrad', mean(abs(scatter_diag.theta_history))*1e6));
-    text(0.1, 0.35, sprintf('RMS angle: %.2f µrad', std(scatter_diag.theta_history)*1e6));
-    
-    % Expected transmission reduction
-    expected_loss = scatter_diag.event_count / n_created * 0.1;  % Rough estimate
-    text(0.1, 0.20, sprintf('Expected loss: ~%.1f%%', expected_loss*100));
-    text(0.1, 0.10, sprintf('Actual transmission: %.1f%%', ...
-                    100*particles_transmitted/n_created), 'FontWeight', 'bold');
+    text(0.1, 0.90, 'SCATTERING SUMMARY', 'FontWeight','bold','FontSize',14);
+    text(0.1, 0.76, sprintf('Method: %s', SCATTERING_METHOD));
+    text(0.1, 0.66, sprintf('Total events: %d', scatter_diag.event_count));
+    text(0.1, 0.56, sprintf('Events/electron: %.4f', ...
+                             scatter_diag.event_count / max(n_created,1)));
+
+    if ~isempty(scatter_diag.theta_history)
+        th = scatter_diag.theta_history;
+        text(0.1, 0.46, sprintf('Mean angle: %.2f µrad',  mean(abs(th))*1e6));
+        text(0.1, 0.36, sprintf('RMS angle:  %.2f µrad',  std(th)*1e6));
+        text(0.1, 0.26, sprintf('Max angle:  %.2f mrad',  max(abs(th))*1e3));
+        large_th = sum(abs(th) > 1e-3);
+        text(0.1, 0.16, sprintf('Events >1 mrad: %d (%.2f%%)', ...
+                                 large_th, 100*large_th/max(length(th),1)));
+    else
+        text(0.1, 0.46, 'Mean angle: no data', 'Color','red');
+        text(0.1, 0.36, 'RMS angle:  no data', 'Color','red');
+    end
+
+    expected_loss = scatter_diag.event_count / max(n_created,1) * 0.1;
+    text(0.1, 0.08, sprintf('Expected loss: ~%.2f%%', expected_loss*100));
+    text(0.1, 0.02, sprintf('Actual transmission: %.1f%%', ...
+                             100*particles_transmitted/max(n_created,1)), ...
+         'FontWeight','bold');
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ==================== SCATTERING HALO ANALYSIS ====================
@@ -3542,7 +2457,7 @@ if exist('steady_state_beam', 'var') && steady_state_beam.n_total > 1000
     
     % Debug: Show actual particle distribution
     fprintf('\n=== Particle Distribution at Steady State ===\n');
-    z_bins = 0:0.1:2.7;  % 100mm bins
+    z_bins = 0:0.1:8.3;  % 100mm bins
     [n_hist, edges] = histcounts(z_beam, z_bins);
     fprintf('First 10 bins (0-1000mm):\n');
     for i = 1:10
@@ -3553,7 +2468,7 @@ if exist('steady_state_beam', 'var') && steady_state_beam.n_total > 1000
     
     % Define slices covering the full beamline
     slice_width = 0.090;  % 90mm slices
-    slice_edges = 0:slice_width:2.7;  % 0 to 2700mm
+    slice_edges = 0:slice_width:8.3;  % 0 to 2700mm
     n_slices = length(slice_edges) - 1;
     
     % Initialize slice data structure
@@ -3737,7 +2652,8 @@ fprintf('Ion data range: %.1e to %.1e ions\n', ...
     ylabel('Ions Created per Timestep');
     title('Ionization Rate');
     grid on;
-    xlim([145 900]);
+    %xlim([145 900]);
+    xlim([t_plot_min t_plot_max]);
     hold on;
     % Mark pulse boundaries
     for ip = 1:pulse_config.n_pulses
@@ -3764,8 +2680,8 @@ if sum(nonzero_idx) > 2  % Need at least a few points to plot
     ylabel('Total Ions in System', 'FontSize', 12);
     title('Ion Accumulation with Recombination', 'FontSize', 14);
     grid on;
-    xlim([145 900]);
-    
+    %xlim([145 900]);
+    xlim([t_plot_min t_plot_max]);
     % Set explicit y-limits based on actual data
     ylim([min(ions_nonzero(ions_nonzero>0))*0.5, max(ions_nonzero)*2]);
     
@@ -3798,7 +2714,8 @@ end
     ylabel('Peak Ion Density (ions/m³)', 'FontSize', 12);
     title('Peak Local Ion Density', 'FontSize', 14);
     grid on;
-    xlim([145 900]);
+    %xlim([145 900]);
+    xlim([t_plot_min t_plot_max]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Plot 4: Ion spatial distribution at Pulse 1 end (t=270ns)
     subplot(3,3,4);
@@ -3922,7 +2839,8 @@ if ENABLE_ION_ACCUMULATION
     ylabel('Ions Created per Timestep', 'FontSize', 12);
     title('Ionization Rate', 'FontSize', 14);
     grid on;
-    xlim([145 900]);
+    %xlim([145 900]);
+    xlim([t_plot_min t_plot_max]);
     hold on;
     for ip = 1:pulse_config.n_pulses
         t_p = pulse_config.pulse_starts(ip)*1e9;
@@ -3945,8 +2863,8 @@ if ENABLE_ION_ACCUMULATION
         ylabel('Total Ions in System', 'FontSize', 12);
         title('Ion Accumulation with Recombination', 'FontSize', 14);
         grid on;
-        xlim([145 900]);
-        
+        %xlim([145 900]);
+        xlim([t_plot_min t_plot_max]);
         % Set intelligent y-limits
         min_ions = min(ion_diag.total_ions_vs_time(nonzero_mask));
         max_ions = max(ion_diag.total_ions_vs_time(nonzero_mask));
@@ -3994,8 +2912,8 @@ if ENABLE_ION_ACCUMULATION
         ylabel('Peak Ion Density (ions/m³)', 'FontSize', 12);
         title('Peak Local Ion Density', 'FontSize', 14);
         grid on;
-        xlim([145 900]);
-        
+        %xlim([145 900]);
+        xlim([t_plot_min t_plot_max]);
         % Set reasonable y-limits
         min_density = min(ion_diag.peak_density_vs_time(nonzero_mask_peak));
         max_density = max(ion_diag.peak_density_vs_time(nonzero_mask_peak));
@@ -4122,7 +3040,7 @@ set(gca, 'YScale', 'log');  % Set y-axis to log scale AFTER creating bar plot
 ylabel('Field Magnitude (log scale)', 'FontSize', 12);
 title('Space Charge Field Comparison', 'FontSize', 14);
 grid on;
-ylim([1e-1 1e1]);
+ylim([1e-2 1e2]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Chaged Annotation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ===== ADD ORDER-OF-MAGNITUDE ANNOTATIONS =====
     % Get bar x-positions
@@ -4169,32 +3087,68 @@ ylim([1e-1 1e1]);
     subplot(3,3,9);
     axis off;
     
-    text(0.1, 0.95, 'ION SUMMARY', 'FontWeight', 'bold', 'FontSize', 16);
+    text(0.1, 0.99, 'ION SUMMARY', 'FontWeight', 'bold', 'FontSize', 16);
     text(0.1, 0.85, sprintf('Total ionizations: %d', total_ions_created), 'FontSize', 11);
-    text(0.1, 0.78, sprintf('Rate: %.4f ions/e⁻', total_ions_created/n_created), 'FontSize', 11);
-    text(0.1, 0.71, sprintf('Peak count: %d ions', round(max_ion_count)), 'FontSize', 11);
-    text(0.1, 0.64, sprintf('Peak density: %.2e /m³', max_ion_density), 'FontSize', 11);
+    text(0.1, 0.75, sprintf('Rate: %.4f ions/e⁻', total_ions_created/n_created), 'FontSize', 11);
+    text(0.1, 0.65, sprintf('Peak count: %d ions', round(max_ion_count)), 'FontSize', 11);
+    text(0.1, 0.55, sprintf('Peak density: %.2e /m³', max_ion_density), 'FontSize', 11);
     
-    text(0.1, 0.52, 'Expected focusing effect:', 'FontWeight', 'bold', 'FontSize', 11);
+    text(0.1, 0.45, 'Expected focusing effect:', 'FontWeight', 'bold', 'FontSize', 11);
     
     % Estimate ion lens strength
     ion_lens_strength = ion_field_estimate / 1.7e6;  % Ratio to beam energy
     focal_length_estimate = 1 / (ion_lens_strength / 2);  % Rough thin lens approx
     
-    text(0.1, 0.44, sprintf('Ion field/Beam energy: %.2e', ion_lens_strength), 'FontSize', 10);
-    text(0.1, 0.36, sprintf('Estimated focal length: ~%.0f m', focal_length_estimate), 'FontSize', 10);
-    text(0.1, 0.28, sprintf('Expected Δr at exit: ~%.2f mm', ion_lens_strength*50*1000), ...
+    text(0.1, 0.35, sprintf('Ion field/Beam energy: %.2e', ion_lens_strength), 'FontSize', 10);
+    text(0.1, 0.27, sprintf('Estimated focal length: ~%.0f m', focal_length_estimate), 'FontSize', 10);
+    text(0.1, 0.19, sprintf('Expected Δr at exit: ~%.2f mm', ion_lens_strength*50*1000), ...
          'Color', 'red', 'FontWeight', 'bold', 'FontSize', 11);
     
     % Add pressure info
-    text(0.1, 0.15, sprintf('Pressure: %.1e mbar', gas_params.P/133.322), ...
+    text(0.1, 0.10, sprintf('Pressure: %.1e mbar', gas_params.P/133.322), ...
          'FontSize', 10, 'Color', [0.3 0.3 0.3]);
-    text(0.1, 0.08, sprintf('Mean free path: %.1f km', gas_params.lambda_mfp/1000), ...
+    text(0.1, 0.00, sprintf('Mean free path: %.1f km', gas_params.lambda_mfp/1000), ...
          'FontSize', 10, 'Color', [0.3 0.3 0.3]);
     
     sgtitle(sprintf('Ion Accumulation and Space Charge Effects (P=%.1e mbar)', gas_params.P/133.322), ...
             'FontSize', 16);
 end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Stand Alone Plot 3,3,4 Figure 3 %%%%%%%%%%%%%%%%%%%%%%%
+      figure('Position', [100, 100, 1800, 400], 'Name', 'Ion Accumulation Diagnostics - Enhanced');
+         % Create custom colormap with better contrast for low values
+        custom_cmap = [
+        0 0 0.2;         % Dark blue for zero
+        0 0 0.5;         % Blue
+        0 0.3 0.8;       % Lighter blue
+        0 0.6 1;         % Cyan-blue
+        0 0.9 0.9;       % Cyan
+        0.3 1 0.3;       % Light green
+        0.8 1 0;         % Yellow-green
+        1 0.8 0;         % Yellow
+        1 0.5 0;         % Orange
+        1 0.2 0;         % Red-orange
+        0.8 0 0];        % Red
+    colormap_interp = interp1(linspace(0,1,11), custom_cmap, linspace(0,1,256));
+    
+    % Use sqrt scaling for better contrast at low ion counts
+    ion_plot_data = sqrt(ion_density_grid + 1);  % sqrt instead of log10
+    
+    imagesc(sc_z*1000, sc_r*1000, ion_plot_data);
+    axis xy;
+    colormap(gca, colormap_interp);
+    h = colorbar;
+    ylabel(h, 'sqrt(Ion Count + 1)', 'FontSize', 10);
+    xlabel('z (mm)', 'FontSize', 12);
+    ylabel('r (mm)', 'FontSize', 12);
+    title('Final Ion Distribution (sqrt scale)', 'FontSize', 14);
+    hold on;
+    plot([254 254], [0 sc_r_max*1000], 'w--', 'LineWidth', 1.5);
+    plot([0 8310], [75 75], 'w-', 'LineWidth', 2);
+    text(280, 10, 'Anode', 'Color', 'white', 'FontSize', 10, 'FontWeight', 'bold');
+    text(400, 70, 'Wall', 'Color', 'white', 'FontSize', 10);
+    xlim([0 8310]);
+    ylim([0 80]);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ^^ Stand Alone Plot 3,3,4 Figure 3 ^^ %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 4 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ==================== STANDALONE ION SPATIAL DISTRIBUTION FIGURE ====================
 % Create a dedicated high-contrast figure for ion distribution analysis
@@ -4245,8 +3199,8 @@ if ENABLE_ION_ACCUMULATION && sum(ion_density_grid(:)) > 10
     plot([0 8310], [75 75], 'w--', 'LineWidth', 2);
     plot([0 8310], [50 50], 'm--', 'LineWidth', 1.5);
     
-    text(264, 5, 'Anode', 'Color', 'white', 'FontSize', 12, 'FontWeight', 'bold');
-    text(1400, 72, 'Wall (75mm)', 'Color', 'white', 'FontSize', 12);
+    text(267, 5, 'Anode', 'Color', 'white', 'FontSize', 12, 'FontWeight', 'bold');
+    text(6400, 72, 'Wall (75mm)', 'Color', 'white', 'FontSize', 12);
     text(1400, 47, 'Target (50mm)', 'Color', 'magenta', 'FontSize', 10);
     
     xlim([0 8310]);
@@ -4324,7 +3278,124 @@ if ENABLE_ION_ACCUMULATION && sum(ion_density_grid(:)) > 10
 end
 
 fprintf('\nEnhanced ion diagnostics complete!\n');
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 4.2 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+if ENABLE_ION_ACCUMULATION && sum(ion_density_grid(:)) > 10
+    
+    figure('Position', [100, 100, 1600, 900], 'Name', 'Ion Spatial Distribution - High Contrast');
+    
+    % Main plot: 2D distribution with enhanced contrast
+    subplot(2,1,[1,2]);
+    
+    % Apply adaptive scaling for better visualization
+    ion_data_plot = ion_density_grid;
+    
+    % Option 1: Power-law scaling for better mid-range contrast
+    ion_scaled = (ion_data_plot).^0.5;  % Square root scaling
+    
+    % Create enhanced colormap (dark blue → cyan → yellow → red)
+    enhanced_cmap = [
+        0 0 0.3;         % Very dark blue (zero/low)
+        0 0 0.6;         % Dark blue
+        0 0.2 0.9;       % Blue
+        0 0.5 1;         % Light blue
+        0 0.8 1;         % Cyan
+        0.2 1 0.8;       % Cyan-green
+        0.5 1 0.5;       % Light green
+        0.8 1 0;         % Yellow-green
+        1 0.9 0;         % Yellow
+        1 0.6 0;         % Orange
+        1 0.3 0;         % Red-orange
+        0.9 0 0];        % Red (high)
+    
+    cmap_fine = interp1(linspace(0,1,12), enhanced_cmap, linspace(0,1,256));
+    
+    imagesc(sc_z*1000, sc_r*1000, ion_scaled);
+    axis xy;
+    colormap(gca, cmap_fine);
+    h = colorbar;
+    ylabel(h, 'sqrt(Ion Count)', 'FontSize', 14);
+    
+    xlabel('z position (mm)', 'FontSize', 14);
+    ylabel('r (mm)', 'FontSize', 14);
+    title('Ion Density Distribution (Enhanced Contrast)', 'FontSize', 16);
+    
+    hold on;
+    % Overlay geometry
+    plot([254 254], [0 80], 'w:', 'LineWidth', 2);
+    plot([0 8310], [75 75], 'w--', 'LineWidth', 2);
+    plot([0 8310], [50 50], 'm--', 'LineWidth', 1.5);
+    
+    text(267, 5, 'Anode', 'Color', 'white', 'FontSize', 12, 'FontWeight', 'bold');
+    text(6400, 72, 'Wall (75mm)', 'Color', 'white', 'FontSize', 12);
+    text(1400, 47, 'Target (50mm)', 'Color', 'magenta', 'FontSize', 10);
+    
+    xlim([0 8310]);
+    ylim([0 80]);
+    
+    % Inset: Zoom on peak density region
+    axes('Position', [0.15, 0.72, 0.15, 0.15]);
+    [~, iz_peak] = max(sum(ion_density_grid, 1));
+    z_zoom_range = max(1, iz_peak-50):min(sc_nz, iz_peak+50);
+    imagesc(sc_z(z_zoom_range)*1000, sc_r*1000, ion_scaled(:, z_zoom_range));
+    axis xy;
+    colormap(gca, cmap_fine);
+    title(sprintf('Zoom: z≈%.0f mm', sc_z(iz_peak)*1000), 'FontSize', 10, 'Color', 'white');
+    set(gca, 'Color', 'k', 'XColor', 'w', 'YColor', 'w');
+    
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Additional Figure 4.3 %%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ENABLE_ION_ACCUMULATION && sum(ion_density_grid(:)) > 10
+ figure('Position', [100, 100, 1600, 400], 'Name', 'Ion Spatial Distribution - High Contrast');
+    
+    % Main plot: 2D distribution with enhanced contrast
+    %subplot(2,1,[1,2]);
+    
+    % Apply adaptive scaling for better visualization
+    ion_data_plot = ion_density_grid;
+    
+    % Option 1: Power-law scaling for better mid-range contrast
+    ion_scaled = (ion_data_plot).^0.5;  % Square root scaling
+    
+    % Create enhanced colormap (dark blue → cyan → yellow → red)
+    enhanced_cmap = [
+        0 0 0.3;         % Very dark blue (zero/low)
+        0 0 0.6;         % Dark blue
+        0 0.2 0.9;       % Blue
+        0 0.5 1;         % Light blue
+        0 0.8 1;         % Cyan
+        0.2 1 0.8;       % Cyan-green
+        0.5 1 0.5;       % Light green
+        0.8 1 0;         % Yellow-green
+        1 0.9 0;         % Yellow
+        1 0.6 0;         % Orange
+        1 0.3 0;         % Red-orange
+        0.9 0 0];        % Red (high)
+    
+    cmap_fine = interp1(linspace(0,1,12), enhanced_cmap, linspace(0,1,256));
+    
+    imagesc(sc_z*1000, sc_r*1000, ion_scaled);
+    axis xy;
+    colormap(gca, cmap_fine);
+    h = colorbar;
+    ylabel(h, 'sqrt(Ion Count)', 'FontSize', 14);
+    
+    xlabel('z position (mm)', 'FontSize', 14);
+    ylabel('r (mm)', 'FontSize', 14);
+    title('Ion Density Distribution (Enhanced Contrast)', 'FontSize', 16);
+    
+    hold on;
+    % Overlay geometry
+    plot([254 254], [0 80], 'w:', 'LineWidth', 2);
+    plot([0 8310], [75 75], 'w--', 'LineWidth', 2);
+    plot([0 8310], [50 50], 'm--', 'LineWidth', 1.5);
+    
+    text(267, 5, 'Anode', 'Color', 'white', 'FontSize', 12, 'FontWeight', 'bold');
+    text(6400, 72, 'Wall (75mm)', 'Color', 'white', 'FontSize', 12);
+    text(1400, 47, 'Target (50mm)', 'Color', 'magenta', 'FontSize', 10);
+    
+    xlim([0 8310]);
+    ylim([0 80]);
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Figure 5 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
     %% Create improved visualization
     figure('Position', [100, 100, 1600, 900], 'Name', 'Longitudinal Beam Analysis (Steady State)');
@@ -4402,7 +3473,7 @@ fprintf('\nEnhanced ion diagnostics complete!\n');
 %% OPTION 1: Logarithmic Scale with Custom Colormap
 subplot(2,3,6);
 [N, z_edges, r_edges] = histcounts2(z_beam*1000, r_beam*1000, ...
-                                     0:25:2750, 0:1:80);  % Finer binning
+                                     0:25:8300, 0:1:80);  % Finer binning
                                      
 % Apply logarithmic scaling for better contrast
 N_log = log10(N + 1);  % Add 1 to avoid log(0)
@@ -4435,7 +3506,7 @@ xlim([0 8310]);
 ylim([0 80]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 6 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-figure('Position', [100, 100, 1400, 700], 'Name', 'Longitudinal Beam Analysis (Steady State)');
+figure('Position', [100, 100, 1800, 400], 'Name', 'Longitudinal Beam Analysis (Steady State)');
 %subplot(2,3,6);
 [N, z_edges, r_edges] = histcounts2(z_beam*1000, r_beam*1000, ...
                                      0:25:8300, 0:1:80);  % Finer binning
@@ -4566,7 +3637,12 @@ if abs(particles_unaccounted) > 10
 end
 
 % Space charge diagnostic
+
+
 if ENABLE_SPACE_CHARGE
+     enhancement1 = enhancement_gap * sc_enhancement_scale; %
+     enhancement2 = enhancement_drift * sc_enhancement_scale;
+
     fprintf('\n=== SPACE CHARGE PARAMETERS ===\n');
     fprintf('  Enhancement (gap):    %.3f\n', enhancement1);  % Update with your value
     fprintf('  Enhancement (drift):  %.3f\n', enhancement2);  % Update with your value
@@ -4687,7 +3763,7 @@ fprintf('  Drift exit efficiency: %.1f%%\n', avg_drift_efficiency);
 %% ==================== UPDATED PLOTTING SECTION ====================
 % Replace the existing Figure with collection efficiency (subplot 2,3,5)
 % This creates the corrected efficiency plot
-
+I_drift_exit = I_exit;
 figure('Position', [50, 50, 1600, 900], 'Name', 'Emission System Diagnostics v8 - Corrected');
 
 % Copy your existing subplots 1-4 here (Current density, Weight, SC field, Currents)
@@ -4730,60 +3806,51 @@ xlim([t_plot_min t_plot_max]);
 %ylim([0  (sc_field_max/1e6)*1.1]);
 if ENABLE_SPACE_CHARGE == true
 sc_lim = (max(sc_field_max/1e6))*1.5;
-ylim([0 sc_lim]);
+if sc_lim > 0; ylim([0 sc_lim]); else; ylim([0 1]); end
 else
 ylim([0 1]);
 end
-% 4. Emission and collection currents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% New Subplot (2,3,4) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% ==================== Subplot 4: Emission and Collection Currents ====================
 subplot(2,3,4);
-plot(t*1e9, I_anode*1e6, 'b-', 'LineWidth', 2, 'DisplayName', 'Anode');
-%plot(t*1e9, I_cathode*1e6, 'r-', 'LineWidth', 2, 'DisplayName', 'Cathode');
+%% V3 currents are in Amperes — plot directly, no ×1e6 scaling
+plot(t_ns, I_cathode, 'r-', 'LineWidth', 2, 'DisplayName', 'Cathode');
 hold on;
-%plot(t*1e9, I_anode*1e6, 'b-', 'LineWidth', 2, 'DisplayName', 'Anode');
-plot(t*1e9, I_drift_exit*1e6, 'g-', 'LineWidth', 2, 'DisplayName', 'Drift Exit');
-plot(t*1e9, I_cathode*1e6, 'r-', 'LineWidth', 2, 'DisplayName', 'Cathode');
+plot(t_ns, I_anode,   'b-', 'LineWidth', 1.5, 'DisplayName', 'Anode');
+plot(t_ns, I_exit,    'g-', 'LineWidth', 1.5, 'DisplayName', 'Drift Exit');
 xlabel('Time (ns)');
-ylabel('Current (µA)');
+ylabel('Current (A)');
 title('Emission and Collection Currents');
 legend('Location', 'best');
 grid on;
 xlim([t_plot_min t_plot_max]);
+ylim([0, max(max(I_cathode), 10) * 1.15]);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Subplot 5: CORRECTED Collection Efficiency
+%%%%%%%%%%%%%%%%%%%%%%%%%%% NEW SUBPLOT (2,3,5) %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% ==================== Subplot 5: Collection Efficiency ====================
 subplot(2,3,5);
+
+collection_efficiency_2 = 100*(I_exit./I_cath_ss);
+anode_efficiency = 100*(I_anode./I_cath_ss);
 hold on;
-
-% Plot both anode and drift exit efficiencies
-valid_anode = ~isnan(collection_efficiency_corrected);
-valid_drift = ~isnan(drift_exit_efficiency);
-
-plot(t(valid_anode)*1e9, collection_efficiency_corrected(valid_anode), 'b-', ...
-     'LineWidth', 2, 'DisplayName', 'Anode');
-plot(t(valid_drift)*1e9, drift_exit_efficiency(valid_drift), 'm-', ...
-     'LineWidth', 2, 'DisplayName', 'Drift Exit');
-
-% Add reference line at 100%
-yline(100, 'k--', 'Alpha', 0.5, 'DisplayName', '100% Reference');
-
-% Add average values as horizontal lines
-yline(avg_anode_efficiency, 'b:', 'LineWidth', 1.5, ...
-      'Label', sprintf('Avg Anode: %.1f%%', avg_anode_efficiency));
-yline(avg_drift_efficiency, 'm:', 'LineWidth', 1.5, ...
-      'Label', sprintf('Avg Drift: %.1f%%', avg_drift_efficiency));
+plot(t_ns, collection_efficiency_2, 'm-', 'LineWidth', 1.0, ...
+     'DisplayName', 'Exit');
+plot(t_ns, anode_efficiency, 'b-', 'LineWidth', 1, 'DisplayName', 'Anode');
+yline(100, 'k--', 'LineWidth', 1, 'DisplayName', '100% Reference');
+ylabel('Drift Exit Efficiency (%)');
+ylim([0, 120]);
 
 xlabel('Time (ns)');
-ylabel('Collection Efficiency (%)');
-title('True Collection Efficiency (No Spike)');
-legend('Location', 'best');
+xlim([t_plot_min, t_plot_max]);
+title('Current Transport Collection Efficiency');
+legend('Exit','Anode','100% Reference','Location','northeast');
+%legend('Location','northeast');
 grid on;
-xlim([t_plot_min t_plot_max]);
-ylim([0 120]);  % Reasonable range around 100%
-
-% Subplot 6: Keep your existing Space Charge Distribution
-% ... [Keep your existing subplot 6 code] ...
-
+hold off;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 6. Space charge distribution histogram
+subplot(2,3,6);
 % 6. Space charge distribution histogram
 subplot(2,3,6);
 sc_factors = sc_field_distribution(sc_field_distribution > 0);
@@ -4792,9 +3859,9 @@ if ~isempty(sc_factors)
     xlabel('Space Charge Factor (MV/m)');
     ylabel('Frequency');
     title('Space Charge Distribution');
-    text(0.6, 0.9, sprintf('SC updates: %d', sum(sc_field_distribution > 0)), ...
+    text(0.2, 0.9, sprintf('SC updates: %d', sum(sc_field_distribution > 0)), ...
          'Units', 'normalized');
-    text(0.6, 0.85, sprintf('Limited: %d', sum(sc_field_max >= 15e6*0.99)), ...
+    text(0.2, 0.80, sprintf('Limited: %d', sum(sc_field_max >= 15e6*0.99)), ...
          'Units', 'normalized', 'Color', 'red');
     %text(0.6, 0.85, sprintf('Limited: %d', sum(sc_field_max >= max_sc*0.99)), ...
     %     'Units', 'normalized', 'Color', 'red');
@@ -4804,15 +3871,17 @@ grid on;
 % Print summary statistics
 fprintf('\n=== EMISSION DIAGNOSTICS SUMMARY ===\n');
 fprintf('Peak emission current: %.2f A\n', max(I_cathode));
-fprintf('Average collection efficiency: %.1f%%\n', mean(collection_efficiency(I_cathode > 0)));
+fprintf('Anode Steady State Efficiency: %.1f%%\n', anode_eff);
 fprintf('Peak space charge field: %.2f MV/m\n', max(sc_field_max)/1e6);
-fprintf('Drift exit transmission: %.1f%%\n', 100*max(I_drift_exit)/max(I_cathode));
+fprintf('Exit Steady State Transmission: %.1f%%\n', exit_eff);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 8 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ==================== STANDALONE EFFICIENCY FIGURE ====================
 % Create a dedicated figure just for efficiency analysis
 figure('Position', [100, 100, 1200, 600], 'Name', 'Collection Efficiency Analysis');
+
+collection_efficiency_2 = 100*(I_exit./I_cath_ss);
+colororder({'b','m'})
 
 % Main plot
 yyaxis left
@@ -4824,39 +3893,43 @@ plot(t*1e9, I_cathode, 'r-', 'LineWidth', 2, 'DisplayName', 'Cathode');
 ylabel('Current (A)');
 ylim([0 1700]);
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 yyaxis right
-%plot(t(valid_drift)*1e9, drift_exit_efficiency(valid_drift),'Color',[0.85 0.15 0.15], ...
-%     'LineWidth', 2, 'DisplayName', 'Efficiency');
-plot(t(valid_drift)*1e9, drift_exit_efficiency(valid_drift), 'm-', ...
-     'LineWidth', 2, 'DisplayName', 'Efficiency');
+
+plot(t_ns, collection_efficiency_2, 'm-', 'LineWidth', 1.0, ...
+     'DisplayName', 'Efficiency');
 ylabel('Drift Exit Efficiency (%)');
-%ylim([85 105]);
-ylim([0 115]);
+ylim([0, 120]);
 
 xlabel('Time (ns)');
+xlim([t_plot_min, t_plot_max]);
 title('Current Transport and Collection Efficiency');
-legend('Location', 'northeast');
+legend('Location','northeast');
 grid on;
-xlim([t_plot_min t_plot_max]);
 
 % Add text annotation with key metrics
-text(0.35, 0.95, sprintf('Steady-state Metrics:'), ...
+text(0.30, 0.65, sprintf('Steady-state Metrics:'), ...
      'Units', 'normalized', 'VerticalAlignment', 'top', 'FontWeight', 'bold');
-text(0.35, 0.90, sprintf('  Emission: %.1f A', I_emit_steady), ...
+text(0.30, 0.60, sprintf('  I Cathode Steady : %.1f A', I_cath_ss), ...
      'Units', 'normalized', 'VerticalAlignment', 'top');
-text(0.35, 0.85, sprintf('  Anode Eff: %.1f%%', avg_anode_efficiency), ...
+text(0.30, 0.55, sprintf('  I Anode Steady  : %.1f A', I_anode_ss), ...
      'Units', 'normalized', 'VerticalAlignment', 'top');
-text(0.35, 0.80, sprintf('  Drift Exit Eff: %.1f%%', avg_drift_efficiency), ...
+text(0.30, 0.50, sprintf('  Anode Efficiency : %.1f%%', anode_eff), ...
      'Units', 'normalized', 'VerticalAlignment', 'top');
-text(0.35, 0.75, sprintf('  Transmission: %.1f%%', avg_drift_efficiency), ...
+text(0.30, 0.45, sprintf('  I Exit Steady State: %.1f A', I_exit_ss), ...
+     'Units', 'normalized', 'VerticalAlignment', 'top');
+text(0.30, 0.40, sprintf('  Transmission Steady: %.1f%%', exit_eff), ...
      'Units', 'normalized', 'VerticalAlignment', 'top');
 
-% Save the corrected data
-save('collection_efficiency_corrected.mat', ...
-     'collection_efficiency_corrected', 'drift_exit_efficiency', ...
-     'I_emit_steady', 'avg_anode_efficiency', 'avg_drift_efficiency');
+%% Annotation box
+ann_x = t_plot_min + 0.35*(t_plot_max - t_plot_min);
+ann_y = max(I_cathode) * 0.72;
+text(ann_x, ann_y, ...
+    sprintf('Steady-state Metrics:\nEmission: %.1f A\nAnode Eff: %.1f%%\nDrift Exit Eff: %.1f%%\nTransmission: %.1f%%', ...
+            I_cath_ss, I_anode_ss, I_exit_ss, transmission_pct), ...
+    'FontSize', 10, 'BackgroundColor', 'white', 'EdgeColor', 'black');
 
-fprintf('\nCorrected efficiency data saved to collection_efficiency_corrected.mat\n');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 9 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ==================== R STANDALONE EFFICIENCY FIGURE R ====================
 % Create a dedicated figure just for efficiency analysis
@@ -4871,12 +3944,6 @@ plot(t*1e9, I_drift_exit, 'g-', 'LineWidth', 2, 'DisplayName', 'Drift Exit');
 ylabel('Current (A)');
 ylim([0 1700]);
 
-%yyaxis right
-%plot(t(valid_drift)*1e9, drift_exit_efficiency(valid_drift),'Color',[0.85 0.15 0.15], ...
-%     'LineWidth', 2, 'DisplayName', 'Efficiency');
-%ylabel('Drift Exit Efficiency (%)');
-%ylim([85 105]);
-%ylim([0 115]);
 
 xlabel('Time (ns)');
 title('Current Emission and Transport','FontSize' ,18);
@@ -4885,23 +3952,16 @@ grid on;
 xlim([t_plot_min t_plot_max]);
 
 % Add text annotation with key metrics
-text(0.35, 0.95, sprintf('Steady-state Metrics:'), ...
+text(0.35, 0.65, sprintf('Steady-state Metrics:'), ...
      'Units', 'normalized', 'VerticalAlignment', 'top', 'FontWeight', 'bold');
-text(0.35, 0.90, sprintf('  Emission: %.1f A', I_emit_steady), ...
+text(0.35, 0.55, sprintf('  Emission: %.1f A', I_emit_steady), ...
      'Units', 'normalized', 'VerticalAlignment', 'top');
-text(0.35, 0.85, sprintf('  Anode Eff: %.1f%%', avg_anode_efficiency), ...
+text(0.35, 0.50, sprintf('  Anode Eff: %.1f%%', avg_anode_efficiency), ...
      'Units', 'normalized', 'VerticalAlignment', 'top');
-text(0.35, 0.80, sprintf('  Drift Exit Eff: %.1f%%', avg_drift_efficiency), ...
+text(0.35, 0.45, sprintf('  Drift Exit Eff: %.1f%%', avg_drift_efficiency), ...
      'Units', 'normalized', 'VerticalAlignment', 'top');
-text(0.35, 0.75, sprintf('  Transmission: %.1f%%', avg_drift_efficiency), ...
+text(0.35, 0.40, sprintf('  Transmission: %.1f%%', avg_drift_efficiency), ...
      'Units', 'normalized', 'VerticalAlignment', 'top');
-
-% Save the corrected data
-save('collection_efficiency_corrected.mat', ...
-     'collection_efficiency_corrected', 'drift_exit_efficiency', ...
-     'I_emit_steady', 'avg_anode_efficiency', 'avg_drift_efficiency');
-
-fprintf('\nCorrected efficiency data saved to collection_efficiency_corrected.mat\n');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 10  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 %%%%%%%%%%%%%%%%%%%%% SCHOTTKY EFFECT VISUALIZATION FIXED %%%%%%%%%%%%%%%%%%%%%%%
@@ -4927,8 +3987,8 @@ if exist('schottky_diagnostics', 'var')
     t_plot = t(plot_indices);
     
     fprintf('  Plotting timesteps %d to %d (%d points)\n', it_start, it_end, length(plot_indices));
-    
-    figure('Position', [100, 100, 1400, 800], 'Name', 'Test 63: Schottky Effect Analysis');
+  
+    figure('Position', [100, 100, 1400, 800], 'Name', 'Test 82: Schottky Effect Analysis');
     
     % Plot 1: Cathode surface field
     subplot(2,3,1);
@@ -4998,37 +4058,48 @@ if exist('schottky_diagnostics', 'var')
     title('Cathode Temperature Reduction', 'FontSize', 14);
     grid on;
     xlim([t_plot_min t_plot_max]);
-    % Plot 6: Summary
+ 
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%% Schottky summary fixed %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% ==================== Plot 6: Summary ====================
     subplot(2,3,6);
     axis off;
-    
-    % Find steady-state indices
-    steady_start = find(t >= 165e-9, 1);
-    steady_end = find(t <= 245e-9, 1, 'last');
-    steady_range = steady_start:steady_end;
-    
-    avg_E = mean(schottky_diagnostics.E_cathode(steady_range));
-    avg_delta_phi = mean(schottky_diagnostics.delta_phi(steady_range));
-    avg_T = mean(schottky_diagnostics.T_cathode(steady_range));
-    avg_T_saved = mean(schottky_diagnostics.T_required(steady_range)) - avg_T;
-    
-    text(0.1, 0.9, 'SCHOTTKY SUMMARY', 'FontWeight', 'bold', 'FontSize', 14);
-    text(0.1, 0.75, 'Steady-State:', 'FontWeight', 'bold');
-    text(0.1, 0.65, sprintf('E_{cathode}: %.2f MV/m', avg_E/1e6), 'FontSize', 11);
-    text(0.1, 0.55, sprintf('Δφ: %.3f eV (%.1f%%)', avg_delta_phi, 100*avg_delta_phi/phi_0), 'FontSize', 11);
-    text(0.1, 0.45, sprintf('T_{op}: %.0f K', avg_T), 'FontSize', 11);
-    text(0.1, 0.35, sprintf('T saved: %.0f K', avg_T_saved), 'FontSize', 11);
-    text(0.1, 0.20, 'Lifetime Extension:', 'FontWeight', 'bold', 'FontSize', 11);
-    lifetime_factor = 2^(avg_T_saved/50);
-    text(0.1, 0.10, sprintf('~%.1fx longer life', lifetime_factor), 'FontSize', 11);
-    
-    sgtitle('Schottky-Enhanced Thermionic Emission - Test 63', 'FontSize', 16);
-    
-    fprintf('✓ Schottky Effect Figure Generated!\n');
-else
-    fprintf('⚠️  schottky_diagnostics not found\n');
-end
 
+    %% Steady-state window — use pulse flat-top
+    steady_start = find(t >= 165e-9, 1);
+    steady_end   = find(t <= 245e-9, 1, 'last');
+    if isempty(steady_start), steady_start = 1; end
+    if isempty(steady_end),   steady_end   = length(t); end
+    steady_range = steady_start:steady_end;
+
+    %% Only average over timesteps where emission was active
+    active_ss = schottky_diagnostics.E_cathode(steady_range) > 0.5e6;
+
+    if sum(active_ss) > 10
+        avg_E       = mean(schottky_diagnostics.E_cathode(steady_range(active_ss)));
+        avg_dphi    = mean(schottky_diagnostics.delta_phi(steady_range(active_ss)));
+        avg_T       = mean(schottky_diagnostics.T_cathode(steady_range(active_ss)));
+        avg_T_req   = mean(schottky_diagnostics.T_required(steady_range(active_ss)));
+        avg_T_saved = avg_T_req - avg_T;
+    else
+        avg_E = 0; avg_dphi = 0; avg_T = 1200;
+        avg_T_req = 1200; avg_T_saved = 0;
+    end
+
+    lifetime_factor = 2^(max(avg_T_saved, 0) / 50);
+
+    text(0.1, 0.90, 'SCHOTTKY SUMMARY', 'FontWeight','bold','FontSize',14);
+    text(0.1, 0.76, 'Steady-State:', 'FontWeight','bold');
+    text(0.1, 0.65, sprintf('E_{cathode}: %.2f MV/m',     avg_E/1e6),      'FontSize',11);
+    text(0.1, 0.54, sprintf('Δφ: %.3f eV (%.1f%%)',        avg_dphi, ...
+                             100*avg_dphi/phi_0),                           'FontSize',11);
+    text(0.1, 0.43, sprintf('T_{op}: %.0f K',              avg_T),          'FontSize',11);
+    text(0.1, 0.32, sprintf('T_{required} (no Schottky): %.0f K', avg_T_req), 'FontSize',11);
+    text(0.1, 0.21, sprintf('T saved: %.0f K',             avg_T_saved),    'FontSize',11);
+    text(0.1, 0.10, 'Lifetime Extension:', 'FontWeight','bold','FontSize',11);
+    text(0.1, 0.02, sprintf('~%.1fx longer life',          lifetime_factor), 'FontSize',11);
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%% Updated 02.25.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ==================================================================================
 %% FIX 2: CORRECTED P1 POST-SIMULATION ANALYSIS (15 PLANES)
@@ -5164,7 +4235,7 @@ if exist('steady_state_beam', 'var') && steady_state_beam.n_total > 1000
             scatter(r_sel*1000, Lz_normalized, 10, 'b.');
             xlabel('r (mm)', 'FontSize', 12);
             ylabel('L_z/(m_e c) (m)', 'FontSize', 12);
-            title('Angular Momentum vs Radius', 'FontSize', 14);
+            title('     Angular Momentum vs Radius', 'FontSize', 14);
             grid on;
             
             % --- Subplot 5: Lz histogram ---
@@ -5310,13 +4381,13 @@ if exist('steady_state_beam_pulse2', 'var') && steady_state_beam_pulse2.n_total 
             Lz_normalized = Lz_sel / (m_e * c);
             scatter(r_sel*1000, Lz_normalized, 10, 'b.');
             xlabel('r (mm)'); ylabel('L_z/(m_e c) (m)');
-            title('Angular Momentum vs Radius', 'FontSize', 14); grid on;
-            
+            title('     Angular Momentum vs Radius', 'FontSize', 14); grid on;
+            % Have reserved space in the Title for exponential decade 
             % --- Subplot 5: Lz histogram ---
             subplot(2,3,5);
             histogram(Lz_normalized, 30, 'FaceColor', 'c', 'EdgeColor', 'none');
             xlabel('L_z/(m_e c) (m)'); ylabel('Count');
-            title('Angular Momentum Distribution', 'FontSize', 14); grid on;
+            title('     Angular Momentum Distribution', 'FontSize', 14); grid on;
             
             % --- Subplot 6: Energy vs radius ---
             subplot(2,3,6);
@@ -5414,7 +4485,8 @@ if exist('steady_state_beam_pulse3', 'var') && steady_state_beam_pulse3.n_total 
                 plot(el_r*1000 + r_mean*1000, el_pr*1000, 'r-', 'LineWidth', 2);
                 if alpha_twiss > 0.1, cond_str = 'Converging'; cond_col = 'red';
                 elseif alpha_twiss < -0.1, cond_str = 'Diverging'; cond_col = 'blue';
-                else, cond_str = 'Collimated'; cond_col = 'green'; end
+                else, cond_str = 'Collimated'; cond_col = 'green'; 
+                end
                 text(0.05, 0.95, cond_str, 'Units', 'normalized', 'Color', cond_col, 'FontWeight', 'bold');
             end
             xlabel('r (mm)'); ylabel('r'' (mrad)');
@@ -5423,21 +4495,25 @@ if exist('steady_state_beam_pulse3', 'var') && steady_state_beam_pulse3.n_total 
             
             subplot(2,3,3);
             histogram(r_sel*1000, 20, 'FaceColor', 'g', 'EdgeColor', 'none');
-            xlabel('r (mm)'); ylabel('Count'); title('Radial Distribution'); grid on; xlim([0 65]);
+            xlabel('r (mm)'); ylabel('Count'); title('Radial Distribution'); 
+            grid on; xlim([0 65]);
             
             subplot(2,3,4);
             Lz_sel = r_sel .* ptheta_sel; Lz_normalized = Lz_sel / (m_e * c);
             scatter(r_sel*1000, Lz_normalized, 10, 'b.');
-            xlabel('r (mm)'); ylabel('L_z/(m_e c) (m)'); title('Angular Momentum vs Radius'); grid on;
+            xlabel('r (mm)'); ylabel('L_z/(m_e c) (m)'); 
+            title('     Angular Momentum vs Radius'); grid on;
             
             subplot(2,3,5);
             histogram(Lz_normalized, 30, 'FaceColor', 'c', 'EdgeColor', 'none');
-            xlabel('L_z/(m_e c) (m)'); ylabel('Count'); title('Ang. Mom. Distribution'); grid on;
+            xlabel('L_z/(m_e c) (m)'); ylabel('Count'); 
+            title('Ang. Mom. Distribution'); grid on;
             
             subplot(2,3,6);
             scatter(r_sel(valid_energy)*1000, energy_MeV(valid_energy), 10, energy_MeV(valid_energy), 'filled');
             colormap(gca, 'hot'); colorbar;
-            xlabel('r (mm)'); ylabel('Energy (MeV)'); title('Energy vs Radius'); grid on;
+            xlabel('r (mm)'); ylabel('Energy (MeV)'); 
+            title('Energy vs Radius'); grid on;
             
             sgtitle(sprintf('PULSE 3: %s — %d particles, r_{rms}=%.1f mm, E=%.3f±%.3f MeV', ...
                     plane_name, n_selected, r_rms*1000, energy_mean, energy_spread), 'FontSize', 16);
@@ -5521,7 +4597,8 @@ if exist('steady_state_beam_pulse4', 'var') && steady_state_beam_pulse4.n_total 
                 plot(el_r*1000 + r_mean*1000, el_pr*1000, 'r-', 'LineWidth', 2);
                 if alpha_twiss > 0.1, cond_str = 'Converging'; cond_col = 'red';
                 elseif alpha_twiss < -0.1, cond_str = 'Diverging'; cond_col = 'blue';
-                else, cond_str = 'Collimated'; cond_col = 'green'; end
+                else, cond_str = 'Collimated'; cond_col = 'green'; 
+                end
                 text(0.05, 0.95, cond_str, 'Units', 'normalized', 'Color', cond_col, 'FontWeight', 'bold');
             end
             xlabel('r (mm)'); ylabel('r'' (mrad)'); title('r-r'' Phase Space');
@@ -5529,12 +4606,15 @@ if exist('steady_state_beam_pulse4', 'var') && steady_state_beam_pulse4.n_total 
             
             subplot(2,3,3);
             histogram(r_sel*1000, 20, 'FaceColor', 'g', 'EdgeColor', 'none');
-            xlabel('r (mm)'); ylabel('Count'); title('Radial Distribution'); grid on; xlim([0 65]);
+            xlabel('r (mm)'); ylabel('Count'); title('Radial Distribution'); 
+            grid on; 
+            xlim([0 65]);
             
             subplot(2,3,4);
             Lz_sel = r_sel .* ptheta_sel; Lz_normalized = Lz_sel / (m_e * c);
             scatter(r_sel*1000, Lz_normalized, 10, 'b.');
-            xlabel('r (mm)'); ylabel('L_z/(m_e c) (m)'); title('Angular Momentum vs Radius'); grid on;
+            xlabel('r (mm)'); ylabel('L_z/(m_e c) (m)'); 
+            title('     Angular Momentum vs Radius'); grid on;
             
             subplot(2,3,5);
             histogram(Lz_normalized, 30, 'FaceColor', 'c', 'EdgeColor', 'none');
@@ -5553,269 +4633,254 @@ if exist('steady_state_beam_pulse4', 'var') && steady_state_beam_pulse4.n_total 
     end
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 21 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Enhanced Twiss Parameter Analysis for PIC v8
-% This code replaces the existing Twiss analysis section in your v8 code
-% Place this after line 750 in your main simulation
+%%%%%%%%%%%%%%%%%%%%%%%%%% NEW TWISS ANALYSIS PARAMETR PULSE 1 %%%%%%%%%%%%%%%%%%
+%% ==================== TWISS PARAMETER ANALYSIS ====================
+%%  V3 compatible — uses steady_state_beam (captured at it=6000)
 
-%% ==================== ENHANCED TWISS PARAMETER ANALYSIS Pulse 1 ====================
-if exist('beam_snapshot', 'var')
-    fprintf('\n=== TWISS PARAMETER ANALYSIS AT KEY LOCATIONS ===\n');
+%% Resolve correct snapshot variable name
+if exist('steady_state_beam','var') && steady_state_beam.n_total > 100
+    beam_snap = steady_state_beam;
+    fprintf('\n=== TWISS ANALYSIS using steady_state_beam (t=%.1f ns) ===\n', ...
+            beam_snap.time*1e9);
+elseif exist('beam_snapshot','var')
+    beam_snap = beam_snapshot;
+    fprintf('\n=== TWISS ANALYSIS using beam_snapshot ===\n');
+else
+    fprintf('\nWARNING: No beam snapshot found — Twiss analysis skipped.\n');
+    beam_snap = [];
+end
 
-%%%%%%%%%%%%%%%%% Updated Twiss _Analysis_Locations 02.13.2026 %%%%%%%%%%%%%%%%%%%
-    % Extended to cover key solenoid centers and BPMs
-twiss_locations = [254;    % Anode (after gap acceleration)
-                   600;    % Early drift (near Sol 3-4)
-                   1000;   % Mid drift region 1 (near Sol 7-8)
-                   1500;   % Between Sol 9-10
-                   1700;   % Legacy diagnostic
-                   2200;   % Near Sol 14-15
-                   2700;   % BPM1 region (near Sol 19-20)
-                   3400;   % Mid-extension (near Sol 25)
-                   3964;   % BPM2 (experimental)
-                   4600;   % Mid-extension 2 (near Sol 35)
-                   5400;   % Near Sol 45
-                   6402;   % BPM3 (experimental)
-                   6828;   % BPM4 (experimental)
-                   7450;   % Near final solenoid (Sol 49)
-                   8305];  % BPM5 / Final exit
+if ~isempty(beam_snap)
 
-location_names = {'Anode', 'Early_Drift', 'Mid_Drift1', 'Trans1', 'Trans2', ...
-                  'Mid_Drift2', 'BPM1', 'Extension1', 'BPM2', 'Extension2', ...
-                  'Late_Drift', 'BPM3', 'BPM4', 'Sol49', 'Exit'};
+    twiss_locations = [254; 600; 1000; 1500; 1700; 2200; 2700; ...
+                       3400; 3964; 4600; 5400; 6402; 6828; 7450; 8305];
+    location_names  = {'Anode','Early_Drift','Mid_Drift1','Trans1','Trans2', ...
+                       'Mid_Drift2','BPM1','Extension1','BPM2','Extension2', ...
+                       'Late_Drift','BPM3','BPM4','Sol49','Exit'};
+    n_twiss_planes  = length(twiss_locations);
 
-n_twiss_planes = length(twiss_locations);
+    fprintf('  Planes: %d  |  z = %.0f – %.0f mm\n', ...
+            n_twiss_planes, twiss_locations(1), twiss_locations(end));
 
-fprintf('=== Twiss Analysis Configuration ===\n');
-fprintf('  Number of analysis planes: %d (expanded from 5)\n', n_twiss_planes);
-fprintf('  Axial coverage: %.0f mm to %.0f mm\n', ...
-        twiss_locations(1), twiss_locations(end));
-fprintf('  Average spacing: %.0f mm\n', mean(diff(twiss_locations)));
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    % Initialize storage for Twiss parameters
-    twiss_results = struct();
-    %twiss_locations = analysis_planes;
-    % Process each location
-    %for ip = 1:length(analysis_planes)
-    %    z_plane = analysis_planes(ip).z;
-    %    plane_name = analysis_planes(ip).name;
-%%%%%%%%%%%%%%%%%%%%%% correction 02.26.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
-    for ip = 1:length(twiss_locations)
-        z_target = twiss_locations(ip) / 1000;  % Convert mm to meters
-        plane_name = location_names{ip};
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % Use time-based selection with conservative window
-        dt_window = 30;  % Use 3*dt for selection window, changed to 10*dt, then 30*dt
-        dz_window = abs(beam_snapshot.vz * dt * dt_window);
-        in_plane = abs(beam_snapshot.z - z_plane) < abs(dz_window);
-        
-        % Fallback to spatial window if needed
+    %% Pre-initialize struct array with NaN sentinels
+    twiss_results = struct( ...
+        'location', location_names, ...
+        'z',        num2cell(twiss_locations'), ...
+        'n_particles', num2cell(zeros(1,n_twiss_planes)), ...
+        'r_rms',    num2cell(NaN(1,n_twiss_planes)), ...
+        'div_rms',  num2cell(NaN(1,n_twiss_planes)), ...
+        'emit_geo', num2cell(NaN(1,n_twiss_planes)), ...
+        'emit_norm',num2cell(NaN(1,n_twiss_planes)), ...
+        'beta',     num2cell(NaN(1,n_twiss_planes)), ...
+        'alpha',    num2cell(NaN(1,n_twiss_planes)), ...
+        'gamma_tw', num2cell(NaN(1,n_twiss_planes)), ...
+        'condition',repmat({'Unknown'},1,n_twiss_planes));
+
+    for ip = 1:n_twiss_planes
+
+        %% [BUG2 FIX] Use z_target consistently — no z_plane reference
+        z_target   = twiss_locations(ip) / 1000;   % metres
+        dz_window  = 0.045;                         % ±45mm spatial window
+
+        in_plane = abs(beam_snap.z - z_target) < dz_window;
+
+        %% Fallback: widen window if too few particles
         if sum(in_plane) < 100
-            in_plane = abs(beam_snapshot.z - z_plane) < 0.015;  % 15mm window
+            in_plane = abs(beam_snap.z - z_target) < 0.090;
         end
-        
-        n_selected = sum(in_plane);
-        
-        if n_selected > 50  % Need minimum statistics
-            % Extract particle data
-            r_sel = beam_snapshot.r(in_plane);
-            pr_sel = beam_snapshot.pr(in_plane);
-            pz_sel = beam_snapshot.pz(in_plane);
-            gamma_sel = beam_snapshot.gamma(in_plane);
-            
-            % Calculate normalized transverse momentum (r' = pr/(gamma*m_e*c))
-            pr_norm = pr_sel ./ (gamma_sel * m_e * c);
-            
-            % Center the distribution
-            r_mean = mean(r_sel);
-            pr_mean = mean(pr_norm);
-            r_centered = r_sel - r_mean;
-            pr_centered = pr_norm - pr_mean;
-            
-            % Calculate second moments
-            r2_avg = mean(r_centered.^2);
-            pr2_avg = mean(pr_centered.^2);
-            r_pr_avg = mean(r_centered .* pr_centered);
-            
-            % Calculate RMS emittance
-            emit_rms = sqrt(r2_avg * pr2_avg - r_pr_avg^2);
-            
-            % Calculate Twiss parameters if emittance is non-zero
-            if emit_rms > 1e-10
-                beta_twiss = r2_avg / emit_rms;
-                gamma_twiss = pr2_avg / emit_rms;
-                alpha_twiss = -r_pr_avg / emit_rms;
-                
-                % Verify Twiss relation: beta*gamma - alpha^2 = 1
-                twiss_check = beta_twiss * gamma_twiss - alpha_twiss^2;
-                
-                % Calculate normalized emittance
-                gamma_avg = mean(gamma_sel);
-                beta_rel = sqrt(1 - 1/gamma_avg^2);
-                emit_norm = emit_rms * gamma_avg * beta_rel;
-                
-                % Store results
-                twiss_results(ip).location = plane_name;
-                twiss_results(ip).z = z_plane;
-                twiss_results(ip).n_particles = n_selected;
-                twiss_results(ip).r_rms = sqrt(r2_avg) * 1000;  % mm
-                twiss_results(ip).div_rms = sqrt(pr2_avg) * 1000;  % mrad
-                twiss_results(ip).emit_geo = emit_rms * 1e6;  % m-rad to mm-mrad
-                twiss_results(ip).emit_norm = emit_norm * 1e6;  % mm-mrad
-                twiss_results(ip).beta = beta_twiss;  % m
-                twiss_results(ip).alpha = alpha_twiss;  % dimensionless
-                twiss_results(ip).gamma = gamma_twiss;  % 1/m
-                twiss_results(ip).twiss_check = twiss_check;  % Should be ~1
-                
-                % Determine beam condition based on alpha
-                if alpha_twiss > 0.1
-                    beam_condition = 'Converging';
-                elseif alpha_twiss < -0.1
-                    beam_condition = 'Diverging';
-                else
-                    beam_condition = 'Nearly collimated';
-                end
-                twiss_results(ip).condition = beam_condition;
-                
-                % Print results
-                fprintf('\n%s:\n', plane_name);
-                fprintf('  Particles analyzed: %d\n', n_selected);
-                fprintf('  RMS radius: %.2f mm\n', twiss_results(ip).r_rms);
-                fprintf('  RMS divergence: %.2f mrad\n', twiss_results(ip).div_rms);
-                fprintf('  Geometric emittance: %.2f mm-mrad\n', twiss_results(ip).emit_geo);
-                fprintf('  Normalized emittance: %.2f mm-mrad\n', twiss_results(ip).emit_norm);
-                fprintf('  Twiss parameters:\n');
-                fprintf('    β = %.3f m\n', beta_twiss);
-                fprintf('    α = %.3f (%s)\n', alpha_twiss, beam_condition);
-                fprintf('    γ = %.3f 1/m\n', gamma_twiss);
-                fprintf('    Consistency check (βγ-α²): %.4f\n', twiss_check);
-                
-            else
-                fprintf('\n%s: Emittance too small for reliable Twiss analysis\n', plane_name);
-            end
-        else
-            fprintf('\n%s: Insufficient particles (%d) for analysis\n', plane_name, n_selected);
+        if sum(in_plane) < 50
+            in_plane = abs(beam_snap.z - z_target) < 0.150;
         end
+
+        n_sel = sum(in_plane);
+        twiss_results(ip).n_particles = n_sel;
+
+        if n_sel < 50
+            fprintf('  %-12s z=%4.0fmm: only %d particles — skipped\n', ...
+                    location_names{ip}, twiss_locations(ip), n_sel);
+            continue
+        end
+
+        %% Extract phase space
+        r_sel     = beam_snap.r(in_plane);
+        pr_sel    = beam_snap.pr(in_plane);
+        pz_sel    = beam_snap.pz(in_plane);
+        gam_sel   = beam_snap.gamma(in_plane);
+
+        %% Normalised transverse divergence r' = pr/(γ m_e c)
+        pr_norm   = pr_sel ./ (gam_sel * m_e * c);
+
+        %% Centre
+        r_c  = r_sel  - mean(r_sel);
+        pr_c = pr_norm - mean(pr_norm);
+
+        %% Second moments
+        r2   = mean(r_c.^2);
+        pr2  = mean(pr_c.^2);
+        rpr  = mean(r_c .* pr_c);
+
+        %% Geometric RMS emittance
+        emit_geo = sqrt(max(r2*pr2 - rpr^2, 0));
+
+        if emit_geo < 1e-12
+            fprintf('  %-12s z=%4.0fmm: emittance ~0 — skipped\n', ...
+                    location_names{ip}, twiss_locations(ip));
+            continue
+        end
+
+        %% Twiss parameters
+        beta_tw  =  r2  / emit_geo;
+        alpha_tw = -rpr / emit_geo;
+        gamma_tw =  pr2 / emit_geo;
+        twiss_check = beta_tw * gamma_tw - alpha_tw^2;
+
+        %% Normalised emittance
+        gam_avg  = mean(gam_sel);
+        beta_rel = sqrt(1 - 1/gam_avg^2);
+        emit_norm = emit_geo * gam_avg * beta_rel;
+
+        %% Beam condition
+        if     alpha_tw >  0.1,  cond_str = 'Converging';
+        elseif alpha_tw < -0.1,  cond_str = 'Diverging';
+        else,                    cond_str = 'Collimated';
+        end
+
+        %% Store
+        twiss_results(ip).r_rms     = sqrt(r2)   * 1000;   % mm
+        twiss_results(ip).div_rms   = sqrt(pr2)  * 1000;   % mrad
+        twiss_results(ip).emit_geo  = emit_geo   * 1e6;    % mm-mrad
+        twiss_results(ip).emit_norm = emit_norm  * 1e6;    % mm-mrad
+        twiss_results(ip).beta      = beta_tw;             % m
+        twiss_results(ip).alpha     = alpha_tw;
+        twiss_results(ip).gamma_tw  = gamma_tw;            % 1/m
+        twiss_results(ip).condition = cond_str;
+
+        fprintf('  %-12s z=%4.0fmm: n=%5d  r=%5.2fmm  β=%5.3fm  α=%+6.3f  ε_n=%6.1f mm-mrad  %s\n', ...
+                location_names{ip}, twiss_locations(ip), n_sel, ...
+                twiss_results(ip).r_rms, beta_tw, alpha_tw, ...
+                emit_norm*1e6, cond_str);
     end
-    
-    % Create visualization of Twiss parameters
-    if length(twiss_results) >= 2
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% FIGURE 21 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        figure('Position', [100, 100, 1400, 900], 'Name', 'Twiss Parameter Evolution');
-        
-        % Extract values for plotting
-        z_vals = [twiss_results.z] * 1000;  % mm
-        beta_vals = [twiss_results.beta];
-        alpha_vals = [twiss_results.alpha];
-        gamma_vals = [twiss_results.gamma];
-        emit_vals = [twiss_results.emit_norm];
-        
-        % Plot 1: Beta function
+
+    %% ============================================================
+    %% PLOTTING — only planes with valid data
+    %% ============================================================
+    valid = ~cellfun(@(x) isnan(x), {twiss_results.beta});
+    n_valid = sum(valid);
+
+    fprintf('\n  Valid Twiss planes: %d / %d\n', n_valid, n_twiss_planes);
+
+    if n_valid >= 2
+
+        z_plot   = twiss_locations(valid);
+        beta_pl  = cell2mat({twiss_results(valid).beta});
+        alpha_pl = cell2mat({twiss_results(valid).alpha});
+        gamma_pl = cell2mat({twiss_results(valid).gamma_tw});
+        emit_pl  = cell2mat({twiss_results(valid).emit_norm});
+        cond_pl  = {twiss_results(valid).condition};
+
+        figure('Name','Twiss Parameter Analysis Along Beamline Pulse 1', ...
+               'Position',[50 50 1600 900]);
+
+        %% --- Beta function ---
         subplot(2,3,1);
-        plot(z_vals, beta_vals, 'b-o', 'LineWidth', 2, 'MarkerSize', 8);
-        xlabel('z (mm)');
-        ylabel('β (m)');
+        plot(z_plot, beta_pl, 'bo-', 'MarkerSize', 8, 'LineWidth', 2);
+        xlabel('z (mm)');  ylabel('β (m)');
         title('Beta Function');
-        grid on;
-        ylim([0 max(beta_vals)*1.2]);
-        
-        % Plot 2: Alpha parameter
+        xlim([0 8500]);  grid on;
+        for i = 1:n_valid
+            text(z_plot(i), beta_pl(i)*1.04, ...
+                 sprintf('%.2f', beta_pl(i)), ...
+                 'FontSize',7, 'HorizontalAlignment','center');
+        end
+
+        %% --- Alpha parameter ---
         subplot(2,3,2);
-        plot(z_vals, alpha_vals, 'r-s', 'LineWidth', 2, 'MarkerSize', 8);
-        xlabel('z (mm)');
-        ylabel('α');
+        plot(z_plot, alpha_pl, 'rs-', 'MarkerSize', 8, 'LineWidth', 2);
+        hold on;
+        yline(0,'k--','LineWidth',1);
+        xlabel('z (mm)');  ylabel('α');
         title('Alpha Parameter (Convergence/Divergence)');
-        grid on;
-        yline(0, 'k--', 'Collimated');
-        
-        % Add text annotations for beam condition
-        for i = 1:length(z_vals)
-            text(z_vals(i), alpha_vals(i)+0.05, twiss_results(i).condition, ...
-                'HorizontalAlignment', 'center', 'FontSize', 8);
+        xlim([0 8500]);  grid on;
+        for i = 1:n_valid
+            text(z_plot(i), alpha_pl(i) + 0.03*range(alpha_pl), ...
+                 cond_pl{i}, 'FontSize', 7, 'HorizontalAlignment','center');
         end
-        
-        % Plot 3: Gamma parameter
+
+        %% --- Gamma parameter ---
         subplot(2,3,3);
-        plot(z_vals, gamma_vals, 'g-^', 'LineWidth', 2, 'MarkerSize', 8);
-        xlabel('z (mm)');
-        ylabel('γ (1/m)');
+        plot(z_plot, gamma_pl, 'g^-', 'MarkerSize', 8, 'LineWidth', 2);
+        xlabel('z (mm)');  ylabel('γ (1/m)');
         title('Gamma Parameter');
-        grid on;
-        
-        % Plot 4: Normalized emittance
+        xlim([0 8500]);  grid on;
+
+        %% --- Normalised emittance ---
         subplot(2,3,4);
-        plot(z_vals, emit_vals, 'm-d', 'LineWidth', 2, 'MarkerSize', 8);
-        xlabel('z (mm)');
-        ylabel('ε_n (mm-mrad)');
-        title('Normalized Emittance');
-        grid on;
-        
-        % Plot 5: Phase advance estimate
-        subplot(2,3,5);
-        if length(beta_vals) > 1
-            % Estimate phase advance between planes
-            for i = 2:length(z_vals)
-                dz = (z_vals(i) - z_vals(i-1))/1000;  % m
-                beta_avg = (beta_vals(i) + beta_vals(i-1))/2;
-                phase_advance = dz / beta_avg;  % Approximate
-                bar(i-1, phase_advance);
-                hold on;
-            end
-            xlabel('Section');
-            ylabel('Phase Advance (rad)');
-            title('Estimated Phase Advance');
-            set(gca, 'XTick', 1:length(z_vals)-1);
-            labels = {};
-            for i = 1:length(z_vals)-1
-                labels{i} = sprintf('%d-%d', round(z_vals(i)), round(z_vals(i+1)));
-            end
-            set(gca, 'XTickLabel', labels);
+        plot(z_plot, emit_pl, 'md-', 'MarkerSize', 8, 'LineWidth', 2);
+        xlabel('z (mm)');  ylabel('ε_n (mm-mrad)');
+        title('Normalised Emittance');
+        xlim([0 8500]);  grid on;
+        for i = 1:n_valid
+            text(z_plot(i), emit_pl(i)*1.02, ...
+                 sprintf('%.0f', emit_pl(i)), ...
+                 'FontSize', 7, 'HorizontalAlignment','center');
         end
-        
-        % Plot 6: Summary table
+
+        %% --- Phase advance ---
+        subplot(2,3,5);
+        if n_valid >= 2
+            phase_adv = zeros(n_valid-1, 1);
+            section_labels = cell(n_valid-1, 1);
+            for i = 1:n_valid-1
+                dz  = (z_plot(i+1) - z_plot(i)) / 1000;  % m
+                b_m = 0.5*(beta_pl(i) + beta_pl(i+1));    % mean beta
+                beta_rel_avg = sqrt(1 - 1/mean(gam_avg)^2);
+                phase_adv(i) = dz / b_m;
+                section_labels{i} = sprintf('%d-%d', ...
+                    round(z_plot(i)), round(z_plot(i+1)));
+            end
+            bar(1:n_valid-1, phase_adv, 'FaceColor',[0.3 0.6 0.9]);
+            set(gca,'XTick',1:n_valid-1,'XTickLabel',section_labels, ...
+                'XTickLabelRotation',45);
+            xlabel('Section');  ylabel('Phase Advance (rad)');
+            title('Estimated Phase Advance per Section');
+            grid on;
+        end
+
+        %% --- Summary text ---
         subplot(2,3,6);
         axis off;
-        text(0.1, 0.9, 'TWISS PARAMETER SUMMARY', 'FontWeight', 'bold', 'FontSize', 12);
-        
-        y_pos = 0.75;
-        for i = 1:length(twiss_results)
-            text(0.1, y_pos, sprintf('%s:', twiss_results(i).location), 'FontWeight', 'bold');
-            y_pos = y_pos - 0.05;
-            text(0.15, y_pos, sprintf('β=%.3fm, α=%.3f, γ=%.3f/m', ...
-                twiss_results(i).beta, twiss_results(i).alpha, twiss_results(i).gamma));
-            y_pos = y_pos - 0.05;
-            text(0.15, y_pos, sprintf('ε_n=%.1f mm-mrad, %s', ...
-                twiss_results(i).emit_norm, twiss_results(i).condition));
-            y_pos = y_pos - 0.08;
+        text(0.02, 0.97, 'TWISS PARAMETER SUMMARY PULSE 1', ...
+             'FontWeight','bold','FontSize',12,'Units','normalized', ...
+             'VerticalAlignment','top');
+        y_pos = 0.99;
+        dy    = 0.08;
+        for i = 1:min(n_valid, 12)   % max 12 entries fit
+            idx = find(valid);
+            ii  = idx(i);
+            line1 = sprintf('%s (z=%dmm):', ...
+                            twiss_results(ii).location, twiss_locations(ii));
+            line2 = sprintf('  β=%.3fm  α=%+.3f  ε_n=%.1f mm-mrad  %s', ...
+                            twiss_results(ii).beta, twiss_results(ii).alpha, ...
+                            twiss_results(ii).emit_norm, twiss_results(ii).condition);
+            text(0.02, y_pos, line1, 'FontSize',8,'FontWeight','bold', ...
+                 'Units','normalized','VerticalAlignment','top');
+            text(0.02, y_pos-0.028, line2, 'FontSize',7, ...
+                 'Units','normalized','VerticalAlignment','top');
+            y_pos = y_pos - dy;
         end
 
-        sgtitle('Twiss Parameter Analysis Along Beamline', 'FontSize', 14);
-    end
-    
-    % Save Twiss results
-    %save('twiss_analysis_results.mat', 'twiss_results', 'analysis_planes');
-    save('twiss_analysis_results.mat', 'twiss_results', 'twiss_locations', 'location_names');
-    fprintf('\nTwiss analysis results saved to twiss_analysis_results.mat\n');
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Debug the diagnostic arrays
-fprintf('\n=== Checking Diagnostic Arrays ===\n');
-fprintf('r_rms_history dimensions: %dx%d\n', size(r_rms_history));
-fprintf('Non-zero RMS values: %d\n', sum(r_rms_history(:) > 0));
-fprintf('n_particles_vs_z dimensions: %dx%d\n', size(n_particles_vs_z));
-fprintf('Non-zero particle counts: %d\n', sum(n_particles_vs_z(:) > 0));
+        sgtitle(sprintf('Twiss Parameter Analysis Along Beamline — t=%.1f ns', ...
+                        beam_snap.time*1e9), ...
+                'FontSize',14,'FontWeight','bold');
 
-% Try to manually calculate for one timestep
-active_idx = find(active_particles);
-if ~isempty(active_idx)
-    z_test = z_particles(active_idx);
-    r_test = r_particles(active_idx);
-    fprintf('Current active particles: %d\n', length(active_idx));
-    fprintf('Z range: %.1f to %.1f mm\n', min(z_test)*1000, max(z_test)*1000);
-    fprintf('R range: %.1f to %.1f mm\n', min(r_test)*1000, max(r_test)*1000);
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 22 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        fprintf('  Twiss figure generated with %d planes.\n', n_valid);
+
+    else
+        fprintf('  WARNING: Only %d valid planes — need ≥2 to plot.\n', n_valid);
+    end
+
+end  %% ~isempty(beam_snap)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 72 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ==================== POST-PROCESSING VISUALIZATION Pulse 1 Envelope====================
 % Add after simulation completes (after line 415)
 % Plot beam envelope evolution
@@ -5823,7 +4888,7 @@ figure('Position', [100 100 1400 800]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(2,1,1);
 % Find time indices with good statistics
-time_indices = 1500:1000:9500;  % Sample every 1000 steps
+time_indices = 5000:500:10000;  % Sample every 1000 steps
 colors = jet(length(time_indices));
 hold on;
 
@@ -5857,7 +4922,7 @@ if plot_count == 0
     end
 end
 
-plot([0 8310], [r_wall r_wall]*1000, 'r--', 'LineWidth', 2, 'DisplayName', 'Drift Tube Wall');
+plot([0 8310], [r_wall r_wall]*1000, 'r--', 'LineWidth', 2, 'DisplayName', 'Wall');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
 % Mark solenoid positions
 %sol_positions = [372, 1145, 1268, 1369, 1492, 1594, 1717, 1819, 1942, 2043, 2166, ...
@@ -5915,12 +4980,12 @@ for bp = bpm_positions
 end
 
 % Legend entry for solenoids
-plot(NaN, NaN, 'k:', 'LineWidth', 1, 'DisplayName', 'Solenoids (45 total)');
-plot(NaN, NaN, 'm:', 'LineWidth', 1, 'DisplayName', 'BPMs (5 total)');
+plot(NaN, NaN, 'k:', 'LineWidth', 1, 'DisplayName', 'Solenoids');
+plot(NaN, NaN, 'm:', 'LineWidth', 1, 'DisplayName', 'BPMs');
 
 xlabel('z position (mm)', 'FontSize', 14);
 ylabel('RMS Radius (mm)', 'FontSize', 14);
-title('Beam Envelope Evolution with Hardware Overlay_Pulse 1', 'FontSize', 16);
+title('Beam Envelope Evolution with Hardware Overlay - Pulse 1', 'FontSize', 16);
 legend('Location', 'best');
 xlim([0 8310]);
 ylim([0 80]);
@@ -5937,7 +5002,146 @@ grid on;
 % Replace the subplot(2,1,2) section with:
 subplot(2,1,2);
 % Plot particle survival vs z at end of flat-top
-it_steady = 5500;  % During steady state
+it_steady = 6000;  % During steady state
+% Find non-zero data
+valid_data = n_particles_vs_z(it_steady, :) > 0;
+if any(valid_data)
+    z_valid = z_diagnostic(valid_data);
+    n_valid = n_particles_vs_z(it_steady, valid_data);
+    n_normalized = n_valid / max(n_valid);
+    plot(z_valid*1000, n_normalized, 'b-', 'LineWidth', 2);
+else
+    fprintf('WARNING: No particle count data at timestep %d\n', it_steady);
+end
+xlabel('z position (mm)');
+ylabel('Normalized Particle Count');
+title('Particle Survival Along Beamline Pulse 1', 'FontSize', 18);
+xlim([0 8310]);  % Force correct axis limits
+grid on;
+
+%%%%%%%%%%%%%%%%%%%%%% Additional Figure for Pulse 1 %%%%%%%%%%%%%%%%%%%%%%%%%%
+%% ==================== POST-PROCESSING VISUALIZATION Pulse 1 Envelope====================
+% Add after simulation completes (after line 415)
+% Plot beam envelope evolution
+figure('Position', [100 100 1400 800]);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+subplot(2,1,1);
+% Find time indices with good statistics
+time_indices = 5000:1000:10000;  % Sample every 1000 steps
+colors = jet(length(time_indices));
+hold on;
+
+plot_count = 0;
+for idx = 1:length(time_indices)
+    it = time_indices(idx);
+    r_valid = r_rms_history(it, :);
+    
+    % Find where we actually have data (non-zero values)
+    has_data = r_valid > 0;
+    if sum(has_data) > 10  % Need at least 10 points to plot
+        z_plot = z_diagnostic(has_data);
+        r_plot = r_valid(has_data);
+        plot(z_plot*1000, r_plot*1000, 'o-', 'LineWidth', 2, ...
+             'Color', colors(idx,:), 'DisplayName', sprintf('t=%.0f ns', t(it)*1e9));
+        plot_count = plot_count + 1;
+    end
+end
+
+if plot_count == 0
+    fprintf('WARNING: No RMS radius data found in time indices\n');
+    % Try to plot the last timestep with any data
+    for it = nt:-100:1
+        r_test = r_rms_history(it, :);
+        if any(r_test > 0)
+            has_data = r_test > 0;
+            plot(z_diagnostic(has_data)*1000, r_test(has_data)*1000, 'b-', 'LineWidth', 2);
+            fprintf('Plotted data from timestep %d\n', it);
+            break;
+        end
+    end
+end
+
+plot([0 8310], [r_wall r_wall]*1000, 'r--', 'LineWidth', 2, 'DisplayName', 'Wall');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+% Mark solenoid positions
+%sol_positions = [372, 1145, 1268, 1369, 1492, 1594, 1717, 1819, 1942, 2043, 2166, ...
+%    2268, 2391, 2493, 2616, 2717];  % mm
+%for sp = sol_positions
+%    plot([sp sp], [0 r_wall*1000], 'k:', 'LineWidth', 1.5);
+%end
+%%%%%%%%%%%%%%%%%%%% Updated sol positions 02.13.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Define ALL 49 solenoid positions (z_c values from your solenoid definitions)
+all_solenoid_positions = [
+    -279;   % Sol 1 (cathode)
+    372;    % Sol 2 (anode)
+    1144.61; 1267.57; 1369.27;  % Sol 3-5
+    % Sol 6 is steering (not plotted)
+    1492.23; 1593.93; 1716.89; 1818.60;  % Sol 7-10
+    1941.56; 2043.26;  % Sol 11-12
+    % Sol 13 is steering
+    2166.22; 2267.93; 2390.89; 2492.59; 2615.55; 2717.26;  % Sol 14-19
+    % Extended solenoids 20-49
+    2840.22; 2941.92; 3064.88; 3166.58; 3289.54; 3391.25;  % Sol 20-25
+    3514.21; 3615.91; 3738.87; 3840.58; 3963.54; 4065.24;  % Sol 26-31
+    4188.20; 4289.93; 4412.89; 4514.59; 4637.55;  % Sol 32-36
+    % Sol 37 steering
+    4739.25; 4862.21; 4963.92; 5086.88; 5188.58; 5311.54;  % Sol 38-43
+    % Sol 44 steering
+    5413.24; 5536.20; 5637.91; 5760.87;  % Sol 45-48
+    7448.00];  % Sol 49 (final)
+
+% Plot solenoid markers (vertical lines)
+for sp = all_solenoid_positions
+    plot([sp sp], [0 r_wall*1000], 'k:', 'LineWidth', 0.8, 'HandleVisibility', 'off');
+end
+
+% Highlight key solenoids with labels
+key_solenoids = struct();
+key_solenoids(1).z = -279; key_solenoids(1).name = 'S1';
+key_solenoids(2).z = 372; key_solenoids(2).name = 'S2';
+key_solenoids(3).z = 2717; key_solenoids(3).name = 'S19';
+key_solenoids(4).z = 3964; key_solenoids(4).name = 'S30';
+key_solenoids(5).z = 5413; key_solenoids(5).name = 'S45';
+key_solenoids(6).z = 7448; key_solenoids(6).name = 'S49';
+
+for ks = 1:length(key_solenoids)
+    plot([key_solenoids(ks).z key_solenoids(ks).z], [0 r_wall*1000], ...
+         'b:', 'LineWidth', 1, 'HandleVisibility', 'off');
+    text(key_solenoids(ks).z, r_wall*1000*1.05, key_solenoids(ks).name, ...
+         'HorizontalAlignment', 'center', 'FontSize', 9, 'Color', 'blue', ...
+         'FontWeight', 'bold');
+end
+
+% Add BPM markers (distinct from solenoids)
+bpm_positions = [2760, 3964, 6401.8, 6827.6, 8305];
+for bp = bpm_positions
+    plot([bp bp], [0 r_wall*1000], 'm:', 'LineWidth', 1, 'HandleVisibility', 'off');
+end
+
+% Legend entry for solenoids
+plot(NaN, NaN, 'k:', 'LineWidth', 1, 'DisplayName', 'Solenoids');
+plot(NaN, NaN, 'm:', 'LineWidth', 1, 'DisplayName', 'BPMs');
+
+xlabel('z position (mm)', 'FontSize', 14);
+ylabel('RMS Radius (mm)', 'FontSize', 14);
+title('Beam Envelope Evolution with Hardware Overlay - Pulse 1', 'FontSize', 16);
+legend('Location', 'best');
+xlim([0 8310]);
+ylim([0 80]);
+grid on;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%xlabel('z position (mm)');
+%ylabel('RMS Radius (mm)');
+%title('Beam Envelope Evolution Pulse 1', 'FontSize', 18);
+%legend('Location', 'best');
+%xlim([-400 8310]);
+%ylim([0 80]);
+%grid on;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Replace the subplot(2,1,2) section with:
+subplot(2,1,2);
+% Plot particle survival vs z at end of flat-top
+it_steady = 6000;  % During steady state
 % Find non-zero data
 valid_data = n_particles_vs_z(it_steady, :) > 0;
 if any(valid_data)
@@ -5964,7 +5168,7 @@ figure('Position', [100 100 1400 800]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(2,1,1);
 % Find time indices with good statistics
-time_indices = 21500:1000:29500;  % +20000 Sample every 1000 steps
+time_indices = 24500:500:29500;  % +20000 Sample every 1000 steps
 colors = jet(length(time_indices));
 hold on;
 
@@ -6056,8 +5260,8 @@ for bp = bpm_positions
 end
 
 % Legend entry for solenoids
-plot(NaN, NaN, 'k:', 'LineWidth', 1, 'DisplayName', 'Solenoids (45 total)');
-plot(NaN, NaN, 'm:', 'LineWidth', 1, 'DisplayName', 'BPMs (5 total)');
+plot(NaN, NaN, 'k:', 'LineWidth', 1, 'DisplayName', 'Solenoids');
+plot(NaN, NaN, 'm:', 'LineWidth', 1, 'DisplayName', 'BPMs');
 
 xlabel('z position (mm)', 'FontSize', 14);
 ylabel('RMS Radius (mm)', 'FontSize', 14);
@@ -6078,7 +5282,7 @@ grid on;
 % Replace the subplot(2,1,2) section with:
 subplot(2,1,2);
 % Plot particle survival vs z at end of flat-top
-it_steady = 25000;  % During steady state
+it_steady = 27000;  % During steady state
 % Find non-zero data
 valid_data = n_particles_vs_z(it_steady, :) > 0;
 if any(valid_data)
@@ -6095,7 +5299,7 @@ title('Particle Survival Along Beamline','FontSize', 18);
 xlim([0 8310]);  % Force correct axis limits
 grid on;
 end
-%%%%%%%%%%%%%%%%%%%%%% Third Pulse Envelope Figure 24 %%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%% Third Pulse Envelope Figure 73 %%%%%%%%%%%%%%%%%%%%%%%%
 %% ==================== POST-PROCESSING VISUALIZATION ====================
 % Add after simulation completes (after line 415)
 % Plot beam envelope evolution
@@ -6105,7 +5309,7 @@ figure('Position', [100 100 1400 800]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(2,1,1);
 % Find time indices with good statistics
-time_indices = 41500:1000:49500;  % +20000 Sample every 1000 steps
+time_indices = 44500:500:49500;  % +20000 Sample every 1000 steps
 colors = jet(length(time_indices));
 hold on;
 
@@ -6219,7 +5423,7 @@ grid on;
 % Replace the subplot(2,1,2) section with:
 subplot(2,1,2);
 % Plot particle survival vs z at end of flat-top
-it_steady = 45000;  % During steady state
+it_steady = 47000;  % During steady state
 % Find non-zero data
 valid_data = n_particles_vs_z(it_steady, :) > 0;
 if any(valid_data)
@@ -6247,7 +5451,7 @@ figure('Position', [100 100 1400 800]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(2,1,1);
 % Find time indices with good statistics
-time_indices = 61500:1000:69500;  % +60000 Sample every 1000 steps
+time_indices = 64500:500:69500;  % +60000 Sample every 1000 steps
 colors = jet(length(time_indices));
 hold on;
 
@@ -6347,7 +5551,7 @@ grid on;
 % Replace the subplot(2,1,2) section with:
 subplot(2,1,2);
 % Plot particle survival vs z at end of flat-top
-it_steady = 65000;  % During steady state
+it_steady = 67000;  % During steady state
 % Find non-zero data
 valid_data = n_particles_vs_z(it_steady, :) > 0;
 if any(valid_data)
@@ -6729,7 +5933,14 @@ end
 workspace_filename = sprintf('PIC_v8_workspace_%s.mat', datestr(now, 'yyyymmdd_HHMMSS'));
 
 fprintf('\n=== Preparing workspace save ===\n');
-
+%%%%%%%%%%%%%%%%%%%%%%% Debagging script if pulse_diagnostics not exist %%%%%%%%%%%%%%%%%%%% 
+%% Add immediately before the workspace save block
+if ~exist('pulse_diagnostics', 'var')
+    pulse_diagnostics = struct();
+    pulse_diagnostics.note = 'Not available in this run mode';
+    pulse_diagnostics.n_pulses = 1;
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Always save these base variables
 base_vars = {'I_cathode', 'I_anode', 'I_drift_exit', 'I_emit', ...
              'n_active_history', 'J_thermionic', 'J_space_charge', 'J_actual', ...
@@ -8712,7 +7923,7 @@ if exist('interpulse_clouds', 'var') && length(interpulse_clouds) == 3 && ...
     fprintf('═════════════════════════════════════════════════════════════════════════════════════\n');
     
     %% POPULATION METRICS
-    fprintf('\n📊 POPULATION METRICS:\n');
+    fprintf('\n POPULATION METRICS:\n');
     fprintf('─────────────────────────────────────────────────────────────────────────────────────\n');
     fprintf('%-30s | %20d | %20d | %20d\n', 'Total electrons', ...
             cloud_metrics(1).n_total, cloud_metrics(2).n_total, cloud_metrics(3).n_total);
@@ -8760,7 +7971,7 @@ if exist('interpulse_clouds', 'var') && length(interpulse_clouds) == 3 && ...
             cloud_metrics(3).E_max - cloud_metrics(3).E_min);
     
     %% SPATIAL DISTRIBUTION
-    fprintf('\n📍 SPATIAL DISTRIBUTION (BPM/Screen Measurable):\n');
+    fprintf('\n SPATIAL DISTRIBUTION (BPM/Screen Measurable):\n');
     fprintf('─────────────────────────────────────────────────────────────────────────────────────\n');
     
     fprintf('%-30s | %16.1f±%.1f mm | %16.1f±%.1f mm | %16.1f±%.1f mm\n', ...
@@ -8803,7 +8014,7 @@ if exist('interpulse_clouds', 'var') && length(interpulse_clouds) == 3 && ...
             cloud_metrics(1).z_span, cloud_metrics(2).z_span, cloud_metrics(3).z_span);
     
     %% CURRENT MEASUREMENTS
-    fprintf('\n🔌 CURRENT MEASUREMENTS (Ammeter/Faraday Cup):\n');
+    fprintf('\n CURRENT MEASUREMENTS (Ammeter/Faraday Cup):\n');
     fprintf('─────────────────────────────────────────────────────────────────────────────────────\n');
     
     fprintf('%-30s | %16.2f±%.2f µA | %16.2f±%.2f µA | %16.2f±%.2f µA\n', ...
@@ -8826,7 +8037,7 @@ if exist('interpulse_clouds', 'var') && length(interpulse_clouds) == 3 && ...
     end
     
     %% SPACE CHARGE FIELD (Lensing Potential)
-    fprintf('\n🔬 SPACE CHARGE FIELD (Electric Field Probe):\n');
+    fprintf('\n SPACE CHARGE FIELD (Electric Field Probe):\n');
     fprintf('─────────────────────────────────────────────────────────────────────────────────────\n');
     
     for ipc = 1:3
@@ -8852,7 +8063,7 @@ if exist('interpulse_clouds', 'var') && length(interpulse_clouds) == 3 && ...
     fprintf('═════════════════════════════════════════════════════════════════════════════════════\n\n');
     
     %% Test 1: Is population growth slowing? (Saturation test)
-    fprintf('🔍 SATURATION TEST:\n');
+    fprintf(' SATURATION TEST:\n');
     
     % Calculate growth rates with uncertainties
     n1 = cloud_metrics(1).n_total;
@@ -8900,7 +8111,7 @@ if exist('interpulse_clouds', 'var') && length(interpulse_clouds) == 3 && ...
     end
     
     %% Test 2: Is spatial position stable?
-    fprintf('\n🎯 SPATIAL STABILITY TEST:\n');
+    fprintf('\n SPATIAL STABILITY TEST:\n');
     
     % Axial centroid drift
     z1 = cloud_metrics(1).z_centroid;
@@ -8967,7 +8178,7 @@ if exist('interpulse_clouds', 'var') && length(interpulse_clouds) == 3 && ...
     end
     
     %% Test 4: Lensing field comparison
-    fprintf('\n🔬 LENSING FIELD COMPARISON:\n');
+    fprintf('\n LENSING FIELD COMPARISON:\n');
     
     for ipc = 1:3
         if ~isnan(cloud_metrics(ipc).E_sc_slow_cloud)
@@ -10391,9 +9602,9 @@ fprintf('  Average spacing: %.0f mm\n', mean(diff(twiss_locations)));
     subplot(2,3,1);
     hold on;
     errorbar(z_vals, r_early, r_early_std, 'b-o', 'LineWidth', 2, ...
-             'MarkerSize', 8, 'CapSize', 10, 'DisplayName', 'Early (165-180ns)');
+             'MarkerSize', 8, 'CapSize', 10, 'DisplayName', 'Early (190-220ns)');
     errorbar(z_vals, r_late, r_late_std, 'r-s', 'LineWidth', 2, ...
-             'MarkerSize', 8, 'CapSize', 10, 'DisplayName', 'Late (210-225ns)');
+             'MarkerSize', 8, 'CapSize', 10, 'DisplayName', 'Late (220-250ns)');
     yline(50, 'm--', 'LineWidth', 2, 'DisplayName', 'Target');
     
     xlabel('z (mm)', 'FontSize', 12);
@@ -10761,11 +9972,11 @@ if ENABLE_MULTIPULSE == false && ENABLE_BETATRON_AVERAGING == true && ...
         subplot(2,3,1);
         hold on;
         errorbar(z_vals, r_early_mean, r_early_std, 'b-o', 'LineWidth', 2, ...
-                 'MarkerSize', 8, 'CapSize', 10, 'DisplayName', 'Early (165-183ns)');
+                 'MarkerSize', 8, 'CapSize', 10, 'DisplayName', 'Early (190-220ns)');
         errorbar(z_vals, r_p1_mean, r_p1_std, 'k-d', 'LineWidth', 2.5, ...
-                 'MarkerSize', 8, 'CapSize', 10, 'DisplayName', 'P1-Avg (195-225ns)');
+                 'MarkerSize', 8, 'CapSize', 10, 'DisplayName', 'P1-Avg (210-240ns)');
         errorbar(z_vals, r_late_mean, r_late_std, 'r-s', 'LineWidth', 2, ...
-                 'MarkerSize', 8, 'CapSize', 10, 'DisplayName', 'Late (210-228ns)');
+                 'MarkerSize', 8, 'CapSize', 10, 'DisplayName', 'Late (220-250ns)');
         yline(50, 'm--', 'LineWidth', 2, 'DisplayName', 'Target');
         xlabel('z (mm)', 'FontSize', 13);
         ylabel('r_{rms} (mm)', 'FontSize', 13);
@@ -10915,7 +10126,7 @@ if ENABLE_MULTIPULSE == false && ENABLE_BETATRON_AVERAGING == true && ...
          'SNAPSHOT_P1_TIMES', 'N_SNAPSHOTS');
     fprintf('\nP1 betatron-averaged Twiss saved (single-pulse mode)\n');
 end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 29 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 30 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ==================== STEP 5.1: BETATRON OSCILLATION VISUALIZATION P1 ====================
 
 if ENABLE_BETATRON_AVERAGING == true && exist('twiss_p1_averaged', 'var')
@@ -10998,13 +10209,95 @@ if ENABLE_BETATRON_AVERAGING == true && exist('twiss_p1_averaged', 'var')
     title('Pulse 1: RMS Radius Oscillations', 'FontSize', 14);
     grid on;
 end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 30 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% RR Figure in jet colors %%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ENABLE_BETATRON_AVERAGING == true && exist('twiss_p1_averaged', 'var')
+
+ figure('Position', [100, 100, 1800, 1200], ...
+           'Name', 'Betatron Oscillation Analysis Pulse 1');
+    
+    %% Plot 1: Beta function oscillations at each location
+    subplot(1,3,1);
+    hold on;
+    length = n_locations;
+    colors = jet(length);
+
+    for iloc = 1:n_locations
+        % Extract beta values across all snapshots
+        beta_p1 = [twiss_p1_instantaneous(iloc,:).beta];
+        times_p1 = [twiss_p1_instantaneous(iloc,:).time] * 1e9;  % ns
+        valid = ~isnan(beta_p1);
+        
+        if sum(valid) > 2
+            plot(times_p1(valid), beta_p1(valid), 'o-', 'Color', colors(iloc,:), ...
+                 'LineWidth', 2, 'DisplayName', location_names{iloc});
+            
+            % Add mean line
+            beta_mean = twiss_p1_averaged(iloc).beta_mean;
+            plot([min(times_p1) max(times_p1)], [beta_mean beta_mean], '--', ...
+                 'Color', colors(iloc,:), 'LineWidth', 1.5);
+        end
+    end
+    
+    xlabel('Time (ns)', 'FontSize', 12);
+    ylabel('β (m)', 'FontSize', 12);
+    title('Pulse 1: Beta Function Oscillations', 'FontSize', 14);
+    legend('Location', 'best', 'FontSize', 9);
+    grid on;
+    
+    %% Plot 2: Alpha parameter oscillations
+    subplot(1,3,2);
+    hold on;
+    
+    for iloc = 1:n_locations
+        alpha_p1 = [twiss_p1_instantaneous(iloc,:).alpha];
+        times_p1 = [twiss_p1_instantaneous(iloc,:).time] * 1e9;
+        valid = ~isnan(alpha_p1);
+        
+        if sum(valid) > 2
+            plot(times_p1(valid), alpha_p1(valid), 'o-', 'Color', colors(iloc,:), ...
+                 'LineWidth', 2);
+            alpha_mean = twiss_p1_averaged(iloc).alpha_mean;
+            plot([min(times_p1) max(times_p1)], [alpha_mean alpha_mean], '--', ...
+                 'Color', colors(iloc,:), 'LineWidth', 1.5);
+        end
+    end
+    
+    yline(0, 'k:', 'LineWidth', 1.5);
+    xlabel('Time (ns)', 'FontSize', 12);
+    ylabel('α', 'FontSize', 12);
+    title('Pulse 1: Alpha Parameter Oscillations', 'FontSize', 14);
+    grid on;
+    
+    %% Plot 3: RMS radius oscillations (key betatron signature!)
+    subplot(1,3,3);
+    hold on;
+    
+    for iloc = 1:n_locations
+        r_rms_p1 = [twiss_p1_instantaneous(iloc,:).r_rms];
+        times_p1 = [twiss_p1_instantaneous(iloc,:).time] * 1e9;
+        valid = ~isnan(r_rms_p1);
+        
+        if sum(valid) > 2
+            plot(times_p1(valid), r_rms_p1(valid), 'o-', 'Color', colors(iloc,:), ...
+                 'LineWidth', 2, 'MarkerSize', 6);
+            r_mean = twiss_p1_averaged(iloc).r_rms_mean;
+            plot([min(times_p1) max(times_p1)], [r_mean r_mean], '--', ...
+                 'Color', colors(iloc,:), 'LineWidth', 1.5);
+        end
+    end
+    
+    xlabel('Time (ns)', 'FontSize', 12);
+    ylabel('r_{rms} (mm)', 'FontSize', 12);
+    title('Pulse 1: RMS Radius Oscillations', 'FontSize', 14);
+    grid on;
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 31 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
 %% ==================== STEP 5.2: BETATRON OSCILLATION VISUALIZATION P1 vs P2 ===============
 
 if ENABLE_MULTIPULSE == true && ENABLE_BETATRON_AVERAGING == true && exist('twiss_p2_averaged', 'var')
     
     figure('Position', [100, 100, 1800, 1200], ...
-           'Name', 'Betatron Oscillation Analysis Pulse 1');
+           'Name', 'Betatron Oscillation Analysis P1 vs P2');
     
     %% Plot 1: Beta function oscillations at each location
     subplot(3,3,1);
@@ -12730,7 +12023,7 @@ end
 %Add these comparison figures:
 %Figure 47: Four-Pulse Transmission Comparison
 %% ==================== FOUR-PULSE EFFICIENCY COMPARISON ====================
-if pulse_config.n_pulses == 4
+if ENABLE_MULTIPULSE == true && pulse_config.n_pulses == 4
     figure('Position', [100, 100, 1600, 600], 'Name', 'Four-Pulse Transmission Analysis');
     
     % Plot efficiencies for all four pulses
@@ -12760,6 +12053,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Added 02.09.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 %Figure 48: Cumulative Ion Buildup (All 4 Pulses)
 %% ==================== CUMULATIVE ION EVOLUTION ====================
+if ENABLE_MULTIPULSE == true
 figure('Position', [100, 100, 1400, 600], 'Name', 'Ion Accumulation: Four-Pulse Evolution');
 
 subplot(1,2,1);
@@ -12799,7 +12093,7 @@ cumulative = cumsum([ion_diag.ions_per_pulse(1:4)])/1e9;
 plot(1:4, cumulative, 'ro-', 'LineWidth', 2.5, 'MarkerSize', 10, ...
      'DisplayName', 'Cumulative');
 legend('Per pulse', 'Cumulative', 'FontSize', 12);
-
+end
 %%%%%%%%%%%%%%%%%%%%%%%% Added 0209.2026 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Figure 49: P1 vs P4 Comparison (Maximum Ion Effect)
 %% ==================== P1 vs P4 TWISS COMPARISON (MAXIMUM ION DOSE) ====================
@@ -13329,154 +12623,180 @@ if pulse_config.n_pulses == 4 && exist('twiss_p1_averaged', 'var') && ...
     fprintf('\nâœ" Four-pulse progression figure saved\n');
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%% Added Particle Handoff File 02.13.2026 %%%%%%%%%%%%%%%%%%%
-%% ==================== EXPORT PARTICLES AT EXIT FOR NEXT STAGE ====================
-% Create handoff file for downstream acceleration gap simulation
-% Captures all particles crossing z=8.305m with full 6D phase space
 
-fprintf('\n========================================================================\n');
-fprintf('  CREATING PARTICLE HANDOFF FILE FOR NEXT ACCELERATION STAGE          \n');
-fprintf('========================================================================\n');
+%%%%%%%%%%%%%%%%%%%%%% NEW HANDOFF FILE CREATION 03.26.2026 %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% HANDOFF FILE CREATION  ALL VERSIONS %%%%%%%%%%%%%%%
+fprintf('\n================================================================\n');
+fprintf('  CREATING HANDOFF FILE FOR NEXT ACCELERATION STAGE\n');
+fprintf('  Generating 3 versions: Flat-top / Full pulse / Natural pulse\n');
+fprintf('================================================================\n');
 
-if particles_transmitted > 1000
-    % Find all particles that successfully reached exit
-    particles_at_exit = find(particle_crossed_exit);
-    n_export = length(particles_at_exit);
-    
-    fprintf('Particles reaching z=8.305m: %d (%.2f%% transmission)\n', ...
-            n_export, 100*n_export/n_created);
-    
-    % Extract final state at exit crossing
-    % Need to reconstruct particle state at the moment they crossed z=8.305m
-    
-    % Initialize export structure
-    exit_particles = struct();
-    exit_particles.n_total = n_export;
-    exit_particles.z_exit = 8.305;  % meters
-    exit_particles.exit_time = particle_t_at_exit(particles_at_exit);  % Individual crossing times
-    
-    % CRITICAL: Get particle state AT THE EXIT (not final simulation state)
-    % We need to interpolate or use last recorded position near exit
-    
-    % Method: Find particles currently near exit in final snapshot
-    final_active = find(active_particles);
-    near_exit = abs(z_particles(final_active) - 8.305) < 0.050;  % Within 50mm
-    exit_idx = final_active(near_exit);
-    
-    % Combine with particles that already passed (if tracked)
-    % For now, use particles near exit in final state
-    
-    if length(exit_idx) > 100
-        fprintf('Using final snapshot: %d particles near exit\n', length(exit_idx));
-        
-        % 6D phase space coordinates
-        exit_particles.z = z_particles(exit_idx);  % m
-        exit_particles.r = r_particles(exit_idx);  % m
-        exit_particles.pz = pz_particles(exit_idx);  % kg⋅m/s
-        exit_particles.pr = pr_particles(exit_idx);  % kg⋅m/s
-        exit_particles.ptheta = ptheta_particles(exit_idx);  % kg⋅m²/s
-        exit_particles.gamma = gamma_particles(exit_idx);  % Lorentz factor
-        exit_particles.weight = weight_particles(exit_idx);  % Macroparticle weight
-        
-        % Calculate derived quantities for convenience
-        exit_particles.energy_MeV = (exit_particles.gamma - 1) * m_e * c^2 / e_charge / 1e6;
-        exit_particles.vz = exit_particles.pz ./ (exit_particles.gamma * m_e);
-        exit_particles.vr = exit_particles.pr ./ (exit_particles.gamma * m_e);
-        
-        % Statistical summary
-        exit_particles.stats = struct();
-        exit_particles.stats.r_rms = sqrt(mean(exit_particles.r.^2)) * 1000;  % mm
-        exit_particles.stats.E_mean = mean(exit_particles.energy_MeV);  % MeV
-        exit_particles.stats.E_spread = std(exit_particles.energy_MeV);  % MeV
-        exit_particles.stats.total_charge = sum(exit_particles.weight) * e_charge;  % Coulombs
-        
-        % Twiss parameters at exit
-        pr_norm = exit_particles.pr ./ (exit_particles.gamma * m_e * c);
-        r_centered = exit_particles.r - mean(exit_particles.r);
-        pr_centered = pr_norm - mean(pr_norm);
-        
-        r2 = mean(r_centered.^2);
-        pr2 = mean(pr_centered.^2);
-        r_pr = mean(r_centered .* pr_centered);
-        
-        emit_rms = sqrt(r2 * pr2 - r_pr^2);
-        
-        if emit_rms > 0
-            exit_particles.stats.beta_twiss = r2 / emit_rms;
-            exit_particles.stats.alpha_twiss = -r_pr / emit_rms;
-            exit_particles.stats.gamma_twiss = pr2 / emit_rms;
-            exit_particles.stats.emittance_norm = emit_rms * mean(exit_particles.gamma) * ...
-                                                  sqrt(1 - 1/mean(exit_particles.gamma)^2) * 1e6;  % mm-mrad
-        end
-        
-        % Add simulation metadata
-        exit_particles.metadata = struct();
-        exit_particles.metadata.source_simulation = 'Pierce_Gun_PIC_v8_Extended_8p3m';
-        exit_particles.metadata.simulation_mode = simulation_mode;
-        exit_particles.metadata.n_pulses = pulse_config.n_pulses;
-        exit_particles.metadata.gas_pressure_mbar = gas_params.P / 133.322;
-        exit_particles.metadata.space_charge_enabled = ENABLE_SPACE_CHARGE;
-        exit_particles.metadata.date_created = datestr(now);
-        
-        % Save handoff file
-        handoff_filename = sprintf('Injector_Exit_Particles_%dpulse_%s.mat', ...
-                                   pulse_config.n_pulses, datestr(now, 'yyyymmdd_HHMM'));
-        
-        save(handoff_filename, 'exit_particles', '-v7.3');
-        
-        fprintf('\n✓ Particle handoff file created: %s\n', handoff_filename);
-        fprintf('  Particles exported: %d\n', length(exit_idx));
-        fprintf('  File size: %.2f MB\n', dir(handoff_filename).bytes/1024^2);
-        fprintf('  Exit statistics:\n');
-        fprintf('    <r_rms> = %.2f mm\n', exit_particles.stats.r_rms);
-        fprintf('    <E> = %.4f ± %.4f MeV\n', ...
-                exit_particles.stats.E_mean, exit_particles.stats.E_spread);
-        fprintf('    Total charge: %.3f µC\n', exit_particles.stats.total_charge*1e6);
-        
-        if isfield(exit_particles.stats, 'emittance_norm')
-            fprintf('    ε_n = %.2f mm-mrad\n', exit_particles.stats.emittance_norm);
-            fprintf('    β = %.3f m, α = %.3f\n', ...
-                    exit_particles.stats.beta_twiss, exit_particles.stats.alpha_twiss);
-        end
-        
-        % Create quick validation plot
-        figure('Position', [100, 100, 1200, 500], 'Name', 'Exit Particle Distribution');
-        
-        subplot(1,3,1);
-        histogram(exit_particles.r*1000, 30, 'FaceColor', 'b', 'EdgeColor', 'none');
-        xlabel('r (mm)'); ylabel('Count');
-        title(sprintf('Radial Distribution at Exit (n=%d)', n_export));
-        grid on;
-        xline(exit_particles.stats.r_rms, 'r--', 'LineWidth', 2, ...
-              'Label', sprintf('RMS: %.1f mm', exit_particles.stats.r_rms));
-        
-        subplot(1,3,2);
-        histogram(exit_particles.energy_MeV, 40, 'FaceColor', 'g', 'EdgeColor', 'none');
-        xlabel('Energy (MeV)'); ylabel('Count');
-        title('Energy Distribution at Exit');
-        grid on;
-        xline(exit_particles.stats.E_mean, 'r--', 'LineWidth', 2);
-        
-        subplot(1,3,3);
-        scatter(exit_particles.r*1000, pr_norm*1000, 10, 'b.');
-        xlabel('r (mm)'); ylabel('r'' (mrad)');
-        title('Exit Phase Space');
-        grid on;
-        
-        sgtitle(sprintf('Particle Handoff: %d particles at z=8.305m', n_export), ...
-                'FontSize', 14);
-        
-        % Save validation figure
-        saveas(gcf, strrep(handoff_filename, '.mat', '_validation.png'));
-        
-    else
-        fprintf('WARNING: Too few particles near exit (%d) - cannot create handoff file\n', ...
-                length(exit_idx));
-    end
-    
-else
-    fprintf('WARNING: No transmitted particles - cannot create handoff file\n');
+%% ---- n_created safety check -------------------------------------------
+if ~exist('n_created','var') || isempty(n_created) || ...
+   ~isscalar(n_created)     || n_created < 1
+    fprintf('  ERROR: n_created invalid  cannot create handoff.\n');
+    fprintf('================================================================\n');
+    return
 end
+n_created = round(double(n_created));
+fprintf('  n_created = %d (verified)\n', n_created);
+
+%% ---- Force all crossing arrays to correct shape and length -------------
+%% Use a helper pattern: extract, reshape to row, extend, reassign
+%% This handles ALL edge cases: scalar, column, row, short, struct field
+
+pte  = double(particle_t_at_exit(:)');    %% force row vector, double
+pke  = double(particle_KE_at_exit(:)');
+pce  = logical(particle_crossed_exit(:)');
+pra  = double(particle_r_at_anode(:)');
+wp   = double(weight_particles(:)');
+
+%% Extend to n_created if shorter
+if numel(pte)  < n_created,  pte(n_created)  = 0;     end
+if numel(pke)  < n_created,  pke(n_created)  = 0;     end
+if numel(pce)  < n_created,  pce(n_created)  = false; end
+if numel(pra)  < n_created,  pra(n_created)  = 0;     end
+if numel(wp)   < n_created,  wp(n_created)   = 0;     end
+
+fprintf('  Array shapes verified:\n');
+fprintf('    particle_t_at_exit:    %d elements\n', numel(pte));
+fprintf('    particle_KE_at_exit:   %d elements\n', numel(pke));
+fprintf('    particle_crossed_exit: %d elements\n', numel(pce));
+fprintf('    particle_r_at_anode:   %d elements\n', numel(pra));
+fprintf('    weight_particles:      %d elements\n', numel(wp));
+
+%% ---- Build masks using LOCAL copies (not original arrays) --------------
+crossed_mask  = pce(1:n_created);
+t_exit_ns     = pte(1:n_created) * 1e9;
+KE_exit_all   = pke(1:n_created);
+
+mask_A = crossed_mask & (t_exit_ns >= 190) & (t_exit_ns <= 270);
+mask_B = crossed_mask;
+KE_threshold_MeV = 1.0;
+mask_C = crossed_mask & (KE_exit_all >= KE_threshold_MeV * 1e6);
+
+fprintf('  Version A (flat-top 190-270ns):   %d particles\n', sum(mask_A));
+fprintf('  Version B (all crossing):         %d particles\n', sum(mask_B));
+fprintf('  Version C (KE > %.1f MeV):        %d particles\n', ...
+        KE_threshold_MeV, sum(mask_C));
+
+%% ---- Recompute flat-top scalars if needed ------------------------------
+if ~exist('I_exit_ss','var') || ~exist('I_cath_ss','var')
+    t_ns_full = t * 1e9;
+    flat_mask = (t_ns_full >= 190) & (t_ns_full <= 270);
+    I_exit_ss = mean(I_exit(flat_mask));
+    I_cath_ss = mean(I_cathode(flat_mask));
+    fprintf('  NOTE: I_exit_ss recomputed from I_exit array.\n');
+end
+
+%% ====================================================================
+%% VERSION LOOP  uses local copies pte, pke, pra, wp throughout
+%% ====================================================================
+for ver_idx = 1:3
+    switch ver_idx
+        case 1
+            use_mask      = mask_A;
+            version_label = 'VERSION_A';
+            version_desc  = 'Flat-top only (190-270ns)  idealized steady state';
+        case 2
+            use_mask      = mask_B;
+            version_label = 'VERSION_B';
+            version_desc  = 'Full pulse  all particles  realistic rise/fall';
+        case 3
+            use_mask      = mask_C;
+            version_label = 'VERSION_C';
+            version_desc  = sprintf('Natural pulse  KE > %.1f MeV threshold', ...
+                                    KE_threshold_MeV);
+    end
+
+    idx = find(use_mask);   %% row index vector
+
+    if isempty(idx)
+        fprintf('\n  %s: No particles found  skipped.\n', version_label);
+        continue
+    end
+
+    fprintf('\n  Processing %s (%d particles)...\n', version_label, numel(idx));
+
+    %% Index into LOCAL copies  guaranteed correct length and shape
+    t_cross   = pte(idx);   %% row vector
+    KE_eV     = pke(idx);
+    r_anode   = pra(idx);
+    w_vec     = wp(idx);
+
+    %% Phase space reconstruction
+    gam_h  = 1 + KE_eV / (m_e * c^2 / e_charge);
+    beta_h = sqrt(1 - 1./gam_h.^2);
+    p_h    = gam_h .* m_e .* beta_h .* c;
+
+    %% Build struct  all fields from local variables, no re-indexing
+    ho                         = struct();
+    ho.description             = sprintf('Pierce Gun PIC V3  %s', version_desc);
+    ho.version                 = version_label;
+    ho.date                    = datestr(now);
+    ho.z_handoff               = 8.305;
+    ho.n_particles             = numel(idx);       %% numel not length
+    ho.t_cross                 = t_cross;
+    ho.KE_eV                   = KE_eV;
+    ho.KE_MeV                  = KE_eV / 1e6;
+    ho.gamma                   = gam_h;
+    ho.beta                    = beta_h;
+    ho.pz                      = p_h;
+    ho.r_at_anode              = r_anode;
+    ho.weight                  = w_vec;
+
+    %% Statistics
+    ho.KE_mean_MeV             = mean(ho.KE_MeV);
+    ho.KE_std_MeV              = std(ho.KE_MeV);
+    ho.KE_min_MeV              = min(ho.KE_MeV);
+    ho.KE_max_MeV              = max(ho.KE_MeV);
+    ho.t_mean_ns               = mean(t_cross) * 1e9;
+    ho.t_min_ns                = min(t_cross)  * 1e9;
+    ho.t_max_ns                = max(t_cross)  * 1e9;
+    ho.pulse_duration_ns       = ho.t_max_ns - ho.t_min_ns;
+    ho.I_peak_A                = I_exit_ss;
+    ho.transmission_pct        = 100 * numel(idx) / n_created;
+    ho.flatop_transmission_pct = 100 * I_exit_ss / max(I_cath_ss, 1);
+
+    %% Time-resolved current profile
+    t_bins      = linspace(ho.t_min_ns - 1, ho.t_max_ns + 1, 101);
+    t_centers   = 0.5 * (t_bins(1:end-1) + t_bins(2:end));
+    [n_bin, ~]  = histcounts(t_cross * 1e9, t_bins);
+    dt_bin      = mean(diff(t_bins)) * 1e-9;
+    w_pos       = w_vec(w_vec > 0);
+    w_mean      = mean(w_pos);
+    ho.pulse_t_ns      = t_centers;
+    ho.pulse_I_A       = n_bin * w_mean * e_charge / dt_bin;
+    ho.pulse_I_peak_A  = max(ho.pulse_I_A);
+
+    %% Save
+    fname = sprintf('handoff_%s_%s.mat', ...
+                    version_label, datestr(now, 'yyyymmdd_HHMMSS'));
+    save(fname, 'ho', '-v7.3');
+
+    fprintf('  === %s SUMMARY ===\n',        version_label);
+    fprintf('  Description:        %s\n',    version_desc);
+    fprintf('  Particles:          %d\n',    ho.n_particles);
+    fprintf('  KE mean:            %.4f MeV\n', ho.KE_mean_MeV);
+    fprintf('  KE std:             %.4f MeV  (%.2f%% spread)\n', ...
+            ho.KE_std_MeV, 100*ho.KE_std_MeV/max(ho.KE_mean_MeV,1e-9));
+    fprintf('  KE range:           %.4f - %.4f MeV\n', ...
+            ho.KE_min_MeV, ho.KE_max_MeV);
+    fprintf('  Arrival window:     %.1f - %.1f ns\n', ...
+            ho.t_min_ns, ho.t_max_ns);
+    fprintf('  Pulse duration:     %.1f ns\n',  ho.pulse_duration_ns);
+    fprintf('  Peak current:       %.1f A\n',   ho.pulse_I_peak_A);
+    fprintf('  Transmission:       %.1f%%\n',   ho.transmission_pct);
+    fprintf('  Saved to:           %s\n',       fname);
+
+end  %% version loop
+
+fprintf('\n================================================================\n');
+fprintf('  ALL HANDOFF FILES CREATED\n');
+fprintf('  VERSION_A  idealized flat-top for benchmarking\n');
+fprintf('  VERSION_B  full realistic pulse with rise/fall\n');
+fprintf('  VERSION_C  natural pulse with KE threshold applied\n');
+fprintf('================================================================\n');
 %%%%%%%%%%%%%%%%%%%% Updated Helper Functions 02.12.2026 %%%%%%%%%%%%%%%%%%%%%%%
 %% ======================== HELPER FUNCTIONS (EXTENDED) ====================
 %%%%%%%%%%%%%%%%%%%%%%%%% New Helper  Function for dual pulse %%%%%%%%%%%%%%%%%
@@ -13528,22 +12848,57 @@ function factor = pulse_shape_multipulse(t, config)
     end
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% New Updated Bz Br functions %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%% Bz_func // Br_func %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function Bz = calculate_Bz(z_pos, r_pos, t_curr, ...
+function Bz = calculate_Bz_solenoid(z_pos, r_pos, t_curr, ...
     sol1, sol2, sol3, sol4, sol5, sol7, sol8, sol9, sol10, sol11, sol12, ...
     sol14, sol15, sol16, sol17, sol18, sol19, ...
     sol20, sol21, sol22, sol23, sol24, sol25, sol26, sol27, sol28, sol29, ...
     sol30, sol31, sol32, sol33, sol34, sol35, sol36, ...
     sol38, sol39, sol40, sol41, sol42, sol43, ...
-    sol45, sol46, sol47, sol48, sol49, ...
-    pulse_func)
+    sol45, sol46, sol47, sol48, sol49)
     
-    pulse_factor = pulse_func(t_curr);
+    % ========================================================================
+    % SOLENOID TIMING - INDEPENDENT OF EMISSION PULSE
+    % ========================================================================
+    % Single-pulse mode: covers t=150-270ns (emission) + margins
+    % Multi-pulse mode: covers t=150-870ns (all 4 pulses) + margins
+    %
+    % For single-pulse (current test):
+    %   Emission: 150-270ns
+    %   Solenoids: 100-370ns (50ns early, 100ns late)
+    % ========================================================================
     
-    % Sum contributions from all 45 active transport solenoids
-    % (Excludes steering magnets 6, 13, 37, 44)
-    Bz = pulse_factor * (...
+    % Timing parameters (adjust for multi-pulse if needed)
+    t_first_pulse_start = 150e-9;    % First emission pulse
+    t_last_pulse_end = 270e-9;       % Last pulse end (single-pulse mode)
+    
+    t_sol_start = 100e-9;            % Start 50ns before emission
+    t_sol_ramp = 50e-9;              % 50ns ramp time
+    t_sol_flat_start = t_sol_start + t_sol_ramp;  % 150ns
+    t_sol_end = t_last_pulse_end + 100e-9;        % 370ns (100ns after pulse)
+    
+    % Compute solenoid amplitude factor (time-dependent, NOT pulse-dependent!)
+    if t_curr < t_sol_start
+        solenoid_factor = 0.0;  % Before energization
+        
+    elseif t_curr < t_sol_flat_start
+        % Ramp-up (smooth cosine)
+        t_rel = t_curr - t_sol_start;
+        solenoid_factor = 0.5 * (1 - cos(pi * t_rel / t_sol_ramp));
+        
+    elseif t_curr < t_sol_end
+        % Flat-top: FULL STRENGTH (independent of emission pulse!)
+        solenoid_factor = 1.0;
+        
+    else
+        % Stay on for particle transport
+        solenoid_factor = 1.0;
+    end
+    
+    % Sum all solenoid contributions
+    Bz = solenoid_factor * (...
          solenoid_Bz(z_pos, r_pos, sol1) + solenoid_Bz(z_pos, r_pos, sol2) + ...
          solenoid_Bz(z_pos, r_pos, sol3) + solenoid_Bz(z_pos, r_pos, sol4) + ...
          solenoid_Bz(z_pos, r_pos, sol5) + solenoid_Bz(z_pos, r_pos, sol7) + ...
@@ -13569,18 +12924,35 @@ function Bz = calculate_Bz(z_pos, r_pos, t_curr, ...
          solenoid_Bz(z_pos, r_pos, sol49));
 end
 
-function Br = calculate_Br(z_pos, r_pos, t_curr, ...
+function Br = calculate_Br_solenoid(z_pos, r_pos, t_curr, ...
     sol1, sol2, sol3, sol4, sol5, sol7, sol8, sol9, sol10, sol11, sol12, ...
     sol14, sol15, sol16, sol17, sol18, sol19, ...
     sol20, sol21, sol22, sol23, sol24, sol25, sol26, sol27, sol28, sol29, ...
     sol30, sol31, sol32, sol33, sol34, sol35, sol36, ...
     sol38, sol39, sol40, sol41, sol42, sol43, ...
-    sol45, sol46, sol47, sol48, sol49, ...
-    pulse_func)
+    sol45, sol46, sol47, sol48, sol49)
     
-    pulse_factor = pulse_func(t_curr);
+    % Same timing as Bz
+    t_first_pulse_start = 150e-9;
+    t_last_pulse_end = 270e-9;
     
-    Br = pulse_factor * (...
+    t_sol_start = 100e-9;
+    t_sol_ramp = 50e-9;
+    t_sol_flat_start = t_sol_start + t_sol_ramp;
+    t_sol_end = t_last_pulse_end + 100e-9;
+    
+    if t_curr < t_sol_start
+        solenoid_factor = 0.0;
+    elseif t_curr < t_sol_flat_start
+        t_rel = t_curr - t_sol_start;
+        solenoid_factor = 0.5 * (1 - cos(pi * t_rel / t_sol_ramp));
+    elseif t_curr < t_sol_end
+        solenoid_factor = 1.0;
+    else
+        solenoid_factor = 1.0;
+    end
+    
+    Br = solenoid_factor * (...
          solenoid_Br(z_pos, r_pos, sol1) + solenoid_Br(z_pos, r_pos, sol2) + ...
          solenoid_Br(z_pos, r_pos, sol3) + solenoid_Br(z_pos, r_pos, sol4) + ...
          solenoid_Br(z_pos, r_pos, sol5) + solenoid_Br(z_pos, r_pos, sol7) + ...
@@ -13606,7 +12978,7 @@ function Br = calculate_Br(z_pos, r_pos, t_curr, ...
          solenoid_Br(z_pos, r_pos, sol49));
 end
 
-% Keep existing solenoid_Bz() and solenoid_Br() atomic functions unchanged:
+% Keep atomic functions unchanged
 function Bz = solenoid_Bz(z, r, sol)
     in_radius = r <= sol.R;
     z_factor = 0.5 * (tanh(2*(z - (sol.z_c - sol.L/2))/sol.L) - ...
@@ -13621,4 +12993,4 @@ function Br = solenoid_Br(z, r, sol)
                            sech(2*(z - (sol.z_c + sol.L/2))/sol.L).^2);
     Br = sol.B * in_radius .* r_factor .* z_deriv;
 end
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% End of the modelV3 script %%%%%%%%%%%%%%%%%%%%%
