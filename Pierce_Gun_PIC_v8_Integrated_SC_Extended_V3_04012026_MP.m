@@ -405,7 +405,7 @@ base_single   = 1.05e6;
 
 if ENABLE_MULTIPULSE == true
     expected_parts = base_single * length_factor * pulse_config.n_pulses;
-    safety_factor  = 1.25;
+    safety_factor  = 1.25;  % higher margin: pulses overlap in transit, peak particle density is larger
 else
     expected_parts = base_single * length_factor;
     safety_factor  = 1.15;
