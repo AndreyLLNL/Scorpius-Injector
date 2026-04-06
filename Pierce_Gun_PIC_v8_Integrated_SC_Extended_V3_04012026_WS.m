@@ -7,6 +7,18 @@
 %%   [FIX-10] Exited particles removed from active set immediately at exit crossing
 %%   Duplicate diagnostic blocks removed
 %%   gamma_particles updated inside push block (was in deleted UPDATE POSITION
+%%
+%% ==================== PATCH 11 FIXES (2026-04-06) ====================
+%% Root cause: omega boost 1.0→1.5 on WS engage caused phi~1e60 divergence
+%% Fix-A (CRITICAL): Removed sc_omega=1.5 boost — omega stays 1.0 always
+%% Fix-B (IMPORTANT): WS gate raised from it>=6000 to it>=11000
+%%                    (avoids seeding during peak beam density at t=209ns)
+%% Fix-C (DEFENSE): Phi-seed magnitude validation before loading warm start
+%% Fix-D (CRASH):   Array length guard before plot(times_p1(valid)...) at
+%%                  post-processing Twiss figure section (was line 10149)
+%% Expected outcome: WS acceptance rate >80% (was 23.8% in Test 40)
+%%                   Wall loss spike at step 6000-7000 eliminated
+%%                   Post-processing Twiss figure no longer crashes
 
 clear all; close all; clc;
 
@@ -779,15 +791,26 @@ for it = 1:nt
         %% WS: warm start — only after beam fill-up phase (it >= 6000)
         n_dep_active   = sum(active_particles);
         n_dep_ratio    = n_dep_active / max(1, n_dep_prev_sc);
-        use_warm_start = (it >= 6000) && ...
+        use_warm_start = (it >= 11000) && ...
                          (n_dep_ratio > 0.95 && n_dep_ratio < 1.05);
         if use_warm_start
-            phi_grid = phi_grid_prev;   %% reuse converged solution
+            %% FIX-C: validate seed magnitude before loading
+            phi_seed_max = max(abs(phi_grid_prev(:)));
+            phi_seed_limit = eps0 * 7.5e6 * sc_dz * 50;  %% ~50x field-cap equivalent
+            if phi_seed_max < phi_seed_limit && phi_seed_max > 0
+                phi_grid = phi_grid_prev;   %% seed is valid — load it
+            else
+                phi_grid(:) = 0;            %% seed out of range — cold start
+                ws_phi_seeded = false;
+                fprintf('  [SC] WS seed REJECTED (magnitude): phi_max=%.2e limit=%.2e\n', ...
+                        phi_seed_max, phi_seed_limit);
+            end
             if ~ws_engaged
-                sc_omega      = 1.5;   %% PATCH 10: boost omega once seed is trusted
-                sc_iterations = 200;   %% keep iteration count stable
+                %% FIX-A: do NOT boost omega — keep sc_omega=1.0 always stable
+                %% Boosting to 1.5 with stale seed causes immediate divergence to phi~1e60
+                sc_iterations = 200;
                 ws_engaged = true;
-                fprintf('  [SC] Warm start ENGAGED (it=%d) — omega boosted to 1.5\n', it);
+                fprintf('  [SC] Warm start ENGAGED (it=%d) — omega=%.1f (stable)\n', it, sc_omega);
             end
         else
             %% PATCH 7: smart cold start — use best available seed
@@ -796,11 +819,11 @@ for it = 1:nt
             else
                 phi_grid(:) = 0;           %% true cold start (pre-seed)
             end
-            if it >= 6000 && n_dep_prev_sc > 0
+            if it >= 11000 && n_dep_prev_sc > 0
                 fprintf('  [SC] Cold start: ratio=%.2f (it=%d)\n', n_dep_ratio, it);
             end
             if ws_engaged
-                sc_omega      = 1.0;   %% PATCH 10: back to safe omega on disengage
+                %% FIX-A: sc_omega stays 1.0 always — no restore needed
                 sc_iterations = 200;
                 ws_engaged    = false;
                 ws_phi_seeded = true;       %% keep seed after disengage
@@ -10143,6 +10166,15 @@ if ENABLE_BETATRON_AVERAGING == true && exist('twiss_p1_averaged', 'var')
         % Extract beta values across all snapshots
         beta_p1 = [twiss_p1_instantaneous(iloc,:).beta];
         times_p1 = [twiss_p1_instantaneous(iloc,:).time] * 1e9;  % ns
+        %% FIX-D: guard against length mismatch between times_p1 and Twiss arrays
+        %% This prevents "logical indices outside array bounds" crash
+        min_len_p1 = min([length(times_p1), length(beta_p1)]);
+        if min_len_p1 < length(times_p1)
+            fprintf('  [WARN] FIX-D: trimming times_p1 %d→%d to match Twiss array lengths\n', ...
+                    length(times_p1), min_len_p1);
+            times_p1 = times_p1(1:min_len_p1);
+        end
+        beta_p1  = beta_p1(1:min_len_p1);
         valid = ~isnan(beta_p1);
         
         if sum(valid) > 2
