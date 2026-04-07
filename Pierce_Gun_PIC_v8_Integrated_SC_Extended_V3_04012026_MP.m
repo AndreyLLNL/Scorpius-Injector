@@ -448,16 +448,16 @@ particles_lost_to_walls   = 0;
 particles_out_of_bounds   = 0;
 
 %% ==================== PARTICLE TRACKING ARRAYS ====================
-particle_crossed_anode   = false(max_particles, 1);
-particle_crossed_exit    = false(max_particles, 1);
-particle_t_at_anode      = NaN(max_particles, 1);
-particle_t_at_exit       = NaN(max_particles, 1);
-particle_KE_at_anode     = zeros(max_particles, 1);   % eV
-particle_KE_at_exit      = zeros(max_particles, 1);   % eV
+%%% Those 6 parametersinitialization repeated below
+%particle_crossed_anode   = false(max_particles, 1);
+%particle_crossed_exit    = false(max_particles, 1);
+%particle_t_at_anode      = NaN(max_particles, 1);
+%particle_t_at_exit       = NaN(max_particles, 1);
+%particle_KE_at_anode     = zeros(max_particles, 1);   % eV
+%particle_KE_at_exit      = zeros(max_particles, 1);   % eV
 particle_r_at_anode      = NaN(max_particles, 1);
-particle_counted_as_return     = false(max_particles, 1);
-particle_counted_as_violation  = false(max_particles, 1);
-
+particle_counted_as_return     = false(max_particles, 1); % seems not used
+particle_counted_as_violation  = false(max_particles, 1); %seems not used
 %% ==================== CURRENT ACCUMULATORS ====================
 I_anode_accumulator = 0;
 I_exit_accumulator  = 0;
