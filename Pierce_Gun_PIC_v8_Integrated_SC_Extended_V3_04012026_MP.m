@@ -328,6 +328,12 @@ if ENABLE_SPACE_CHARGE
     Ez_sc    = zeros(sc_nr, sc_nz);
     Er_sc    = zeros(sc_nr, sc_nz);
 
+    %% ==================== WARM START STATE VARIABLES ====================
+    phi_grid_prev   = zeros(sc_nr, sc_nz);  % warm start seed
+    n_dep_prev_sc   = 0;                    % particle count at last SC solve
+    ws_engaged      = false;                % warm start active flag
+    ws_phi_seeded   = false;                % valid seed available flag
+
     sc_omega      = 1.2; % was 1.2 used before
     sc_iterations = 100; % was 100 applied before
 
@@ -894,24 +900,86 @@ for it = 1:nt
     end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% ==================== SPACE CHARGE SOLVER ====================
+    %% ==================== SPACE CHARGE SOLVER (WS + SAFEGUARDS) ====================
     if ENABLE_SPACE_CHARGE && mod(it, sc_interval) == 0 && n_active > 100
 
-        %% Reset SC arrays
+        %% Reset SC field arrays — always
         rho_grid(:) = 0;
-        phi_grid(:) = 0;
         Ez_sc(:)    = 0;
         Er_sc(:)    = 0;
 
-        active_idx = find(active_particles);
-        n_dep      = length(active_idx);
+        %% ---- SAFEGUARD 4: Inter-pulse cold reset ----
+        %% If beam is off (between pulses), force cold start for next pulse
+        if pulse_factor < 0.01
+            phi_grid(:)      = 0;
+            phi_grid_prev(:) = 0;
+            ws_engaged       = false;
+            ws_phi_seeded    = false;
+        end
 
-        z_dep = z_particles(active_idx);
-        r_dep = r_particles(active_idx);
+        active_idx   = find(active_particles);
+        n_dep        = length(active_idx);
+        z_dep        = z_particles(active_idx);
+        r_dep        = r_particles(active_idx);
 
         sc_enhancement_scale = 0.25;
         enhancement_gap      = 1.050 * sc_enhancement_scale;
         enhancement_drift    = 0.950 * sc_enhancement_scale;
+
+        %% ---- SAFEGUARD 1: Warm start gate ----
+        %% Only engage WS after beam fill-up and when particle count is stable
+        n_dep_active   = n_dep;
+        n_dep_ratio    = n_dep_active / max(1, n_dep_prev_sc);
+        use_warm_start = (it >= 11000) && ...
+                         (n_dep_ratio > 0.95 && n_dep_ratio < 1.05);
+
+        if use_warm_start
+            %% Validate seed magnitude before loading
+            phi_seed_max   = max(abs(phi_grid_prev(:)));
+            phi_seed_limit = eps0 * 7.5e6 * sc_dz * 50;
+            if phi_seed_max < phi_seed_limit && phi_seed_max > 0
+                phi_grid = phi_grid_prev;       %% valid seed — load it
+            else
+                phi_grid(:)   = 0;              %% seed out of range — cold start
+                ws_phi_seeded = false;
+                fprintf('  [SC-WS] seed REJECTED: phi_max=%.2e limit=%.2e\n', ...
+                        phi_seed_max, phi_seed_limit);
+            end
+            if ~ws_engaged
+                sc_iterations = 200;
+                ws_engaged    = true;
+                fprintf('  [SC-WS] Warm start ENGAGED (it=%d) omega=%.2f\n', ...
+                        it, sc_omega);
+            end
+        else
+            %% Smart cold start — use best available seed
+            if ws_phi_seeded
+                phi_grid = phi_grid_prev;       %% seed from last valid solution
+            else
+                phi_grid(:) = 0;                %% true cold start (pre-seed)
+            end
+            if it >= 11000 && n_dep_prev_sc > 0
+                fprintf('  [SC-WS] Cold start: ratio=%.2f (it=%d)\n', ...
+                        n_dep_ratio, it);
+            end
+            if ws_engaged
+                sc_iterations = 200;
+                ws_engaged    = false;
+                ws_phi_seeded = true;           %% keep seed after disengage
+            end
+        end
+
+        %% ---- SAFEGUARD 2: Adaptive omega ----
+        if pulse_factor > 0.95
+            sc_omega_use = 1.20;    %% flat-top — stable, aggressive OK
+        elseif pulse_factor > 0.30
+            sc_omega_use = 1.10;    %% ramp region — moderate
+        else
+            sc_omega_use = 1.00;    %% pulse edges — conservative, no overshoot
+        end
+
+        %% Update particle count for next interval
+        n_dep_prev_sc = n_dep_active;
 
 %%%%%%%%%%%%%%%%%%%%%% Corrected Charge Deposition block %%%%%%%%%%%%%%%%%%%
 %% ==================== SC CHARGE DEPOSITION — BILINEAR ====================
@@ -1036,8 +1104,8 @@ end
                                phi_grid(ir_int, jz_int-1))) / denom ...
                       - rho_grid(ir_int, jz_int) * rhs_fac;
 
-            phi_grid(ir_int, jz_int) = (1 - sc_omega) * phi_grid(ir_int, jz_int) + ...
-                                        sc_omega * phi_new;
+            phi_grid(ir_int, jz_int) = (1 - sc_omega_use) * phi_grid(ir_int, jz_int) + ...
+                                        sc_omega_use * phi_new;
 
             axis_denom   = 4*dz2 + 2*dr2;
             phi_axis_new = ((4*dz2) * phi_grid(2, jz_int) + ...
@@ -1045,8 +1113,8 @@ end
                                        phi_grid(1, jz_int-1))) / axis_denom ...
                            - rho_grid(1, jz_int) * (dr2*dz2) / (axis_denom * eps0);
 
-            phi_grid(1, jz_int) = (1 - sc_omega) * phi_grid(1, jz_int) + ...
-                                   sc_omega * phi_axis_new;
+            phi_grid(1, jz_int) = (1 - sc_omega_use) * phi_grid(1, jz_int) + ...
+                                   sc_omega_use * phi_axis_new;
 
             phi_grid(sc_nr, :) = phi_grid(sc_nr-1, :);
             phi_grid(:,    1)  = 0;
@@ -1077,6 +1145,22 @@ end
             Ez_sc = Ez_sc * scale;
             Er_sc = Er_sc * scale;
         end
+
+        %% ---- SAFEGUARD 3: Post-solve field clamp ----
+        E_sc_max_physical = 5.0e6;   %% 5 MV/m absolute ceiling
+        Ez_sc = max(-E_sc_max_physical, min(E_sc_max_physical, Ez_sc));
+        Er_sc = max(-E_sc_max_physical, min(E_sc_max_physical, Er_sc));
+
+        %% Diagnostic warning if clamp triggered
+        E_sc_peak = max(abs(Ez_sc(:)));
+        if E_sc_peak > 0.5e6
+            fprintf('  [SC-WS] WARNING: peak Ez_sc=%.2f MV/m at it=%d\n', ...
+                    E_sc_peak/1e6, it);
+        end
+
+        %% Store solution as warm start seed for next interval
+        phi_grid_prev = phi_grid;
+        ws_phi_seeded = true;
 
         max_sc_field_recorded = max(max_sc_field_recorded, max(abs(Ez_sc(:))));
 
@@ -2318,7 +2402,8 @@ else
     'particles_lost_to_cathode', 'particles_lost_to_walls', ...
     'particles_out_of_bounds',   'n_created', ...
     'r_rms_history', 'n_particles_vs_z', 'z_diagnostic', ...
-    'snapshot_data', 'snapshot_p1', 'snapshot_p2', ...
+    'snapshot_data', 'snapshot_p1', 'snapshot_p2', 'snapshot_p3', 'snapshot_p4', ...
+    'pulse_diagnostics', 'pulse_config', ...
     'schottky_diagnostics', 'ion_diag', 'ion_density_grid', ...
     'ANALYSIS_LOCATIONS', 'ANALYSIS_LOCATION_NAMES', ...
     't', 'dt', 'nt', 't_start', 't_end', ...
@@ -8871,7 +8956,7 @@ fprintf('  Average spacing: %.0f mm\n', mean(diff(twiss_locations)));
                     twiss_p1_instantaneous(iloc,is).emit_norm = emit_norm * 1e6;  % mm-mrad
                     twiss_p1_instantaneous(iloc,is).r_rms = sqrt(r2) * 1000;  % mm
                     twiss_p1_instantaneous(iloc,is).n_particles = n_selected;
-                    twiss_p1_instantaneous(iloc,is).time = beam_data.time;
+                    twiss_p1_instantaneous(iloc,is).time = beam_data.t;
                 else
                     twiss_p1_instantaneous(iloc,is).beta = NaN;
                     twiss_p1_instantaneous(iloc,is).alpha = NaN;
@@ -8993,7 +9078,7 @@ end
                     twiss_p2_instantaneous(iloc,is).emit_norm = emit_norm * 1e6;
                     twiss_p2_instantaneous(iloc,is).r_rms = sqrt(r2) * 1000;
                     twiss_p2_instantaneous(iloc,is).n_particles = n_selected;
-                    twiss_p2_instantaneous(iloc,is).time = beam_data.time;
+                    twiss_p2_instantaneous(iloc,is).time = beam_data.t;
                 else
                     twiss_p2_instantaneous(iloc,is).beta = NaN;
                     twiss_p2_instantaneous(iloc,is).alpha = NaN;
@@ -9139,7 +9224,7 @@ if ENABLE_MULTIPULSE == true && ENABLE_BETATRON_AVERAGING == true && ...
                     twiss_p3_instantaneous(iloc,is).r_rms = sqrt(r2) * 1000;
                     twiss_p3_instantaneous(iloc,is).n_particles = n_selected;
                      % CRITICAL: Include this line to fix the bug for P3:
-                    twiss_p3_instantaneous(iloc,is).time = beam_data.time;
+                    twiss_p3_instantaneous(iloc,is).time = beam_data.t;
                 else
                     twiss_p3_instantaneous(iloc,is).beta = NaN;
                     twiss_p3_instantaneous(iloc,is).alpha = NaN;
@@ -9274,7 +9359,7 @@ if ENABLE_MULTIPULSE == true && ENABLE_BETATRON_AVERAGING == true && ...
                     twiss_p4_instantaneous(iloc,is).r_rms = sqrt(r2) * 1000;
                     twiss_p4_instantaneous(iloc,is).n_particles = n_selected;
                      % CRITICAL: Include this line to fix the bug:
-                    twiss_p4_instantaneous(iloc,is).time = beam_data.time;
+                    twiss_p4_instantaneous(iloc,is).time = beam_data.t;
                 else
                     twiss_p4_instantaneous(iloc,is).beta = NaN;
                     twiss_p4_instantaneous(iloc,is).alpha = NaN;
@@ -9497,7 +9582,7 @@ fprintf('  Average spacing: %.0f mm\n', mean(diff(twiss_locations)));
                     twiss_early_instantaneous(iloc,is).emit_norm = emit_norm * 1e6;
                     twiss_early_instantaneous(iloc,is).r_rms = sqrt(r2) * 1000;
                     twiss_early_instantaneous(iloc,is).n_particles = n_selected;
-                    twiss_early_instantaneous(iloc,is).time = beam_data.time;
+                    twiss_early_instantaneous(iloc,is).time = beam_data.t;
                 else
                     twiss_early_instantaneous(iloc,is).beta = NaN;
                     twiss_early_instantaneous(iloc,is).alpha = NaN;
@@ -9557,7 +9642,7 @@ fprintf('  Average spacing: %.0f mm\n', mean(diff(twiss_locations)));
                     twiss_late_instantaneous(iloc,is).emit_norm = emit_norm * 1e6;
                     twiss_late_instantaneous(iloc,is).r_rms = sqrt(r2) * 1000;
                     twiss_late_instantaneous(iloc,is).n_particles = n_selected;
-                    twiss_late_instantaneous(iloc,is).time = beam_data.time;
+                    twiss_late_instantaneous(iloc,is).time = beam_data.t;
                 else
                     twiss_late_instantaneous(iloc,is).beta = NaN;
                     twiss_late_instantaneous(iloc,is).alpha = NaN;
@@ -10015,7 +10100,7 @@ if ENABLE_MULTIPULSE == false && ENABLE_BETATRON_AVERAGING == true && ...
                     twiss_p1_instantaneous(iloc, is).emit_norm = emit_norm * 1e6;
                     twiss_p1_instantaneous(iloc, is).r_rms = sqrt(r2) * 1000;
                     twiss_p1_instantaneous(iloc, is).n_particles = n_selected;
-                    twiss_p1_instantaneous(iloc, is).time = beam_data.time;
+                    twiss_p1_instantaneous(iloc, is).time = beam_data.t;
                 else
                     twiss_p1_instantaneous(iloc, is).beta = NaN;
                     twiss_p1_instantaneous(iloc, is).alpha = NaN;
