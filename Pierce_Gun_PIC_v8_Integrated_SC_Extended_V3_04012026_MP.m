@@ -5017,6 +5017,247 @@ if ~isempty(beam_snap)
     end
 
 end  %% ~isempty(beam_snap)
+
+%%%%%%%%%%%%%%%%% NEW TWISS ANALYSIS PARAMETR PULSE 2 Figure 18b %%%%%%%%%%%%%%%%%%
+%% ==================== TWISS PARAMETER ANALYSIS — PULSE 2 ====================
+%%  Mirror of Figure 18 P1 block, run on the Pulse 2 mid-pulse snapshot
+%%  (steady_state_beam_pulse2). Gated by ENABLE_MULTIPULSE so it is silent
+%%  in single-pulse runs where this snapshot is not produced.
+
+if exist('ENABLE_MULTIPULSE','var') && ENABLE_MULTIPULSE == true && ...
+   exist('steady_state_beam_pulse2','var') && steady_state_beam_pulse2.n_total > 100
+
+    beam_snap_p2 = steady_state_beam_pulse2;
+    fprintf('\n=== TWISS ANALYSIS PULSE 2 using steady_state_beam_pulse2 (t=%.1f ns) ===\n', ...
+            beam_snap_p2.time*1e9);
+
+    twiss_locations_p2 = [254; 600; 1000; 1500; 1700; 2200; 2700; ...
+                          3400; 3964; 4600; 5400; 6402; 6828; 7450; 8305];
+    location_names_p2  = {'Anode','Early_Drift','Mid_Drift1','Trans1','Trans2', ...
+                          'Mid_Drift2','BPM1','Extension1','BPM2','Extension2', ...
+                          'Late_Drift','BPM3','BPM4','Sol49','Exit'};
+    n_twiss_planes_p2  = length(twiss_locations_p2);
+
+    fprintf('  Planes: %d  |  z = %.0f – %.0f mm\n', ...
+            n_twiss_planes_p2, twiss_locations_p2(1), twiss_locations_p2(end));
+
+    %% Pre-initialize struct array with NaN sentinels
+    twiss_results_p2 = struct( ...
+        'location', location_names_p2, ...
+        'z',        num2cell(twiss_locations_p2'), ...
+        'n_particles', num2cell(zeros(1,n_twiss_planes_p2)), ...
+        'r_rms',    num2cell(NaN(1,n_twiss_planes_p2)), ...
+        'div_rms',  num2cell(NaN(1,n_twiss_planes_p2)), ...
+        'emit_geo', num2cell(NaN(1,n_twiss_planes_p2)), ...
+        'emit_norm',num2cell(NaN(1,n_twiss_planes_p2)), ...
+        'beta',     num2cell(NaN(1,n_twiss_planes_p2)), ...
+        'alpha',    num2cell(NaN(1,n_twiss_planes_p2)), ...
+        'gamma_tw', num2cell(NaN(1,n_twiss_planes_p2)), ...
+        'condition',repmat({'Unknown'},1,n_twiss_planes_p2));
+
+    for ip = 1:n_twiss_planes_p2
+
+        z_target   = twiss_locations_p2(ip) / 1000;   % metres
+        dz_window  = 0.045;                            % ±45mm spatial window
+
+        in_plane = abs(beam_snap_p2.z - z_target) < dz_window;
+
+        %% Fallback: widen window if too few particles
+        if sum(in_plane) < 100
+            in_plane = abs(beam_snap_p2.z - z_target) < 0.090;
+        end
+        if sum(in_plane) < 50
+            in_plane = abs(beam_snap_p2.z - z_target) < 0.150;
+        end
+
+        n_sel = sum(in_plane);
+        twiss_results_p2(ip).n_particles = n_sel;
+
+        if n_sel < 50
+            fprintf('  %-12s z=%4.0fmm: only %d particles — skipped\n', ...
+                    location_names_p2{ip}, twiss_locations_p2(ip), n_sel);
+            continue
+        end
+
+        %% Extract phase space
+        r_sel     = beam_snap_p2.r(in_plane);
+        pr_sel    = beam_snap_p2.pr(in_plane);
+        pz_sel    = beam_snap_p2.pz(in_plane);
+        gam_sel   = beam_snap_p2.gamma(in_plane);
+
+        %% Normalised transverse divergence r' = pr/(γ m_e c)
+        pr_norm   = pr_sel ./ (gam_sel * m_e * c);
+
+        %% Centre
+        r_c  = r_sel  - mean(r_sel);
+        pr_c = pr_norm - mean(pr_norm);
+
+        %% Second moments
+        r2   = mean(r_c.^2);
+        pr2  = mean(pr_c.^2);
+        rpr  = mean(r_c .* pr_c);
+
+        %% Geometric RMS emittance
+        emit_geo = sqrt(max(r2*pr2 - rpr^2, 0));
+
+        if emit_geo < 1e-12
+            fprintf('  %-12s z=%4.0fmm: emittance ~0 — skipped\n', ...
+                    location_names_p2{ip}, twiss_locations_p2(ip));
+            continue
+        end
+
+        %% Twiss parameters
+        beta_tw  =  r2  / emit_geo;
+        alpha_tw = -rpr / emit_geo;
+        gamma_tw =  pr2 / emit_geo;
+        twiss_check = beta_tw * gamma_tw - alpha_tw^2;
+
+        %% Normalised emittance
+        gam_avg  = mean(gam_sel);
+        beta_rel = sqrt(1 - 1/gam_avg^2);
+        emit_norm = emit_geo * gam_avg * beta_rel;
+
+        %% Beam condition
+        if     alpha_tw >  0.1,  cond_str = 'Converging';
+        elseif alpha_tw < -0.1,  cond_str = 'Diverging';
+        else,                    cond_str = 'Collimated';
+        end
+
+        %% Store
+        twiss_results_p2(ip).r_rms     = sqrt(r2)   * 1000;   % mm
+        twiss_results_p2(ip).div_rms   = sqrt(pr2)  * 1000;   % mrad
+        twiss_results_p2(ip).emit_geo  = emit_geo   * 1e6;    % mm-mrad
+        twiss_results_p2(ip).emit_norm = emit_norm  * 1e6;    % mm-mrad
+        twiss_results_p2(ip).beta      = beta_tw;             % m
+        twiss_results_p2(ip).alpha     = alpha_tw;
+        twiss_results_p2(ip).gamma_tw  = gamma_tw;            % 1/m
+        twiss_results_p2(ip).condition = cond_str;
+
+        fprintf('  %-12s z=%4.0fmm: n=%5d  r=%5.2fmm  β=%5.3fm  α=%+6.3f  ε_n=%6.1f mm-mrad  %s\n', ...
+                location_names_p2{ip}, twiss_locations_p2(ip), n_sel, ...
+                twiss_results_p2(ip).r_rms, beta_tw, alpha_tw, ...
+                emit_norm*1e6, cond_str);
+    end
+
+    %% ============================================================
+    %% PLOTTING — only planes with valid data (Pulse 2)
+    %% ============================================================
+    valid_p2  = ~cellfun(@(x) isnan(x), {twiss_results_p2.beta});
+    n_valid_p2 = sum(valid_p2);
+
+    fprintf('\n  Valid Twiss planes (P2): %d / %d\n', n_valid_p2, n_twiss_planes_p2);
+
+    if n_valid_p2 >= 2
+
+        z_plot   = twiss_locations_p2(valid_p2);
+        beta_pl  = cell2mat({twiss_results_p2(valid_p2).beta});
+        alpha_pl = cell2mat({twiss_results_p2(valid_p2).alpha});
+        gamma_pl = cell2mat({twiss_results_p2(valid_p2).gamma_tw});
+        emit_pl  = cell2mat({twiss_results_p2(valid_p2).emit_norm});
+        cond_pl  = {twiss_results_p2(valid_p2).condition};
+
+        figure('Name','Twiss Parameter Analysis Along Beamline Pulse 2', ...
+               'Position',[80 80 1600 900]);
+
+        %% --- Beta function ---
+        subplot(2,3,1);
+        plot(z_plot, beta_pl, 'bo-', 'MarkerSize', 8, 'LineWidth', 2);
+        xlabel('z (mm)');  ylabel('β (m)');
+        title('Beta Function — Pulse 2');
+        xlim([0 8500]);  grid on;
+        for i = 1:n_valid_p2
+            text(z_plot(i), beta_pl(i)*1.04, ...
+                 sprintf('%.2f', beta_pl(i)), ...
+                 'FontSize',7, 'HorizontalAlignment','center');
+        end
+
+        %% --- Alpha parameter ---
+        subplot(2,3,2);
+        plot(z_plot, alpha_pl, 'rs-', 'MarkerSize', 8, 'LineWidth', 2);
+        hold on;
+        yline(0,'k--','LineWidth',1);
+        xlabel('z (mm)');  ylabel('α');
+        title('Alpha Parameter (Convergence/Divergence) — Pulse 2');
+        xlim([0 8500]);  grid on;
+        for i = 1:n_valid_p2
+            text(z_plot(i), alpha_pl(i) + 0.03*range(alpha_pl), ...
+                 cond_pl{i}, 'FontSize', 7, 'HorizontalAlignment','center');
+        end
+
+        %% --- Gamma parameter ---
+        subplot(2,3,3);
+        plot(z_plot, gamma_pl, 'g^-', 'MarkerSize', 8, 'LineWidth', 2);
+        xlabel('z (mm)');  ylabel('γ (1/m)');
+        title('Gamma Parameter — Pulse 2');
+        xlim([0 8500]);  grid on;
+
+        %% --- Normalised emittance ---
+        subplot(2,3,4);
+        plot(z_plot, emit_pl, 'md-', 'MarkerSize', 8, 'LineWidth', 2);
+        xlabel('z (mm)');  ylabel('ε_n (mm-mrad)');
+        title('Normalised Emittance — Pulse 2');
+        xlim([0 8500]);  grid on;
+        for i = 1:n_valid_p2
+            text(z_plot(i), emit_pl(i)*1.02, ...
+                 sprintf('%.0f', emit_pl(i)), ...
+                 'FontSize', 7, 'HorizontalAlignment','center');
+        end
+
+        %% --- Phase advance ---
+        subplot(2,3,5);
+        if n_valid_p2 >= 2
+            phase_adv = zeros(n_valid_p2-1, 1);
+            section_labels = cell(n_valid_p2-1, 1);
+            for i = 1:n_valid_p2-1
+                dz  = (z_plot(i+1) - z_plot(i)) / 1000;  % m
+                b_m = 0.5*(beta_pl(i) + beta_pl(i+1));    % mean beta
+                beta_rel_avg = sqrt(1 - 1/mean(gam_avg)^2);
+                phase_adv(i) = dz / b_m;
+                section_labels{i} = sprintf('%d-%d', ...
+                    round(z_plot(i)), round(z_plot(i+1)));
+            end
+            bar(1:n_valid_p2-1, phase_adv, 'FaceColor',[0.85 0.4 0.4]);
+            set(gca,'XTick',1:n_valid_p2-1,'XTickLabel',section_labels, ...
+                'XTickLabelRotation',45);
+            xlabel('Section');  ylabel('Phase Advance (rad)');
+            title('Estimated Phase Advance per Section — Pulse 2');
+            grid on;
+        end
+
+        %% --- Summary text ---
+        subplot(2,3,6);
+        axis off;
+        text(0.02, 0.97, 'TWISS PARAMETER SUMMARY PULSE 2', ...
+             'FontWeight','bold','FontSize',12,'Units','normalized', ...
+             'VerticalAlignment','top');
+        y_pos = 0.99;
+        dy    = 0.08;
+        for i = 1:min(n_valid_p2, 12)   % max 12 entries fit
+            idx = find(valid_p2);
+            ii  = idx(i);
+            line1 = sprintf('%s (z=%dmm):', ...
+                            twiss_results_p2(ii).location, twiss_locations_p2(ii));
+            line2 = sprintf('  β=%.3fm  α=%+.3f  ε_n=%.1f mm-mrad  %s', ...
+                            twiss_results_p2(ii).beta, twiss_results_p2(ii).alpha, ...
+                            twiss_results_p2(ii).emit_norm, twiss_results_p2(ii).condition);
+            text(0.02, y_pos, line1, 'FontSize',8,'FontWeight','bold', ...
+                 'Units','normalized','VerticalAlignment','top');
+            text(0.02, y_pos-0.028, line2, 'FontSize',7, ...
+                 'Units','normalized','VerticalAlignment','top');
+            y_pos = y_pos - dy;
+        end
+
+        sgtitle(sprintf('Twiss Parameter Analysis Along Beamline (Pulse 2) — t=%.1f ns', ...
+                        beam_snap_p2.time*1e9), ...
+                'FontSize',14,'FontWeight','bold');
+
+        fprintf('  Twiss figure (Pulse 2) generated with %d planes.\n', n_valid_p2);
+
+    else
+        fprintf('  WARNING: Only %d valid planes (P2) — need ≥2 to plot.\n', n_valid_p2);
+    end
+
+end  %% steady_state_beam_pulse2 exists
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 72 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ==================== POST-PROCESSING VISUALIZATION Pulse 1 Envelope====================
 % Add after simulation completes (after line 415)
