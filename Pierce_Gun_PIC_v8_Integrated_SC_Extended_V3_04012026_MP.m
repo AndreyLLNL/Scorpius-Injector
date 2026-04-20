@@ -10276,8 +10276,20 @@ end
 
 if ENABLE_BETATRON_AVERAGING == true && exist('twiss_p1_averaged', 'var')
     
+    % Detect whether Pulse 2 averaged Twiss is also available so this figure
+    % can be promoted from a P1-only view to a direct P1 vs P2 comparison
+    show_p2_overlay = exist('twiss_p2_averaged', 'var') && ...
+                      exist('twiss_p2_instantaneous', 'var');
+    if show_p2_overlay
+        fig_name_p1 = 'Betatron Oscillation Analysis P1 vs P2 (averaged Twiss)';
+        title_suffix = 'Pulse 1 (o, solid mean) vs Pulse 2 (s, dotted mean)';
+    else
+        fig_name_p1 = 'Betatron Oscillation Analysis Pulse 1';
+        title_suffix = '';
+    end
+    
     figure('Position', [100, 100, 1800, 1200], ...
-           'Name', 'Betatron Oscillation Analysis Pulse 1');
+           'Name', fig_name_p1);
     
     %% Plot 1: Beta function oscillations at each location
     subplot(1,3,1);
@@ -10292,18 +10304,39 @@ if ENABLE_BETATRON_AVERAGING == true && exist('twiss_p1_averaged', 'var')
         
         if sum(valid) > 2
             plot(times_p1(valid), beta_p1(valid), 'o-', 'Color', colors(iloc,:), ...
-                 'LineWidth', 2, 'DisplayName', location_names{iloc});
+                 'LineWidth', 2, 'DisplayName', [location_names{iloc} ' P1']);
             
-            % Add mean line
+            % Add mean line (P1 averaged Twiss)
             beta_mean = twiss_p1_averaged(iloc).beta_mean;
-            plot([min(times_p1) max(times_p1)], [beta_mean beta_mean], '--', ...
-                 'Color', colors(iloc,:), 'LineWidth', 1.5);
+            plot([min(times_p1) max(times_p1)], [beta_mean beta_mean], '-', ...
+                 'Color', colors(iloc,:), 'LineWidth', 1.5, ...
+                 'HandleVisibility', 'off');
+        end
+        
+        % Overlay Pulse 2 oscillations and averaged mean for direct comparison
+        if show_p2_overlay
+            beta_p2 = [twiss_p2_instantaneous(iloc,:).beta];
+            times_p2 = [twiss_p2_instantaneous(iloc,:).time] * 1e9;
+            valid_p2 = ~isnan(beta_p2);
+            if sum(valid_p2) > 2
+                plot(times_p2(valid_p2), beta_p2(valid_p2), 's--', ...
+                     'Color', colors(iloc,:), 'LineWidth', 2, ...
+                     'DisplayName', [location_names{iloc} ' P2']);
+                beta_mean_p2 = twiss_p2_averaged(iloc).beta_mean;
+                plot([min(times_p2) max(times_p2)], [beta_mean_p2 beta_mean_p2], ':', ...
+                     'Color', colors(iloc,:), 'LineWidth', 1.5, ...
+                     'HandleVisibility', 'off');
+            end
         end
     end
     
     xlabel('Time (ns)', 'FontSize', 12);
     ylabel('β (m)', 'FontSize', 12);
-    title('Pulse 1: Beta Function Oscillations', 'FontSize', 14);
+    if show_p2_overlay
+        title({'Beta Function Oscillations', title_suffix}, 'FontSize', 14);
+    else
+        title('Pulse 1: Beta Function Oscillations', 'FontSize', 14);
+    end
     legend('Location', 'best', 'FontSize', 9);
     grid on;
     
@@ -10320,15 +10353,32 @@ if ENABLE_BETATRON_AVERAGING == true && exist('twiss_p1_averaged', 'var')
             plot(times_p1(valid), alpha_p1(valid), 'o-', 'Color', colors(iloc,:), ...
                  'LineWidth', 2);
             alpha_mean = twiss_p1_averaged(iloc).alpha_mean;
-            plot([min(times_p1) max(times_p1)], [alpha_mean alpha_mean], '--', ...
+            plot([min(times_p1) max(times_p1)], [alpha_mean alpha_mean], '-', ...
                  'Color', colors(iloc,:), 'LineWidth', 1.5);
+        end
+        
+        if show_p2_overlay
+            alpha_p2 = [twiss_p2_instantaneous(iloc,:).alpha];
+            times_p2 = [twiss_p2_instantaneous(iloc,:).time] * 1e9;
+            valid_p2 = ~isnan(alpha_p2);
+            if sum(valid_p2) > 2
+                plot(times_p2(valid_p2), alpha_p2(valid_p2), 's--', ...
+                     'Color', colors(iloc,:), 'LineWidth', 2);
+                alpha_mean_p2 = twiss_p2_averaged(iloc).alpha_mean;
+                plot([min(times_p2) max(times_p2)], [alpha_mean_p2 alpha_mean_p2], ':', ...
+                     'Color', colors(iloc,:), 'LineWidth', 1.5);
+            end
         end
     end
     
     yline(0, 'k:', 'LineWidth', 1.5);
     xlabel('Time (ns)', 'FontSize', 12);
     ylabel('α', 'FontSize', 12);
-    title('Pulse 1: Alpha Parameter Oscillations', 'FontSize', 14);
+    if show_p2_overlay
+        title({'Alpha Parameter Oscillations', title_suffix}, 'FontSize', 14);
+    else
+        title('Pulse 1: Alpha Parameter Oscillations', 'FontSize', 14);
+    end
     grid on;
     
     %% Plot 3: RMS radius oscillations (key betatron signature!)
@@ -10344,21 +10394,48 @@ if ENABLE_BETATRON_AVERAGING == true && exist('twiss_p1_averaged', 'var')
             plot(times_p1(valid), r_rms_p1(valid), 'o-', 'Color', colors(iloc,:), ...
                  'LineWidth', 2, 'MarkerSize', 6);
             r_mean = twiss_p1_averaged(iloc).r_rms_mean;
-            plot([min(times_p1) max(times_p1)], [r_mean r_mean], '--', ...
+            plot([min(times_p1) max(times_p1)], [r_mean r_mean], '-', ...
                  'Color', colors(iloc,:), 'LineWidth', 1.5);
+        end
+        
+        if show_p2_overlay
+            r_rms_p2 = [twiss_p2_instantaneous(iloc,:).r_rms];
+            times_p2 = [twiss_p2_instantaneous(iloc,:).time] * 1e9;
+            valid_p2 = ~isnan(r_rms_p2);
+            if sum(valid_p2) > 2
+                plot(times_p2(valid_p2), r_rms_p2(valid_p2), 's--', ...
+                     'Color', colors(iloc,:), 'LineWidth', 2, 'MarkerSize', 6);
+                r_mean_p2 = twiss_p2_averaged(iloc).r_rms_mean;
+                plot([min(times_p2) max(times_p2)], [r_mean_p2 r_mean_p2], ':', ...
+                     'Color', colors(iloc,:), 'LineWidth', 1.5);
+            end
         end
     end
     
     xlabel('Time (ns)', 'FontSize', 12);
     ylabel('r_{rms} (mm)', 'FontSize', 12);
-    title('Pulse 1: RMS Radius Oscillations', 'FontSize', 14);
+    if show_p2_overlay
+        title({'RMS Radius Oscillations', title_suffix}, 'FontSize', 14);
+    else
+        title('Pulse 1: RMS Radius Oscillations', 'FontSize', 14);
+    end
     grid on;
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% RR Figure in jet colors %%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ENABLE_BETATRON_AVERAGING == true && exist('twiss_p1_averaged', 'var')
 
+    show_p2_overlay = exist('twiss_p2_averaged', 'var') && ...
+                      exist('twiss_p2_instantaneous', 'var');
+    if show_p2_overlay
+        fig_name_p1_jet = 'Betatron Oscillation Analysis P1 vs P2 (jet colors)';
+        title_suffix = 'Pulse 1 (o, solid mean) vs Pulse 2 (s, dotted mean)';
+    else
+        fig_name_p1_jet = 'Betatron Oscillation Analysis Pulse 1';
+        title_suffix = '';
+    end
+
  figure('Position', [100, 100, 1800, 1200], ...
-           'Name', 'Betatron Oscillation Analysis Pulse 1');
+           'Name', fig_name_p1_jet);
     
     %% Plot 1: Beta function oscillations at each location
     subplot(1,3,1);
@@ -10374,18 +10451,39 @@ if ENABLE_BETATRON_AVERAGING == true && exist('twiss_p1_averaged', 'var')
         
         if sum(valid) > 2
             plot(times_p1(valid), beta_p1(valid), 'o-', 'Color', colors(iloc,:), ...
-                 'LineWidth', 2, 'DisplayName', location_names{iloc});
+                 'LineWidth', 2, 'DisplayName', [location_names{iloc} ' P1']);
             
-            % Add mean line
+            % Add mean line (P1 averaged Twiss)
             beta_mean = twiss_p1_averaged(iloc).beta_mean;
-            plot([min(times_p1) max(times_p1)], [beta_mean beta_mean], '--', ...
-                 'Color', colors(iloc,:), 'LineWidth', 1.5);
+            plot([min(times_p1) max(times_p1)], [beta_mean beta_mean], '-', ...
+                 'Color', colors(iloc,:), 'LineWidth', 1.5, ...
+                 'HandleVisibility', 'off');
+        end
+        
+        % Overlay Pulse 2 oscillations and averaged mean for direct comparison
+        if show_p2_overlay
+            beta_p2 = [twiss_p2_instantaneous(iloc,:).beta];
+            times_p2 = [twiss_p2_instantaneous(iloc,:).time] * 1e9;
+            valid_p2 = ~isnan(beta_p2);
+            if sum(valid_p2) > 2
+                plot(times_p2(valid_p2), beta_p2(valid_p2), 's--', ...
+                     'Color', colors(iloc,:), 'LineWidth', 2, ...
+                     'DisplayName', [location_names{iloc} ' P2']);
+                beta_mean_p2 = twiss_p2_averaged(iloc).beta_mean;
+                plot([min(times_p2) max(times_p2)], [beta_mean_p2 beta_mean_p2], ':', ...
+                     'Color', colors(iloc,:), 'LineWidth', 1.5, ...
+                     'HandleVisibility', 'off');
+            end
         end
     end
     
     xlabel('Time (ns)', 'FontSize', 12);
     ylabel('β (m)', 'FontSize', 12);
-    title('Pulse 1: Beta Function Oscillations', 'FontSize', 14);
+    if show_p2_overlay
+        title({'Beta Function Oscillations', title_suffix}, 'FontSize', 14);
+    else
+        title('Pulse 1: Beta Function Oscillations', 'FontSize', 14);
+    end
     legend('Location', 'best', 'FontSize', 9);
     grid on;
     
@@ -10402,15 +10500,32 @@ if ENABLE_BETATRON_AVERAGING == true && exist('twiss_p1_averaged', 'var')
             plot(times_p1(valid), alpha_p1(valid), 'o-', 'Color', colors(iloc,:), ...
                  'LineWidth', 2);
             alpha_mean = twiss_p1_averaged(iloc).alpha_mean;
-            plot([min(times_p1) max(times_p1)], [alpha_mean alpha_mean], '--', ...
+            plot([min(times_p1) max(times_p1)], [alpha_mean alpha_mean], '-', ...
                  'Color', colors(iloc,:), 'LineWidth', 1.5);
+        end
+        
+        if show_p2_overlay
+            alpha_p2 = [twiss_p2_instantaneous(iloc,:).alpha];
+            times_p2 = [twiss_p2_instantaneous(iloc,:).time] * 1e9;
+            valid_p2 = ~isnan(alpha_p2);
+            if sum(valid_p2) > 2
+                plot(times_p2(valid_p2), alpha_p2(valid_p2), 's--', ...
+                     'Color', colors(iloc,:), 'LineWidth', 2);
+                alpha_mean_p2 = twiss_p2_averaged(iloc).alpha_mean;
+                plot([min(times_p2) max(times_p2)], [alpha_mean_p2 alpha_mean_p2], ':', ...
+                     'Color', colors(iloc,:), 'LineWidth', 1.5);
+            end
         end
     end
     
     yline(0, 'k:', 'LineWidth', 1.5);
     xlabel('Time (ns)', 'FontSize', 12);
     ylabel('α', 'FontSize', 12);
-    title('Pulse 1: Alpha Parameter Oscillations', 'FontSize', 14);
+    if show_p2_overlay
+        title({'Alpha Parameter Oscillations', title_suffix}, 'FontSize', 14);
+    else
+        title('Pulse 1: Alpha Parameter Oscillations', 'FontSize', 14);
+    end
     grid on;
     
     %% Plot 3: RMS radius oscillations (key betatron signature!)
@@ -10426,14 +10541,31 @@ if ENABLE_BETATRON_AVERAGING == true && exist('twiss_p1_averaged', 'var')
             plot(times_p1(valid), r_rms_p1(valid), 'o-', 'Color', colors(iloc,:), ...
                  'LineWidth', 2, 'MarkerSize', 6);
             r_mean = twiss_p1_averaged(iloc).r_rms_mean;
-            plot([min(times_p1) max(times_p1)], [r_mean r_mean], '--', ...
+            plot([min(times_p1) max(times_p1)], [r_mean r_mean], '-', ...
                  'Color', colors(iloc,:), 'LineWidth', 1.5);
+        end
+        
+        if show_p2_overlay
+            r_rms_p2 = [twiss_p2_instantaneous(iloc,:).r_rms];
+            times_p2 = [twiss_p2_instantaneous(iloc,:).time] * 1e9;
+            valid_p2 = ~isnan(r_rms_p2);
+            if sum(valid_p2) > 2
+                plot(times_p2(valid_p2), r_rms_p2(valid_p2), 's--', ...
+                     'Color', colors(iloc,:), 'LineWidth', 2, 'MarkerSize', 6);
+                r_mean_p2 = twiss_p2_averaged(iloc).r_rms_mean;
+                plot([min(times_p2) max(times_p2)], [r_mean_p2 r_mean_p2], ':', ...
+                     'Color', colors(iloc,:), 'LineWidth', 1.5);
+            end
         end
     end
     
     xlabel('Time (ns)', 'FontSize', 12);
     ylabel('r_{rms} (mm)', 'FontSize', 12);
-    title('Pulse 1: RMS Radius Oscillations', 'FontSize', 14);
+    if show_p2_overlay
+        title({'RMS Radius Oscillations', title_suffix}, 'FontSize', 14);
+    else
+        title('Pulse 1: RMS Radius Oscillations', 'FontSize', 14);
+    end
     grid on;
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 31 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
