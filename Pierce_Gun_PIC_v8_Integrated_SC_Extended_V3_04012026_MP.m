@@ -8871,7 +8871,7 @@ fprintf('  Average spacing: %.0f mm\n', mean(diff(twiss_locations)));
                     twiss_p1_instantaneous(iloc,is).emit_norm = emit_norm * 1e6;  % mm-mrad
                     twiss_p1_instantaneous(iloc,is).r_rms = sqrt(r2) * 1000;  % mm
                     twiss_p1_instantaneous(iloc,is).n_particles = n_selected;
-                    twiss_p1_instantaneous(iloc,is).time = beam_data.time;
+                    twiss_p1_instantaneous(iloc,is).time = beam_data.t;
                 else
                     twiss_p1_instantaneous(iloc,is).beta = NaN;
                     twiss_p1_instantaneous(iloc,is).alpha = NaN;
@@ -8993,7 +8993,7 @@ end
                     twiss_p2_instantaneous(iloc,is).emit_norm = emit_norm * 1e6;
                     twiss_p2_instantaneous(iloc,is).r_rms = sqrt(r2) * 1000;
                     twiss_p2_instantaneous(iloc,is).n_particles = n_selected;
-                    twiss_p2_instantaneous(iloc,is).time = beam_data.time;
+                    twiss_p2_instantaneous(iloc,is).time = beam_data.t;
                 else
                     twiss_p2_instantaneous(iloc,is).beta = NaN;
                     twiss_p2_instantaneous(iloc,is).alpha = NaN;
@@ -9139,7 +9139,7 @@ if ENABLE_MULTIPULSE == true && ENABLE_BETATRON_AVERAGING == true && ...
                     twiss_p3_instantaneous(iloc,is).r_rms = sqrt(r2) * 1000;
                     twiss_p3_instantaneous(iloc,is).n_particles = n_selected;
                      % CRITICAL: Include this line to fix the bug for P3:
-                    twiss_p3_instantaneous(iloc,is).time = beam_data.time;
+                    twiss_p3_instantaneous(iloc,is).time = beam_data.t;
                 else
                     twiss_p3_instantaneous(iloc,is).beta = NaN;
                     twiss_p3_instantaneous(iloc,is).alpha = NaN;
@@ -9274,7 +9274,7 @@ if ENABLE_MULTIPULSE == true && ENABLE_BETATRON_AVERAGING == true && ...
                     twiss_p4_instantaneous(iloc,is).r_rms = sqrt(r2) * 1000;
                     twiss_p4_instantaneous(iloc,is).n_particles = n_selected;
                      % CRITICAL: Include this line to fix the bug:
-                    twiss_p4_instantaneous(iloc,is).time = beam_data.time;
+                    twiss_p4_instantaneous(iloc,is).time = beam_data.t;
                 else
                     twiss_p4_instantaneous(iloc,is).beta = NaN;
                     twiss_p4_instantaneous(iloc,is).alpha = NaN;
@@ -9497,7 +9497,7 @@ fprintf('  Average spacing: %.0f mm\n', mean(diff(twiss_locations)));
                     twiss_early_instantaneous(iloc,is).emit_norm = emit_norm * 1e6;
                     twiss_early_instantaneous(iloc,is).r_rms = sqrt(r2) * 1000;
                     twiss_early_instantaneous(iloc,is).n_particles = n_selected;
-                    twiss_early_instantaneous(iloc,is).time = beam_data.time;
+                    twiss_early_instantaneous(iloc,is).time = beam_data.t;
                 else
                     twiss_early_instantaneous(iloc,is).beta = NaN;
                     twiss_early_instantaneous(iloc,is).alpha = NaN;
@@ -9557,7 +9557,7 @@ fprintf('  Average spacing: %.0f mm\n', mean(diff(twiss_locations)));
                     twiss_late_instantaneous(iloc,is).emit_norm = emit_norm * 1e6;
                     twiss_late_instantaneous(iloc,is).r_rms = sqrt(r2) * 1000;
                     twiss_late_instantaneous(iloc,is).n_particles = n_selected;
-                    twiss_late_instantaneous(iloc,is).time = beam_data.time;
+                    twiss_late_instantaneous(iloc,is).time = beam_data.t;
                 else
                     twiss_late_instantaneous(iloc,is).beta = NaN;
                     twiss_late_instantaneous(iloc,is).alpha = NaN;
@@ -10015,7 +10015,7 @@ if ENABLE_MULTIPULSE == false && ENABLE_BETATRON_AVERAGING == true && ...
                     twiss_p1_instantaneous(iloc, is).emit_norm = emit_norm * 1e6;
                     twiss_p1_instantaneous(iloc, is).r_rms = sqrt(r2) * 1000;
                     twiss_p1_instantaneous(iloc, is).n_particles = n_selected;
-                    twiss_p1_instantaneous(iloc, is).time = beam_data.time;
+                    twiss_p1_instantaneous(iloc, is).time = beam_data.t;
                 else
                     twiss_p1_instantaneous(iloc, is).beta = NaN;
                     twiss_p1_instantaneous(iloc, is).alpha = NaN;
